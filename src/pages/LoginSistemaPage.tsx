@@ -42,6 +42,9 @@ const LoginSistemaPage: React.FC = () => {
         case 'laboratorio':
           navigate('/laboratorio');
           break;
+        case 'hospital':
+          navigate('/hospital');
+          break;
         default:
           navigate('/');
       }

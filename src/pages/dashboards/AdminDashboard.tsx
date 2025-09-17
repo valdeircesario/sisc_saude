@@ -36,23 +36,81 @@ const AdminDashboard: React.FC = () => {
 
   // Queries
   const { data: ubsList, isLoading: loadingUBS } = useQuery(
-    'admin-ubs',
+    ['admin-ubs'],
     () => api.get('/admin/ubs').then(res => res.data),
     { enabled: activeTab === 'ubs' }
   );
 
   const { data: laboratorios, isLoading: loadingLabs } = useQuery(
-    'admin-laboratorios',
+    ['admin-laboratorios'],
     () => api.get('/admin/laboratorios').then(res => res.data),
     { enabled: activeTab === 'laboratorios' }
   );
 
-  // Mutations
+  const { data: hospitais, isLoading: loadingHospitais } = useQuery(
+    ['admin-hospitais'],
+    () => api.get('/admin/hospitais').then(res => {
+      console.log('Hospitais data:', res.data);
+      return res.data;
+    }),
+    { enabled: activeTab === 'hospitais' }
+  );
+
+  // Debug logs
+  console.log('Active tab:', activeTab);
+  console.log('Hospitais data:', hospitais);
+  console.log('Loading hospitais:', loadingHospitais);
+
+  // Hospital mutations
+  const createHOSPITALMutation = useMutation(
+    (data: any) => api.post('/admin/hospitais', data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-hospitais']);
+        toast.success('Hospital cadastrado com sucesso!');
+        setShowModal(false);
+        resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao cadastrar hospital');
+      }
+    }
+  );
+
+  const updateHOSPITALMutation = useMutation(
+    ({ id, data }: { id: string; data: any }) => api.put(`/admin/hospitais/${id}`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-hospitais']);
+        toast.success('Hospital atualizado com sucesso!');
+        setShowModal(false);
+        resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao atualizar hospital');
+      }
+    }
+  );
+
+  const deleteHOSPITALMutation = useMutation(
+    (id: string) => api.delete(`/admin/hospitais/${id}`),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-hospitais']);
+        toast.success('Hospital deletado com sucesso!');
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao deletar hospital');
+      }
+    }
+  );
+
+  // UBS mutations
   const createUBSMutation = useMutation(
     (data: any) => api.post('/admin/ubs', data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('admin-ubs');
+        queryClient.invalidateQueries(['admin-ubs']);
         toast.success('UBS cadastrada com sucesso!');
         setShowModal(false);
         resetForm();
@@ -67,7 +125,7 @@ const AdminDashboard: React.FC = () => {
     ({ id, data }: { id: string; data: any }) => api.put(`/admin/ubs/${id}`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('admin-ubs');
+        queryClient.invalidateQueries(['admin-ubs']);
         toast.success('UBS atualizada com sucesso!');
         setShowModal(false);
         resetForm();
@@ -82,7 +140,7 @@ const AdminDashboard: React.FC = () => {
     (id: string) => api.delete(`/admin/ubs/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('admin-ubs');
+        queryClient.invalidateQueries(['admin-ubs']);
         toast.success('UBS deletada com sucesso!');
       },
       onError: (error: any) => {
@@ -91,11 +149,12 @@ const AdminDashboard: React.FC = () => {
     }
   );
 
+  // Laboratory mutations
   const createLabMutation = useMutation(
     (data: any) => api.post('/admin/laboratorios', data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('admin-laboratorios');
+        queryClient.invalidateQueries(['admin-laboratorios']);
         toast.success('Laboratório cadastrado com sucesso!');
         setShowModal(false);
         resetForm();
@@ -110,7 +169,7 @@ const AdminDashboard: React.FC = () => {
     ({ id, data }: { id: string; data: any }) => api.put(`/admin/laboratorios/${id}`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('admin-laboratorios');
+        queryClient.invalidateQueries(['admin-laboratorios']);
         toast.success('Laboratório atualizado com sucesso!');
         setShowModal(false);
         resetForm();
@@ -125,7 +184,7 @@ const AdminDashboard: React.FC = () => {
     (id: string) => api.delete(`/admin/laboratorios/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('admin-laboratorios');
+        queryClient.invalidateQueries(['admin-laboratorios']);
         toast.success('Laboratório deletado com sucesso!');
       },
       onError: (error: any) => {
@@ -148,18 +207,24 @@ const AdminDashboard: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+  
     if (activeTab === 'ubs') {
       if (editingItem) {
         updateUBSMutation.mutate({ id: editingItem.id, data: formData });
       } else {
         createUBSMutation.mutate(formData);
       }
-    } else {
+    } else if (activeTab === 'laboratorios') {
       if (editingItem) {
         updateLabMutation.mutate({ id: editingItem.id, data: formData });
       } else {
         createLabMutation.mutate(formData);
+      }
+    } else if (activeTab === 'hospitais') {
+      if (editingItem) {
+        updateHOSPITALMutation.mutate({ id: editingItem.id, data: formData });
+      } else {
+        createHOSPITALMutation.mutate(formData);
       }
     }
   };
@@ -181,8 +246,10 @@ const AdminDashboard: React.FC = () => {
     if (window.confirm('Tem certeza que deseja deletar este item?')) {
       if (activeTab === 'ubs') {
         deleteUBSMutation.mutate(id);
-      } else {
+      } else if (activeTab === 'laboratorios') {
         deleteLabMutation.mutate(id);
+      } else if (activeTab === 'hospitais') {
+        deleteHOSPITALMutation.mutate(id);
       }
     }
   };
@@ -244,6 +311,17 @@ const AdminDashboard: React.FC = () => {
                 <FlaskConical className="h-5 w-5 inline mr-2" />
                 Laboratórios
               </button>
+              <button
+                onClick={() => setActiveTab('hospitais')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'hospitais'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Building2 className="h-5 w-5 inline mr-2" />
+                Hospitais
+              </button>
             </nav>
           </div>
         </div>
@@ -252,14 +330,24 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {activeTab === 'ubs' ? 'Unidades de Saúde' : 'Laboratórios'}
+              {activeTab === 'ubs' 
+                ? 'Unidades de Saúde'
+                : activeTab === 'laboratorios'
+                ? 'Laboratórios'
+                : 'Hospitais'}
             </h2>
             <button
               onClick={openCreateModal}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              <span>Adicionar {activeTab === 'ubs' ? 'UBS' : 'Laboratório'}</span>
+              <span>
+                Adicionar {activeTab === 'ubs'
+                  ? 'UBS'
+                  : activeTab === 'laboratorios'
+                  ? 'Laboratório'
+                  : 'Hospital'}
+              </span>
             </button>
           </div>
 
@@ -353,11 +441,61 @@ const AdminDashboard: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+
+                {activeTab === 'hospitais' && (
+                  <>
+                    {console.log('Rendering hospitais:', hospitais)}
+                    {hospitais?.map((hospital: any) => (
+                      <tr key={hospital.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{hospital.nome}</div>
+                          <div className="text-sm text-gray-500">{hospital.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {hospital.endereco}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {hospital.telefone}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {hospital.cnpj}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEdit(hospital)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(hospital.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!hospitais || hospitais.length === 0) && !loadingHospitais && (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-4 text-center text-gray-500">
+                          Nenhum hospital encontrado
+                        </td>
+                      </tr>
+                    )}
+                  </>
+                )}
               </tbody>
             </table>
           </div>
 
-          {((activeTab === 'ubs' && loadingUBS) || (activeTab === 'laboratorios' && loadingLabs)) && (
+          {(
+            (activeTab === 'ubs' && loadingUBS) ||
+            (activeTab === 'laboratorios' && loadingLabs) ||
+            (activeTab === 'hospitais' && loadingHospitais)
+          ) && (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
               <p className="mt-2 text-gray-600">Carregando...</p>
@@ -371,7 +509,12 @@ const AdminDashboard: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingItem ? 'Editar' : 'Adicionar'} {activeTab === 'ubs' ? 'UBS' : 'Laboratório'}
+              {editingItem ? 'Editar' : 'Adicionar'}{' '}
+              {activeTab === 'ubs'
+                ? 'UBS'
+                : activeTab === 'laboratorios'
+                ? 'Laboratório'
+                : 'Hospital'}
             </h3>
             
             <form onSubmit={handleSubmit} className="space-y-4">

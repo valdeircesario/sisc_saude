@@ -35,6 +35,144 @@ router.get('/ubs', async (req, res) => {
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
 });
+// Rota pública para UBS listar hospitais
+router.get('/hospitais-publico', authenticateToken, authorizeRole(['ubs']), async (req, res) => {
+  try {
+    const hospitaisList = await prisma.hospital.findMany({
+      select: {
+        id: true,
+        nome: true,
+        endereco: true,
+        telefone: true,
+      },
+      orderBy: { nome: 'asc' }
+    });
+    res.json(hospitaisList);
+  } catch (error) {
+    console.error('Erro ao listar hospitais:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Listar todos hospitais
+router.get('/hospitais', async (req, res) => {
+  try {
+    const hospitaisList = await prisma.hospital.findMany({
+      select: {
+        id: true,
+        nome: true,
+        endereco: true,
+        telefone: true,
+        cnpj: true,
+        email: true,
+        createdAt: true,
+      }
+    });
+    res.json(hospitaisList); // <-- nome igual ao const acima
+  } catch (error) {
+    console.error('Erro ao listar hospitais:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Cadastrar hospital
+router.post('/hospitais', async (req, res) => {
+  try {
+    const { nome, endereco, telefone, cnpj, email, senha } = req.body;
+
+    const hospitalExistente = await prisma.hospital.findFirst({
+      where: {
+        OR: [
+          { email: email.toLowerCase() },
+          { cnpj }
+        ]
+      }
+    });
+
+    if (hospitalExistente) {
+      return res.status(400).json({ message: 'Hospital já cadastrado com estes dados' });
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 12);
+
+    const novoHospital = await prisma.hospital.create({
+      data: {
+        nome,
+        endereco,
+        telefone,
+        cnpj,
+        email: email.toLowerCase(),
+        senha: senhaHash
+      }
+    });
+
+    res.status(201).json({
+      id: novoHospital.id,
+      nome: novoHospital.nome,
+      endereco: novoHospital.endereco,
+      telefone: novoHospital.telefone,
+      cnpj: novoHospital.cnpj,
+      email: novoHospital.email
+    });
+  } catch (error) {
+    console.error('Erro ao cadastrar hospital:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Editar hospital
+router.put('/hospitais/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, endereco, telefone, cnpj, email, senha } = req.body;
+
+    const dados = {
+      nome,
+      endereco,
+      telefone,
+      cnpj,
+      email: email.toLowerCase()
+    };
+
+    if (senha) {
+      dados.senha = await bcrypt.hash(senha, 12);
+    }
+
+    const hospitalAtualizado = await prisma.hospital.update({
+      where: { id },
+      data: dados
+    });
+
+    res.json({
+      id: hospitalAtualizado.id,
+      nome: hospitalAtualizado.nome,
+      endereco: hospitalAtualizado.endereco,
+      telefone: hospitalAtualizado.telefone,
+      cnpj: hospitalAtualizado.cnpj,
+      email: hospitalAtualizado.email
+    });
+  } catch (error) {
+    console.error('Erro ao editar hospital:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Deletar hospital
+router.delete('/hospitais/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.hospital.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'Hospital deletado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao deletar hospital:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 
 // Cadastrar UBS
 router.post('/ubs', async (req, res) => {
@@ -257,5 +395,6 @@ router.delete('/laboratorios/:id', async (req, res) => {
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
 });
+
 
 export default router;
