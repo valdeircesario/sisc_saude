@@ -93,6 +93,11 @@ router.post('/login-sistema', async (req, res) => {
       usuario = await prisma.uBS.findUnique({ where: { email: email.toLowerCase() } });
       if (usuario) tipo = 'ubs';
     }
+    // Verificar hospital
+    if (!usuario) {
+      usuario = await prisma.hospital.findUnique({ where: { email: email.toLowerCase() } });
+      if (usuario) tipo = 'hospital';
+    }
 
     // Verificar Funcionário
     if (!usuario) {

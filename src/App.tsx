@@ -24,6 +24,7 @@ import UBSDashboard from './pages/dashboards/UBSDashboard';
 import FuncionarioDashboard from './pages/dashboards/FuncionarioDashboard';
 import LaboratorioDashboard from './pages/dashboards/LaboratorioDashboard';
 import PacienteDashboard from './pages/dashboards/PacienteDashboard';
+import HOSPDashboard from './pages/dashboards/HOSPDashoard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,11 @@ function App() {
               <Route path="/admin/*" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/hospital/*" element={
+                <ProtectedRoute allowedRoles={['hospital']}>
+                  <HOSPDashboard />
                 </ProtectedRoute>
               } />
               

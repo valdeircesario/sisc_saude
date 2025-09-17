@@ -17,6 +17,7 @@ import pacienteRoutes from './routes/paciente.js';
 import campanhaRoutes from './routes/campanha.js';
 import exameRoutes from './routes/exame.js';
 import consultaRoutes from './routes/consulta.js';
+import hospitalRoutes from './routes/hospital.js';
 
 // Configurar __dirname para ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +69,7 @@ app.use('/api/paciente', pacienteRoutes);
 app.use('/api/campanhas', campanhaRoutes);
 app.use('/api/exames', exameRoutes);
 app.use('/api/consultas', consultaRoutes);
+app.use('/api/hospital', hospitalRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
