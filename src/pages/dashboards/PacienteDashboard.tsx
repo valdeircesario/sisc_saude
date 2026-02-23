@@ -950,6 +950,7 @@ const PacienteDashboard: React.FC = () => {
                                 {solicitacao.horaAgendada && ` às ${solicitacao.horaAgendada}`}
                               </p>
                               {solicitacao.local && <p className="text-blue-700">Local: {solicitacao.local}</p>}
+                              {solicitacao.recomendacoes && <p className="text-blue-700">Local: {solicitacao.recomendacoes}</p>}
                             </div>
                           )}
 
@@ -1075,7 +1076,10 @@ const PacienteDashboard: React.FC = () => {
                             Vacina
                           </th>
                           <th className="px-8 py-4 text-left text-sm font-bold text-green-500 uppercase tracking-wider">
-                            Data de Aplicação
+                            Aplicação por
+                          </th>
+                          <th className="px-8 py-4 text-left text-sm font-bold text-green-500 uppercase tracking-wider">
+                           Data de Aplicação 
                           </th>
                           <th className="px-8 py-4 text-left text-sm font-bold text-green-500 uppercase tracking-wider">
                             Lote
@@ -1091,6 +1095,9 @@ const PacienteDashboard: React.FC = () => {
                             <td className="px-8 py-5 whitespace-nowrap text-base font-semibold text-gray-900">
                               {vacina.nome}
                             </td>
+                            <td className="px-8 py-5 whitespace-nowrap text-base text-gray-700">
+                              {vacina.funcionario ? `CRM: ${vacina.funcionario.crm || 'N/A'}`: 'Não informado'}
+                            </td> 
                             <td className="px-8 py-5 whitespace-nowrap text-base text-gray-700">
                               {format(new Date(vacina.dataApl), 'dd/MM/yyyy', { locale: ptBR })}
                             </td>

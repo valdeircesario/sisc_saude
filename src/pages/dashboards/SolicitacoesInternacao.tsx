@@ -97,6 +97,8 @@ const SolicitacoesInternacao: React.FC = () => {
     }
   );
 
+  
+
   // Query para estatísticas
   const { data: stats } = useQuery(
     'dashboard-solicitacoes-internacao',

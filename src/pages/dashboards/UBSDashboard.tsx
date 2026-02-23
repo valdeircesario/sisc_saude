@@ -391,7 +391,7 @@ const UBSDashboard: React.FC = () => {
     { enabled: activeTab === 'consultas' }
   );
 
-  // Query para buscar hospitais - CORRIGIDO
+  // Query para buscar hospitais
   const { data: hospitaisList, isLoading: loadingHospitais } = useQuery(
   'hospitais',
   () => api.get('/routes/hospitais-publico').then(res => res.data),

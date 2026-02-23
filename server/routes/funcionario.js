@@ -41,6 +41,7 @@ router.post('/vacinas', async (req, res) => {
     const novaVacina = await prisma.vacina.create({
       data: {
         pacienteId,
+        funcionarioId: req.user.id,
         nome,
         lote,
         dataApl: new Date(dataApl),

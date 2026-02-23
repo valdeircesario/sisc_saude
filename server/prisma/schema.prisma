@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -51,10 +52,10 @@ model Hospital {
   updatedAt DateTime @updatedAt
 
   solicitacoesInternacao    SolicitacaoInternacao[]
-  procedimentosHospitalares ProcedimentoHospitalar[]
-  solicitacaoExameHospital  SolicitacaoExameHospital[]
   agendamentosHospitalares  AgendamentoHospitalar[]
   internacoes               Internacao[]
+  examesHospitalares        ExameHospitalar[]
+  cirurgias                 Cirurgia[]
 
   @@map("hospitais")
 }
@@ -78,9 +79,8 @@ model Funcionario {
   consultas                Consulta[]
   solicitacoesInternacao   SolicitacaoInternacao[]
   agendamentosHospitalares AgendamentoHospitalar[]
-  procedimentosRealizados  ProcedimentoHospitalar[]
-  internacoes              Internacao[]
-  MedicacaoAdministrada    MedicacaoAdministrada[]
+  vacinas                  Vacina[]
+  cirurgiasRealizadas      Cirurgia[]
 
   @@map("funcionarios")
 }
@@ -98,7 +98,7 @@ model Laboratorio {
 
   exames                   Exame[]
   solicitacaoExame         SolicitacaoExame[]
-  solicitacaoExameHospital SolicitacaoExameHospital[]
+  solicitacoesExameInternacao SolicitacaoExameInternacao[]
 
   @@map("laboratorios")
 }
@@ -121,13 +121,15 @@ model Paciente {
   vacinas                   Vacina[]
   exames                    Exame[]
   solicitacaoExame          SolicitacaoExame[]
-  solicitacaoExameHospital  SolicitacaoExameHospital[]
   consultas                 Consulta[]
   solicitacoesInternacao    SolicitacaoInternacao[]
-  procedimentosHospitalares ProcedimentoHospitalar[]
   agendamentosHospitalares  AgendamentoHospitalar[]
   internacoes               Internacao[]
   medicacoesAdministradas   MedicacaoAdministrada[]
+  examesHospitalares        ExameHospitalar[]
+  cirurgias                 Cirurgia[]
+  altasHospitalares         AltaHospitalar[]
+  solicitacoesExameInternacao SolicitacaoExameInternacao[]
 
   @@map("pacientes")
 }
@@ -150,14 +152,14 @@ model SolicitacaoInternacao {
   recomendacoes String?
   observacoes   String?
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime @updatedAt
 
-  paciente      Paciente                 @relation(fields: [pacienteId], references: [id])
-  ubs           UBS                      @relation(fields: [ubsId], references: [id])
-  hospital      Hospital                 @relation(fields: [hospitalId], references: [id])
-  funcionario   Funcionario              @relation(fields: [funcionarioId], references: [id])
-  procedimentos ProcedimentoHospitalar[]
-  agendamento   AgendamentoHospitalar[]
+  paciente      Paciente               @relation(fields: [pacienteId], references: [id])
+  ubs           UBS                    @relation(fields: [ubsId], references: [id])
+  hospital      Hospital               @relation(fields: [hospitalId], references: [id])
+  funcionario   Funcionario            @relation(fields: [funcionarioId], references: [id])
+  agendamentos  AgendamentoHospitalar[]
+  internacao    Internacao? // Relação 1:1 - uma solicitação gera uma internação
 
   @@map("solicitacoes_internacao")
 }
@@ -170,7 +172,7 @@ model AgendamentoHospitalar {
   solicitacaoInternacaoId String?
   dataAgendamento         DateTime
   horaAgendamento         String
-  tipo                    String // consulta, cirurgia, exame
+  tipo                    String // consulta, cirurgia, exame, internacao
   status                  String   @default("agendado") // agendado, realizado, cancelado
   observacoes             String?
   createdAt               DateTime @default(now())
@@ -184,50 +186,137 @@ model AgendamentoHospitalar {
   @@map("agendamentos_hospitalares")
 }
 
-model ProcedimentoHospitalar {
-  id                      String   @id @default(cuid())
-  solicitacaoInternacaoId String
+// NOVA ESTRUTURA DE INTERNAÇÃO - CORRIGIDA
+model Internacao {
+  id                      String    @id @default(cuid())
+  solicitacaoInternacaoId String    @unique // Relação 1:1 com solicitação
   pacienteId              String
   hospitalId              String
-  medicoRealizouId        String?
-  tipo                    String // cirurgia, internacao, tratamento
-  descricao               String
-  laudoPos                String?
-  instrucoes              String?
-  dataRealizacao          DateTime
-  status                  String   @default("realizado") // realizado, em_andamento, cancelado
+  medicoResponsavelNome   String
+  dataEntrada             DateTime
+  dataSaida               DateTime?
+  motivoInternacao        String
+  diagnosticoInicial      String?
+  diagnosticoFinal        String? // Diagnóstico na alta
+  quarto                  String
+  leito                   String
+  status                  String    @default("ativa") // ativa, alta, transferida, obito
   observacoes             String?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
+  // Relacionamentos
   solicitacaoInternacao   SolicitacaoInternacao   @relation(fields: [solicitacaoInternacaoId], references: [id])
   paciente                Paciente                @relation(fields: [pacienteId], references: [id])
   hospital                Hospital                @relation(fields: [hospitalId], references: [id])
-  medicoRealizou          Funcionario?            @relation(fields: [medicoRealizouId], references: [id])
-  examesRelacionados      Exame[]
+  
+  // Atividades durante a internação
   medicacoesAdministradas MedicacaoAdministrada[]
+  examesHospitalares      ExameHospitalar[]
+  cirurgias               Cirurgia[]
+  altaHospitalar          AltaHospitalar? // Relação 1:1 - uma internação tem uma alta
+  solicitacoesExameInternacao SolicitacaoExameInternacao[]
 
-  @@map("procedimentos_hospitalares")
+  @@map("internacoes")
 }
 
-model SolicitacaoExameHospital {
-  id            String   @id @default(cuid())
-  hospitalId    String
-  laboratorioId String
-  pacienteId    String
-  tipoExame     String
-  observacoes   String?
-  status        String   @default("pendente") // pendente, agendado, realizado
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+// NOVA TABELA PARA EXAMES REALIZADOS NO HOSPITAL DURANTE A INTERNAÇÃO
+model ExameHospitalar {
+  id               String    @id @default(cuid())
+  internacaoId     String
+  pacienteId       String
+  hospitalId       String
+  tipoExame        String
+  descricaoExame   String
+  medicoSolicitante String
+  resultado        String?
+  arquivoPdf       String?
+  dataRealizado    DateTime?
+  dataSolicitado   DateTime
+  status           String    @default("solicitado") // solicitado, realizado, cancelado
+  observacoes      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  hospital    Hospital    @relation(fields: [hospitalId], references: [id])
-  laboratorio Laboratorio @relation(fields: [laboratorioId], references: [id])
-  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+  internacao Internacao @relation(fields: [internacaoId], references: [id])
+  paciente   Paciente   @relation(fields: [pacienteId], references: [id])
+  hospital   Hospital   @relation(fields: [hospitalId], references: [id])
 
-  @@map("solicitacao_exames_hospital")
+  @@map("exames_hospitalares")
 }
 
+// NOVA TABELA PARA CIRURGIAS REALIZADAS DURANTE A INTERNAÇÃO
+model Cirurgia {
+  id                    String    @id @default(cuid())
+  internacaoId          String
+  pacienteId            String
+  hospitalId            String
+  medicoCircurgiaoId    String
+  tipoCirurgia          String
+  descricaoCirurgia     String
+  dataRealizacao        DateTime
+  duracaoMinutos        Int?
+  anestesiaTipo         String?
+  resultado             String // sucesso, complicacao, etc
+  laudoCircurgico       String
+  observacoes           String?
+  status                String    @default("realizada") // agendada, realizada, cancelada
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  internacao      Internacao   @relation(fields: [internacaoId], references: [id])
+  paciente        Paciente     @relation(fields: [pacienteId], references: [id])
+  hospital        Hospital     @relation(fields: [hospitalId], references: [id])
+  medicoCircurgiao Funcionario @relation(fields: [medicoCircurgiaoId], references: [id])
+
+  @@map("cirurgias")
+}
+
+// NOVA TABELA PARA ALTA HOSPITALAR
+model AltaHospitalar {
+  id                    String   @id @default(cuid())
+  internacaoId          String   @unique // Relação 1:1 com internação
+  pacienteId            String
+  medicoResponsavel     String
+  dataAlta              DateTime
+  tipoAlta              String // medica, a_pedido, transferencia, obito
+  condicaoAlta          String // curado, melhorado, inalterado, agravado
+  diagnosticoFinal      String
+  orientacoesAlta       String
+  medicacoesPrescritas  String? // Medicações para casa
+  retornoAgendado       DateTime?
+  observacoes           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  internacao Internacao @relation(fields: [internacaoId], references: [id])
+  paciente   Paciente   @relation(fields: [pacienteId], references: [id])
+
+  @@map("altas_hospitalares")
+}
+
+model MedicacaoAdministrada {
+  id                    String   @id @default(cuid())
+  pacienteId            String
+  historicoMedicoId     String?
+  internacaoId          String? // Relacionamento corrigido
+  nomeMedicacao         String
+  dosagem               String?
+  viaAdministracao      String?
+  dataHoraAdministracao DateTime
+  administradorNomeOuCrm String?
+  observacoes           String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  paciente        Paciente         @relation(fields: [pacienteId], references: [id])
+  historicoMedico HistoricoMedico? @relation(fields: [historicoMedicoId], references: [id])
+  internacao      Internacao?      @relation(fields: [internacaoId], references: [id]) // Corrigido
+
+  @@map("medicacoes_administradas")
+}
+
+// TABELAS QUE PERMANECEM INALTERADAS (conforme solicitado)
 model Campanha {
   id        String    @id @default(cuid())
   titulo    String
@@ -255,16 +344,16 @@ model InscricaoCampanha {
   email            String
   endereco         String?
   idade            Int?
-  condicoesSaude   String? // diabetes, hipertensao, cardiopatia, etc
-  prioridade       String    @default("normal") // alta, media, normal
-  gravidade        String    @default("leve") // critico, grave, medio, leve
-  pontuacao        Int       @default(0) // pontuacao calculada para classificacao
+  condicoesSaude   String?
+  prioridade       String    @default("normal")
+  gravidade        String    @default("leve")
+  pontuacao        Int       @default(0)
   observacoes      String?
-  status           String    @default("inscrito") // inscrito, agendado, atendido
+  status           String    @default("inscrito")
   dataAgendada     DateTime?
   horaAgendada     String?
   localAtendimento String?
-  tipoAgendamento  String    @default("campanha") // campanha, normal
+  tipoAgendamento  String    @default("campanha")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -294,16 +383,18 @@ model HistoricoMedico {
 }
 
 model Vacina {
-  id          String    @id @default(cuid())
-  pacienteId  String
-  nome        String
-  lote        String
-  dataApl     DateTime
-  proximaDose DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  pacienteId    String
+  funcionarioId String
+  nome          String
+  lote          String
+  dataApl       DateTime
+  proximaDose   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+  funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
 
   @@map("vacinas")
 }
@@ -317,13 +408,12 @@ model Exame {
   arquivoPdf    String?
   dataRealizado DateTime?
   dataAgendada  DateTime?
-  status        String    @default("agendado") // agendado, realizado, cancelado
+  status        String    @default("agendado")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  paciente      Paciente                 @relation(fields: [pacienteId], references: [id])
-  laboratorio   Laboratorio              @relation(fields: [laboratorioId], references: [id])
-  procedimentos ProcedimentoHospitalar[]
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+  laboratorio Laboratorio @relation(fields: [laboratorioId], references: [id])
 
   @@map("exames")
 }
@@ -335,7 +425,7 @@ model SolicitacaoExame {
   laboratorioId String
   tipoExame     String
   observacoes   String?
-  status        String   @default("pendente") // pendente, agendado, realizado
+  status        String   @default("pendente")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -346,6 +436,29 @@ model SolicitacaoExame {
   @@map("solicitacao_exames")
 }
 
+// Nova tabela para solicitação de exames específica para internações
+model SolicitacaoExameInternacao {
+  id            String    @id @default(cuid())
+  internacaoId  String
+  pacienteId    String
+  laboratorioId String
+  tipoExame     String
+  observacoes   String?
+  status        String    @default("pendente") // pendente, enviado, em_analise, realizado, cancelado
+  dataSolicitacao DateTime @default(now())
+  dataResultado   DateTime?
+  resultado       String?
+  arquivoPdf      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  internacao  Internacao  @relation(fields: [internacaoId], references: [id])
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+  laboratorio Laboratorio @relation(fields: [laboratorioId], references: [id])
+
+  @@map("solicitacoes_exame_internacao")
+}
+
 model Consulta {
   id            String    @id @default(cuid())
   pacienteId    String
@@ -354,7 +467,7 @@ model Consulta {
   motivo        String
   especialidade String
   dataAgendada  DateTime?
-  status        String    @default("solicitada") // solicitada, agendada, realizada, cancelada
+  status        String    @default("solicitada")
   observacoes   String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -366,47 +479,3 @@ model Consulta {
   @@map("consultas")
 }
 
-model Internacao {
-  id                  String    @id @default(cuid())
-  pacienteId          String
-  hospitalId          String
-  medicoResponsavelId String?
-  dataEntrada         DateTime
-  dataSaida           DateTime?
-  motivo              String
-  diagnostico         String?
-  observacoes         String?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  paciente                Paciente                @relation(fields: [pacienteId], references: [id])
-  hospital                Hospital                @relation(fields: [hospitalId], references: [id])
-  medicoResponsavel       Funcionario?            @relation(fields: [medicoResponsavelId], references: [id])
-  medicacoesAdministradas MedicacaoAdministrada[]
-
-  @@map("internacoes")
-}
-
-model MedicacaoAdministrada {
-  id                       String   @id @default(cuid())
-  pacienteId               String
-  historicoMedicoId        String?
-  procedimentoHospitalarId String?
-  internacaoId             String?
-  nomeMedicacao            String
-  dosagem                  String?
-  viaAdministracao         String?
-  dataHoraAdministracao    DateTime
-  administradorId          String?
-  observacoes              String?
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
-
-  paciente               Paciente                @relation(fields: [pacienteId], references: [id])
-  historicoMedico        HistoricoMedico?        @relation(fields: [historicoMedicoId], references: [id])
-  procedimentoHospitalar ProcedimentoHospitalar? @relation(fields: [procedimentoHospitalarId], references: [id])
-  internacao             Internacao?             @relation(fields: [internacaoId], references: [id])
-  administrador          Funcionario?            @relation(fields: [administradorId], references: [id])
-
-  @@map("medicacoes_administradas")
-}

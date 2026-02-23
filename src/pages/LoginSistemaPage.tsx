@@ -24,6 +24,12 @@ const LoginSistemaPage: React.FC = () => {
     try {
       const response = await api.post('/auth/login-sistema', data);
       const { token, user } = response.data;
+      if (!['admin', 'ubs', 'funcionario', 'laboratorio', 'hospital'].includes(user.tipo)) {
+        toast.error('Acesso negado. Este portal é exclusivo para profissionais de saúde.');
+        setLoading(false);
+        return;
+      } 
+      
       
       login(token, user);
       toast.success(`Bem-vindo, ${user.nome}!`);

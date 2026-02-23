@@ -658,7 +658,8 @@ router.post('/solicitar-internacao', async (req, res) => {
 
     // Verificar se o hospital existe
     const hospitais = await prisma.hospitais.findUnique({
-      where: { id: hospitalId },
+      where: { 
+        id: hospitalId },
       select: { id: true, nome: true, email: true }
     });
 

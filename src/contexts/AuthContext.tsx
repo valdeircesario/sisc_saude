@@ -7,6 +7,7 @@ interface User {
   email: string;
   tipo: 'admin' | 'ubs' | 'funcionario' | 'laboratorio' | 'paciente' | 'hospital' ;
   ubsId?: string;
+  hospitalId?: string; // Adicionado hospitalId à interface User
 }
 
 interface AuthContextType {

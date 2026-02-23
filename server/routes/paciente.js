@@ -95,6 +95,9 @@ router.get('/vacinas', async (req, res) => {
   try {
     const vacinas = await prisma.vacina.findMany({
       where: { pacienteId: req.user.id },
+      include: {
+    funcionario: { select: { crm: true } }
+  },
       orderBy: { dataApl: 'desc' }
     });
 
@@ -223,8 +226,25 @@ router.get('/ubs', async (req, res) => {
 
 // ==================== FUNCIONALIDADES DE INTERNAÇÃO ====================
 
-// Listar solicitações de internação do paciente
 router.get('/solicitacoes-internacao', async (req, res) => {
+  try {
+    const solicitacoes = await prisma.solicitacaoInternacao.findMany({
+      where: { pacienteId: req.user.id },
+      include: {
+        hospital: { select: { nome: true } },
+        funcionario: { select: { nome: true } },
+        ubs: { select: { nome: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(solicitacoes);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar solicitações' });
+  }
+});
+
+// Listar solicitações de internação do paciente
+router.get('/solicitacoes-internacao/:id', async (req, res) => {
   try {
     const { status } = req.query;
     
@@ -344,24 +364,21 @@ router.put('/solicitacoes-internacao/:id/confirmar-agendamento', async (req, res
 
     // Verificar se a solicitação existe e pertence ao paciente
     const solicitacao = await prisma.solicitacaoInternacao.findUnique({
-      where: { 
-        id,
-        pacienteId: req.user.id,
-        status: 'agendado'
-      }
+      where: { id, pacienteId: req.user.id }
     });
 
     if (!solicitacao) {
-      return res.status(404).json({ 
-        message: 'Solicitação não encontrada ou não está agendada' 
-      });
+      return res.status(404).json({ message: 'Solicitação não encontrada' });
     }
 
-    // Atualizar com confirmação do paciente
+    // Atualizar status e observações
     const solicitacaoAtualizada = await prisma.solicitacaoInternacao.update({
       where: { id },
       data: {
-        observacoes: observacoes ? `${solicitacao.observacoes || ''}\n[PACIENTE CONFIRMOU]: ${observacoes}` : solicitacao.observacoes
+        status: 'confirmado',
+        observacoes: observacoes
+          ? `${solicitacao.observacoes || ''}\n[PACIENTE CONFIRMOU]: ${observacoes}`
+          : solicitacao.observacoes
       },
       include: {
         hospital: {
@@ -381,7 +398,7 @@ router.put('/solicitacoes-internacao/:id/confirmar-agendamento', async (req, res
 });
 
 // Listar internações do paciente
-router.get('/internacoes', async (req, res) => {
+router.get('/internacoes/:id', async (req, res) => {
   try {
     const internacoes = await prisma.internacao.findMany({
       where: { pacienteId: req.user.id },
