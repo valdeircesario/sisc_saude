@@ -5,7 +5,7 @@ interface User {
   id: string;
   nome: string;
   email: string;
-  tipo: 'admin' | 'ubs' | 'funcionario' | 'laboratorio' | 'paciente' | 'hospital' ;
+  tipo: 'admin' | 'ubs' | 'funcionario' | 'laboratorio' | 'paciente' | 'hospital' | 'upa';
   ubsId?: string;
   hospitalId?: string; // Adicionado hospitalId à interface User
 }

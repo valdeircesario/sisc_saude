@@ -56,8 +56,156 @@ model Hospital {
   internacoes               Internacao[]
   examesHospitalares        ExameHospitalar[]
   cirurgias                 Cirurgia[]
+  encaminhamentos          Encaminhamento[]
 
   @@map("hospitais")
+}
+
+// Unidade de Pronto Atendimento (UPA) - CRUD via admin
+model Upa {
+  id        String   @id @default(cuid())
+  nome      String
+  endereco  String
+  telefone  String
+  cnpj      String?  @unique
+  email     String?  @unique
+  senha     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações UPA -> registros específicos
+  triagens               Triagem[]
+  atendimentos           Atendimento[]
+  upaMedicacoes          UpaMedicacao[]
+  solicitacoesExame      UpaSolicitacaoExame[]
+  upaVacinas             UpaVacina[]
+  encaminhamentos        Encaminhamento[]
+
+  @@map("upas")
+}
+
+// Registros específicos da UPA
+model Triagem {
+  id         String   @id @default(cuid())
+  upaId      String
+  pacienteId String
+  sintomas   String?
+  sinais     String?
+  prioridade String   @default("medio")
+  status     String   @default("em_andamento")
+  observacoes String?
+  createdAt  DateTime @default(now())
+
+  upa      Upa      @relation(fields: [upaId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  atendimentos Atendimento[]
+
+  @@map("triagens")
+}
+
+model Atendimento {
+  id          String   @id @default(cuid())
+  upaId       String
+  pacienteId  String
+  triagemId   String?
+  descricao   String?
+  profissional String?
+  dataAtendimento DateTime @default(now())
+  status      String   @default("pendente")
+  laudo       String?
+  notas       String?
+  createdAt   DateTime @default(now())
+
+  // Relações com registros gerados a partir do atendimento
+  upaMedicacoes UpaMedicacao[]
+  solicitacoesExame UpaSolicitacaoExame[]
+  upaVacinas UpaVacina[]
+  encaminhamentos Encaminhamento[]
+
+  upa      Upa      @relation(fields: [upaId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  triagem  Triagem?  @relation(fields: [triagemId], references: [id])
+
+  @@map("atendimentos_upa")
+}
+
+model UpaMedicacao {
+  id                     String   @id @default(cuid())
+  upaId                  String
+  pacienteId             String
+  atendimentoId          String?
+  nomeMedicacao          String
+  dosagem                String?
+  viaAdministracao       String?
+  dataHoraAdministracao  DateTime
+  administradorNome      String?
+  observacoes            String?
+  createdAt              DateTime @default(now())
+
+  upa      Upa      @relation(fields: [upaId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  atendimento Atendimento? @relation(fields: [atendimentoId], references: [id])
+
+  @@map("upa_medicacoes")
+}
+
+model UpaSolicitacaoExame {
+  id           String   @id @default(cuid())
+  upaId        String
+  pacienteId   String
+  atendimentoId String?
+  laboratorioId String?
+  tipoExame    String
+  observacoes  String?
+  status       String   @default("pendente")
+  resultado    String?
+  arquivoPdf   String?
+  createdAt    DateTime @default(now())
+
+  upa      Upa      @relation(fields: [upaId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  laboratorio Laboratorio? @relation(fields: [laboratorioId], references: [id])
+  atendimento Atendimento? @relation(fields: [atendimentoId], references: [id])
+
+  @@map("upa_solicitacoes_exame")
+}
+
+model UpaVacina {
+  id          String   @id @default(cuid())
+  upaId       String
+  pacienteId  String
+  atendimentoId String?
+  nome        String
+  lote        String?
+  dataApl     DateTime
+  proximaDose DateTime?
+  aplicadoPor String?
+  createdAt   DateTime @default(now())
+
+  upa      Upa      @relation(fields: [upaId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  atendimento Atendimento? @relation(fields: [atendimentoId], references: [id])
+
+  @@map("upa_vacinas")
+}
+
+model Encaminhamento {
+  id          String   @id @default(cuid())
+  upaId       String
+  pacienteId  String
+  hospitalId  String
+  atendimentoId String?
+  motivo      String
+  observacoes String?
+  status      String   @default("pendente")
+  createdAt   DateTime @default(now())
+
+  upa      Upa      @relation(fields: [upaId], references: [id])
+  paciente Paciente @relation(fields: [pacienteId], references: [id])
+  hospital Hospital  @relation(fields: [hospitalId], references: [id])
+  atendimento Atendimento? @relation(fields: [atendimentoId], references: [id])
+
+  @@map("upa_encaminhamentos")
 }
 
 model Funcionario {
@@ -99,6 +247,7 @@ model Laboratorio {
   exames                   Exame[]
   solicitacaoExame         SolicitacaoExame[]
   solicitacoesExameInternacao SolicitacaoExameInternacao[]
+  upaSolicitacoesExame     UpaSolicitacaoExame[]
 
   @@map("laboratorios")
 }
@@ -130,6 +279,13 @@ model Paciente {
   cirurgias                 Cirurgia[]
   altasHospitalares         AltaHospitalar[]
   solicitacoesExameInternacao SolicitacaoExameInternacao[]
+  // Relações com registros gerados por UPAs
+  triagens                  Triagem[]
+  atendimentos             Atendimento[]
+  upaMedicacoes            UpaMedicacao[]
+  upaSolicitacoesExame    UpaSolicitacaoExame[]
+  upaVacinas               UpaVacina[]
+  encaminhamentos          Encaminhamento[]
 
   @@map("pacientes")
 }

@@ -24,16 +24,16 @@ const LoginSistemaPage: React.FC = () => {
     try {
       const response = await api.post('/auth/login-sistema', data);
       const { token, user } = response.data;
-      if (!['admin', 'ubs', 'funcionario', 'laboratorio', 'hospital'].includes(user.tipo)) {
+      // permitir UPA também
+      if (!['admin', 'ubs', 'funcionario', 'laboratorio', 'hospital', 'upa'].includes(user.tipo)) {
         toast.error('Acesso negado. Este portal é exclusivo para profissionais de saúde.');
         setLoading(false);
         return;
-      } 
-      
-      
+      }
+
       login(token, user);
       toast.success(`Bem-vindo, ${user.nome}!`);
-      
+
       // Redirecionar baseado no tipo de usuário
       switch (user.tipo) {
         case 'admin':
@@ -41,6 +41,9 @@ const LoginSistemaPage: React.FC = () => {
           break;
         case 'ubs':
           navigate('/ubs');
+          break;
+        case 'upa':
+          navigate('/upa');
           break;
         case 'funcionario':
           navigate('/funcionario');
@@ -80,7 +83,7 @@ const LoginSistemaPage: React.FC = () => {
             Acesso Profissional
           </h2>
           <p className="text-gray-600">
-            Área exclusiva para administradores, UBS, funcionários e laboratórios
+            Área exclusiva para administradores e profissionais/entidades de saúde (UBS, UPA, hospitais, laboratórios, funcionários)
           </p>
         </div>
 

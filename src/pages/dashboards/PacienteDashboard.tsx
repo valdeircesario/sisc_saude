@@ -33,6 +33,36 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { generateHistoricoMedicoPDF, generateVacinasPDF } from '../../utils/pdfGenerator';
+import LoadingSpinner from '../../components/LoadingSpinner';
+
+// Tipagens mínimas para medicações administradas
+type InternacaoRef = {
+  id?: string;
+  hospital?: {
+    nome?: string;
+    endereco?: string;
+  };
+};
+
+type ProcedimentoRef = {
+  id?: string;
+  tipo?: string;
+  descricao?: string;
+  hospital?: { nome?: string };
+};
+
+export interface MedicacaoAdministrada {
+  id: string;
+  pacienteId?: string;
+  nomeMedicacao: string;
+  dataHoraAdministracao: string;
+  dosagem?: string;
+  viaAdministracao?: string;
+  administradorNomeOuCrm?: string | null;
+  internacao?: InternacaoRef | null;
+  procedimentoHospitalar?: ProcedimentoRef | null;
+  observacoes?: string | null;
+}
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -127,10 +157,25 @@ const PacienteDashboard: React.FC = () => {
     { enabled: activeTab === 'procedimentos' }
   );
 
-  const { data: medicacoesHospitalares } = useQuery(
-    'paciente-medicacoes-hospitalares',
-    () => api.get('/paciente/medicacoes-hospitalares').then(res => res.data),
-    { enabled: activeTab === 'medicacoes' }
+  const { data: medicacoesHospitalares, isLoading: medicacoesLoading, refetch: refetchMedicacoes } = useQuery<MedicacaoAdministrada[]>(
+    ['paciente-medicacoes-hospitalares', perfil?.id],
+    async () => {
+      const pacienteQuery = perfil?.id ? `?pacienteId=${perfil.id}` : '';
+      const res = await api.get(`/paciente/medicacoes-hospitalares${pacienteQuery}`);
+      // Ajuda de debug: mostre a resposta no console do browser para investigação local
+      console.debug('medicacoes-hospitalares response', res.status, Array.isArray(res.data) ? res.data.length : typeof res.data, res.data);
+      return res.data as MedicacaoAdministrada[];
+    },
+    {
+      // espere pelo perfil e pela aba ativa antes de buscar (garante que temos o paciente carregado)
+      enabled: activeTab === 'medicacoes' && !!perfil,
+      onError: (err: any) => {
+        console.error('Erro ao buscar medicações hospitalares:', err);
+        toast.error(err?.response?.data?.message || 'Erro ao carregar medicações');
+      },
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false
+    }
   );
 
   const { data: agendamentosHospitalares } = useQuery(
@@ -222,6 +267,20 @@ const PacienteDashboard: React.FC = () => {
     }
   );
 
+  // Inscrever em campanha usando perfil do paciente logado
+  const inscreverCampanhaMutation = useMutation(
+    ({ campanhaId, data }: { campanhaId: string; data: any }) => api.post(`/campanhas/${campanhaId}/inscrever`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('campanhas-ativas');
+        toast.success('Inscrição realizada com sucesso!');
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao inscrever na campanha');
+      }
+    }
+  );
+
   
 
   // Handlers
@@ -242,6 +301,46 @@ const PacienteDashboard: React.FC = () => {
 
   const openEditarPerfilModal = () => {
     setShowEditarPerfilModal(true);
+  };
+
+  const calcularIdade = (nascimento?: string) => {
+    if (!nascimento) return '';
+    const born = new Date(nascimento);
+    const today = new Date();
+    let age = today.getFullYear() - born.getFullYear();
+    const m = today.getMonth() - born.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < born.getDate())) {
+      age--;
+    }
+    return age.toString();
+  };
+
+  const handleInscreverCampanha = (campanhaId: string, campanhaTitulo?: string) => {
+    if (!perfil) {
+      toast.error('Perfil do paciente não carregado.');
+      return;
+    }
+
+    // Pergunta de confirmação ao usuário antes de inscrever
+    const confirmMessage = `Deseja confirmar sua inscrição na campanha "${campanhaTitulo ?? 'selecionada'}"?`;
+    const confirmed = window.confirm(confirmMessage);
+    if (!confirmed) {
+      toast.info('Inscrição cancelada.');
+      return;
+    }
+
+    const payload = {
+      nome: perfil.nome || '',
+      cpf: perfil.cpf || '',
+      telefone: perfil.telefone || '',
+      email: perfil.email || '',
+      endereco: perfil.endereco || '',
+      idade: calcularIdade(perfil.nascimento),
+      condicoesSaude: (perfil as any).condicoesSaude || null,
+      observacoes: ''
+    };
+
+    inscreverCampanhaMutation.mutate({ campanhaId, data: payload });
   };
 
   
@@ -444,6 +543,15 @@ const PacienteDashboard: React.FC = () => {
                               <p className="font-semibold text-gray-900">{campanha.ubs.nome}</p>
                             </div>
                             <p className="text-gray-600 text-sm">{campanha.ubs.endereco}</p>
+                            </div>
+                            <div className="mt-4 flex items-center justify-end">
+                              <button
+                                onClick={() => handleInscreverCampanha(campanha.id, campanha.titulo)}
+                                className="flex items-center space-x-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                              >
+                                <Users className="h-4 w-4" />
+                                <span>Inscrever-se</span>
+                              </button>
                             </div>
                           </div>
                       ))}
@@ -1274,9 +1382,14 @@ const PacienteDashboard: React.FC = () => {
             {activeTab === 'medicacoes' && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Medicações Hospitalares</h2>
-                {medicacoesHospitalares && medicacoesHospitalares.length > 0 ? (
+                {medicacoesLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent mb-4"></div>
+                    <p className="text-gray-700">Carregando medicações...</p>
+                  </div>
+                ) : medicacoesHospitalares && medicacoesHospitalares.length > 0 ? (
                   <div className="space-y-4">
-                    {medicacoesHospitalares.map((medicacao: any) => (
+                    {medicacoesHospitalares.map((medicacao) => (
                       <div key={medicacao.id} className="border border-gray-200 rounded-xl p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>
@@ -1287,7 +1400,7 @@ const PacienteDashboard: React.FC = () => {
                           </div>
                           <div className="text-right text-sm">
                             <p className="font-medium text-gray-700">
-                              {medicacao.internacao?.hospital?.nome || medicacao.procedimentoHospitalar?.hospital?.nome}
+                              {medicacao.internacao?.hospital?.nome || 'Hospital não informado'}
                             </p>
                           </div>
                         </div>
@@ -1305,10 +1418,10 @@ const PacienteDashboard: React.FC = () => {
                               <p className="text-gray-600">{medicacao.viaAdministracao}</p>
                             </div>
                           )}
-                          {medicacao.administrador && (
+                          {medicacao.administradorNomeOuCrm && (
                             <div>
                               <p className="font-medium text-gray-700">Administrado por:</p>
-                              <p className="text-gray-600">{medicacao.administrador.nome}</p>
+                              <p className="text-gray-600">{medicacao.administradorNomeOuCrm}</p>
                             </div>
                           )}
                           {medicacao.observacoes && (
@@ -1622,24 +1735,126 @@ const PacienteDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Detalhes */}
+      {/* Modal de Detalhes - formato elegante para internações/solicitações */}
       {showDetalhesModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Detalhes</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start space-x-4">
+                <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl shadow">
+                  <Building2 className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-extrabold text-gray-900">{selectedItem.hospital?.nome || selectedItem.titulo || 'Detalhes'}</h3>
+                  <p className="text-sm text-gray-500 mt-1">{selectedItem.tipo || (selectedItem.status ? `Status: ${selectedItem.status}` : '')}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                {selectedItem.dataEntrada && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Entrada</p>
+                    <p className="text-sm font-medium text-gray-800">{format(new Date(selectedItem.dataEntrada), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  </div>
+                )}
+                {selectedItem.dataSaida && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500">Saída</p>
+                    <p className="text-sm font-medium text-gray-800">{format(new Date(selectedItem.dataSaida), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowDetalhesModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1 rounded"
+                  aria-label="Fechar detalhes"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">Motivo</p>
+                <p className="text-gray-800 font-medium">{selectedItem.motivo || 'Não informado'}</p>
+
+                <p className="text-xs text-gray-500 mt-3">Médico Responsável</p>
+                <p className="text-gray-800">{selectedItem.medicoResponsavel?.nome || 'Não informado'}</p>
+
+                <p className="text-xs text-gray-500 mt-3">Local</p>
+                <p className="text-gray-800">{selectedItem.local || selectedItem.hospital?.endereco || 'Não informado'}</p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs text-gray-500">Diagnóstico</p>
+                <p className="text-gray-800">{selectedItem.diagnostico || 'Não informado'}</p>
+
+                <p className="text-xs text-gray-500 mt-3">Observações</p>
+                <p className="text-gray-800">{selectedItem.observacoes || selectedItem.recomendacoes || 'Nenhuma'}</p>
+              </div>
+            </div>
+
+            {/* Se houver procedimentos ou medicações, mostrar listas */}
+            {(selectedItem.procedimentos && selectedItem.procedimentos.length > 0) && (
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Procedimentos realizados</h4>
+                <ul className="list-disc pl-5 text-gray-700">
+                  {selectedItem.procedimentos.map((p: any) => (
+                    <li key={p.id || p.nome} className="py-1">{p.nome || JSON.stringify(p)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {( (selectedItem.medicacoes && selectedItem.medicacoes.length > 0) || (selectedItem.medicacoesAdministradas && selectedItem.medicacoesAdministradas.length > 0) ) && (
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">Medicações</h4>
+
+                {/* Container com cabeçalho e lista scrollable; usa layout responsivo: cada medicação ocupa uma "linha" */}
+                <div className="border border-gray-100 rounded-lg overflow-hidden">
+                  {/* Cabeçalho visível em md+ */}
+                  <div className="hidden md:grid grid-cols-6 gap-4 p-3 bg-gray-50 text-xs font-semibold text-gray-600">
+                    <div>Medicação</div>
+                    <div>Data / Hora</div>
+                    <div>Dosagem</div>
+                    <div>Via</div>
+                    <div>Administrado por</div>
+                    <div>Observações</div>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto">
+                    {(selectedItem.medicacoes || selectedItem.medicacoesAdministradas || []).map((m: any) => (
+                      <div key={m.id || m.nomeMedicacao || JSON.stringify(m)} className="grid grid-cols-1 md:grid-cols-6 gap-4 p-3 items-center border-b last:border-b-0">
+                        <div>
+                          <div className="font-medium text-gray-800">{m.nomeMedicacao || m.nome || '—'}</div>
+                          <div className="text-xs text-gray-500 mt-1 md:hidden">{format(new Date(m.dataHoraAdministracao || m.dataHora || m.createdAt || Date.now()), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</div>
+                        </div>
+
+                        <div className="hidden md:block text-sm text-gray-700">
+                          {format(new Date(m.dataHoraAdministracao || m.dataHora || m.createdAt || Date.now()), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </div>
+
+                        <div className="text-sm text-gray-700">{m.dosagem || '—'}</div>
+
+                        <div className="text-sm text-gray-700">{m.viaAdministracao || m.via || '—'}</div>
+
+                        <div className="text-sm text-gray-700">{m.administradorNomeOuCrm || m.administrador || '—'}</div>
+
+                        <div className="text-sm text-gray-700 truncate">{m.observacoes || m.obs || '—'}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setShowDetalhesModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                <X className="h-6 w-6" />
+                Fechar
               </button>
-            </div>
-            
-            <div className="space-y-4">
-              <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-auto">
-                {JSON.stringify(selectedItem, null, 2)}
-              </pre>
             </div>
           </div>
         </div>

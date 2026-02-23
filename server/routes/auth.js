@@ -114,6 +114,12 @@ router.post('/login-sistema', async (req, res) => {
       if (usuario) tipo = 'laboratorio';
     }
 
+    // Verificar UPA
+    if (!usuario) {
+      usuario = await prisma.upa.findUnique({ where: { email: email.toLowerCase() } });
+      if (usuario) tipo = 'upa';
+    }
+
     if (!usuario) {
       return res.status(401).json({ message: 'Email ou senha inválidos' });
     }
