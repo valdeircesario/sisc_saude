@@ -106,7 +106,7 @@ const HomePage: React.FC = () => {
             >
               Sistema Integrado de
               <span className="block bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                Saúde Digital
+                Saúde do Cidadão
               </span>
             </motion.h1>
             
@@ -280,7 +280,7 @@ const HomePage: React.FC = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <Heart className="h-8 w-8 text-red-500" />
-              <span className="text-2xl font-bold">SUS Digital</span>
+              <span className="text-2xl font-bold">SISC - Saúde</span>
             </div>
             
             <div className="flex items-center space-x-6">
@@ -289,7 +289,7 @@ const HomePage: React.FC = () => {
               </Link>
               <span className="text-gray-500">•</span>
               <span className="text-gray-300">
-                © 2024 Sistema Integrado de Saúde
+                © 2026 Sistema Integrado de Saúde do Cidadão
               </span>
             </div>
           </div>

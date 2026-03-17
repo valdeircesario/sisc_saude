@@ -46,7 +46,7 @@ const LoginPacientePage: React.FC = () => {
           <Link to="/" className="inline-flex items-center space-x-3 text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors mb-6">
             <Heart className="h-10 w-10 text-red-500" />
             <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              SUS Digital
+              SISC Saúde
             </span>
           </Link>
           

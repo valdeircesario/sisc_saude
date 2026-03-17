@@ -251,7 +251,7 @@ const CampanhaInscricaoPage: React.FC = () => {
       <Link to="/" className="inline-flex items-center justify-center space-x-3 text-2xl sm:text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors mb-6 lg:mb-8">
         <Heart className="h-8 w-8 sm:h-10 sm:w-10 text-red-500" />
         <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-          SUS Digital
+          SISC - Saúde
         </span>
       </Link>
       
