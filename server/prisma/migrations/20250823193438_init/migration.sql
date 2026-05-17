@@ -232,6 +232,7 @@ CREATE TABLE "historico_medico" (
 CREATE TABLE "vacinas" (
     "id" TEXT NOT NULL,
     "pacienteId" TEXT NOT NULL,
+    "funcionarioId" TEXT NOT NULL,
     "nome" TEXT NOT NULL,
     "lote" TEXT NOT NULL,
     "dataApl" TIMESTAMP(3) NOT NULL,
@@ -440,6 +441,11 @@ ALTER TABLE "historico_medico" ADD CONSTRAINT "historico_medico_funcionarioId_fk
 
 -- AddForeignKey
 ALTER TABLE "vacinas" ADD CONSTRAINT "vacinas_pacienteId_fkey" FOREIGN KEY ("pacienteId") REFERENCES "pacientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "vacinas" ADD CONSTRAINT "vacinas_funcionarioId_fkey" FOREIGN KEY ("funcionarioId") REFERENCES "funcionarios"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+
 
 -- AddForeignKey
 ALTER TABLE "exames" ADD CONSTRAINT "exames_pacienteId_fkey" FOREIGN KEY ("pacienteId") REFERENCES "pacientes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

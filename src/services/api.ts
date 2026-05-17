@@ -25,11 +25,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isAuthRoute =
+      error.config?.url?.includes('login') ||
+      error.config?.url?.includes('cadastro') ||
+      error.config?.url?.includes('auth');
+
+    // Só redireciona se NÃO for uma rota de login/cadastro
+    if (error.response?.status === 401 && !isAuthRoute) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
     }
+
     return Promise.reject(error);
   }
 );

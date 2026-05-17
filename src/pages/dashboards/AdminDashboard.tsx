@@ -47,6 +47,12 @@ const AdminDashboard: React.FC = () => {
     { enabled: activeTab === 'laboratorios' }
   );
 
+  const { data: upas, isLoading: loadingUpas } = useQuery(
+    ['admin-upas'],
+    () => api.get('/admin/upas').then(res => res.data),
+    { enabled: activeTab === 'upas' }
+  );
+
   const { data: hospitais, isLoading: loadingHospitais } = useQuery(
     ['admin-hospitais'],
     () => api.get('/admin/hospitais').then(res => {
@@ -193,6 +199,50 @@ const AdminDashboard: React.FC = () => {
     }
   );
 
+  // UPA mutations
+  const createUpaMutation = useMutation(
+    (data: any) => api.post('/admin/upas', data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-upas']);
+        toast.success('UPA cadastrada com sucesso!');
+        setShowModal(false);
+        resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao cadastrar UPA');
+      }
+    }
+  );
+
+  const updateUpaMutation = useMutation(
+    ({ id, data }: { id: string; data: any }) => api.put(`/admin/upas/${id}`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-upas']);
+        toast.success('UPA atualizada com sucesso!');
+        setShowModal(false);
+        resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao atualizar UPA');
+      }
+    }
+  );
+
+  const deleteUpaMutation = useMutation(
+    (id: string) => api.delete(`/admin/upas/${id}`),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['admin-upas']);
+        toast.success('UPA deletada com sucesso!');
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao deletar UPA');
+      }
+    }
+  );
+
   const resetForm = () => {
     setFormData({
       nome: '',
@@ -226,6 +276,12 @@ const AdminDashboard: React.FC = () => {
       } else {
         createHOSPITALMutation.mutate(formData);
       }
+    } else if (activeTab === 'upas') {
+      if (editingItem) {
+        updateUpaMutation.mutate({ id: editingItem.id, data: formData });
+      } else {
+        createUpaMutation.mutate(formData);
+      }
     }
   };
 
@@ -250,6 +306,8 @@ const AdminDashboard: React.FC = () => {
         deleteLabMutation.mutate(id);
       } else if (activeTab === 'hospitais') {
         deleteHOSPITALMutation.mutate(id);
+      } else if (activeTab === 'upas') {
+        deleteUpaMutation.mutate(id);
       }
     }
   };
@@ -322,6 +380,17 @@ const AdminDashboard: React.FC = () => {
                 <Building2 className="h-5 w-5 inline mr-2" />
                 Hospitais
               </button>
+              <button
+                onClick={() => setActiveTab('upas')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'upas'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Building2 className="h-5 w-5 inline mr-2" />
+                UPAs
+              </button>
             </nav>
           </div>
         </div>
@@ -334,7 +403,9 @@ const AdminDashboard: React.FC = () => {
                 ? 'Unidades de Saúde'
                 : activeTab === 'laboratorios'
                 ? 'Laboratórios'
-                : 'Hospitais'}
+                : activeTab === 'hospitais'
+                ? 'Hospitais'
+                : 'UPAs'}
             </h2>
             <button
               onClick={openCreateModal}
@@ -346,7 +417,9 @@ const AdminDashboard: React.FC = () => {
                   ? 'UBS'
                   : activeTab === 'laboratorios'
                   ? 'Laboratório'
-                  : 'Hospital'}
+                  : activeTab === 'hospitais'
+                  ? 'Hospital'
+                  : 'UPA'}
               </span>
             </button>
           </div>
@@ -403,6 +476,57 @@ const AdminDashboard: React.FC = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {activeTab === 'laboratorios' && laboratorios?.map((lab: any) => (
+                  <tr key={lab.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{lab.nome}</div>
+                      <div className="text-sm text-gray-500">{lab.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lab.endereco}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lab.telefone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{lab.cnpj}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleEdit(lab)} className="text-blue-600 hover:text-blue-900"><Edit className="h-4 w-4"/></button>
+                        <button onClick={() => handleDelete(lab.id)} className="text-red-600 hover:text-red-900"><Trash2 className="h-4 w-4"/></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {activeTab === 'hospitais' && hospitais?.map((h: any) => (
+                  <tr key={h.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{h.nome}</div>
+                      <div className="text-sm text-gray-500">{h.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{h.endereco}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{h.telefone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{h.cnpj}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleEdit(h)} className="text-blue-600 hover:text-blue-900"><Edit className="h-4 w-4"/></button>
+                        <button onClick={() => handleDelete(h.id)} className="text-red-600 hover:text-red-900"><Trash2 className="h-4 w-4"/></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {activeTab === 'upas' && upas?.map((u: any) => (
+                  <tr key={u.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{u.nome}</div>
+                      <div className="text-sm text-gray-500">{u.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.endereco}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.telefone}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{u.cnpj}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleEdit(u)} className="text-blue-600 hover:text-blue-900"><Edit className="h-4 w-4"/></button>
+                        <button onClick={() => handleDelete(u.id)} className="text-red-600 hover:text-red-900"><Trash2 className="h-4 w-4"/></button>
                       </div>
                     </td>
                   </tr>

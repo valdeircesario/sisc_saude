@@ -95,6 +95,9 @@ router.get('/vacinas', async (req, res) => {
   try {
     const vacinas = await prisma.vacina.findMany({
       where: { pacienteId: req.user.id },
+      include: {
+    funcionario: { select: { crm: true } }
+  },
       orderBy: { dataApl: 'desc' }
     });
 
@@ -150,6 +153,8 @@ router.post('/solicitar-consulta', async (req, res) => {
   }
 });
 
+
+
 // Listar consultas do paciente
 router.get('/consultas', async (req, res) => {
   try {
@@ -202,6 +207,46 @@ router.put('/consultas/:id/confirmar', async (req, res) => {
   }
 });
 
+// Cancelar consulta
+router.put('/consultas/:id/cancelar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { motivo, dataCancelamento } = req.body;
+
+    // Verificar se a consulta existe e pertence ao paciente
+    const consulta = await prisma.consulta.findUnique({
+      where: { 
+        id,
+        pacienteId: req.user.id
+      }
+    });
+
+    if (!consulta) {
+      return res.status(404).json({ message: 'Consulta não encontrada' });
+    }
+
+    // Atualizar status para cancelada e adicionar data de cancelamento
+    const consultaAtualizada = await prisma.consulta.update({
+      where: { id },
+      data: {
+        status: 'cancelada',
+        dataCancelamento: dataCancelamento ? new Date(dataCancelamento) : new Date(),
+        motivo: motivo
+          ? `${consulta.motivo || ''}\n[PACIENTE CANCELOU]: ${motivo}`
+          : consulta.motivo
+      }
+    });
+
+    res.json({
+      message: 'Consulta cancelada com sucesso',
+      consulta: consultaAtualizada
+    });
+  } catch (error) {
+    console.error('Erro ao cancelar consulta:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 // Listar UBS disponíveis
 router.get('/ubs', async (req, res) => {
   try {
@@ -223,8 +268,25 @@ router.get('/ubs', async (req, res) => {
 
 // ==================== FUNCIONALIDADES DE INTERNAÇÃO ====================
 
-// Listar solicitações de internação do paciente
 router.get('/solicitacoes-internacao', async (req, res) => {
+  try {
+    const solicitacoes = await prisma.solicitacaoInternacao.findMany({
+      where: { pacienteId: req.user.id },
+      include: {
+        hospital: { select: { nome: true } },
+        funcionario: { select: { nome: true } },
+        ubs: { select: { nome: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(solicitacoes);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar solicitações' });
+  }
+});
+
+// Listar solicitações de internação do paciente
+router.get('/solicitacoes-internacao/:id', async (req, res) => {
   try {
     const { status } = req.query;
     
@@ -344,24 +406,21 @@ router.put('/solicitacoes-internacao/:id/confirmar-agendamento', async (req, res
 
     // Verificar se a solicitação existe e pertence ao paciente
     const solicitacao = await prisma.solicitacaoInternacao.findUnique({
-      where: { 
-        id,
-        pacienteId: req.user.id,
-        status: 'agendado'
-      }
+      where: { id, pacienteId: req.user.id }
     });
 
     if (!solicitacao) {
-      return res.status(404).json({ 
-        message: 'Solicitação não encontrada ou não está agendada' 
-      });
+      return res.status(404).json({ message: 'Solicitação não encontrada' });
     }
 
-    // Atualizar com confirmação do paciente
+    // Atualizar status e observações
     const solicitacaoAtualizada = await prisma.solicitacaoInternacao.update({
       where: { id },
       data: {
-        observacoes: observacoes ? `${solicitacao.observacoes || ''}\n[PACIENTE CONFIRMOU]: ${observacoes}` : solicitacao.observacoes
+        status: 'confirmado',
+        observacoes: observacoes
+          ? `${solicitacao.observacoes || ''}\n[PACIENTE CONFIRMOU]: ${observacoes}`
+          : solicitacao.observacoes
       },
       include: {
         hospital: {
@@ -381,7 +440,7 @@ router.put('/solicitacoes-internacao/:id/confirmar-agendamento', async (req, res
 });
 
 // Listar internações do paciente
-router.get('/internacoes', async (req, res) => {
+router.get('/internacoes/:id', async (req, res) => {
   try {
     const internacoes = await prisma.internacao.findMany({
       where: { pacienteId: req.user.id },
@@ -393,22 +452,10 @@ router.get('/internacoes', async (req, res) => {
             telefone: true
           }
         },
-        medicoResponsavel: {
-          select: {
-            nome: true,
-            funcao: true,
-            crm: true
-          }
-        },
+        // Note: medicoResponsavel is stored as a plain field (medicoResponsavelNome) on Internacao.
+        // There is no relation named medicoResponsavel in the Prisma schema, so we don't attempt to include it here.
         medicacoesAdministradas: {
-          include: {
-            administrador: {
-              select: {
-                nome: true,
-                funcao: true
-              }
-            }
-          },
+          // Include the related medicacoes_administradas records (all fields) and order them by administration time
           orderBy: { dataHoraAdministracao: 'desc' }
         }
       },
@@ -441,22 +488,8 @@ router.get('/internacoes/:id', async (req, res) => {
             email: true
           }
         },
-        medicoResponsavel: {
-          select: {
-            nome: true,
-            funcao: true,
-            crm: true
-          }
-        },
+        // There is no relation named medicoResponsavel on Internacao; the schema stores medicoResponsavelNome as a string.
         medicacoesAdministradas: {
-          include: {
-            administrador: {
-              select: {
-                nome: true,
-                funcao: true
-              }
-            }
-          },
           orderBy: { dataHoraAdministracao: 'desc' }
         }
       }
@@ -470,6 +503,26 @@ router.get('/internacoes/:id', async (req, res) => {
   } catch (error) {
     console.error('Erro ao obter internação:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Listar internações do paciente
+router.get('/internacoes', async (req, res) => {
+  try {
+    const internacoes = await prisma.internacao.findMany({
+      where: { pacienteId: req.user.id },
+      include: {
+        hospital: {
+          select: { nome: true, endereco: true, telefone: true }
+        }
+      },
+      orderBy: { dataEntrada: 'desc' }
+    });
+
+    res.json(internacoes);
+  } catch (error) {
+    console.error('Erro ao listar internações do paciente:', error?.message || error, error?.stack || 'no-stack');
+    res.status(500).json({ message: 'Erro interno do servidor', details: error?.message || String(error) });
   }
 });
 
@@ -507,14 +560,8 @@ router.get('/procedimentos-hospitalares', async (req, res) => {
           }
         },
         medicacoesAdministradas: {
-          include: {
-            administrador: {
-              select: {
-                nome: true,
-                funcao: true
-              }
-            }
-          }
+          // include related medicacoes_administradas (use stored administradorNomeOuCrm field on the model for admin info)
+          orderBy: { dataHoraAdministracao: 'desc' }
         }
       },
       orderBy: { dataRealizacao: 'desc' }
@@ -522,48 +569,42 @@ router.get('/procedimentos-hospitalares', async (req, res) => {
 
     res.json(procedimentos);
   } catch (error) {
-    console.error('Erro ao listar procedimentos hospitalares:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error('Erro ao listar procedimentos hospitalares:', error?.message || error, error?.stack || 'no-stack');
+    // Expor mensagem curta para ajudar debug local (remover/ocultar em produção)
+    res.status(500).json({ message: 'Erro interno do servidor', details: error?.message || String(error) });
   }
 });
 
 // Listar medicações administradas no hospital
 router.get('/medicacoes-hospitalares', async (req, res) => {
   try {
-    const { internacaoId, procedimentoId } = req.query;
-    
+    const { internacaoId } = req.query;
+
+    // filtrar apenas pelo paciente logado e opcionalmente por internação
     const where = { pacienteId: req.user.id };
     if (internacaoId) where.internacaoId = internacaoId;
-    if (procedimentoId) where.procedimentoHospitalarId = procedimentoId;
 
     const medicacoes = await prisma.medicacaoAdministrada.findMany({
       where,
       include: {
-        administrador: {
-          select: {
-            nome: true,
-            funcao: true
-          }
-        },
+        // incluir referência à internação (se houver) e também o histórico médico relacionado
         internacao: {
           select: {
+            id: true,
             hospital: {
-              select: {
-                nome: true
-              }
+              select: { nome: true }
             }
           }
         },
-        procedimentoHospitalar: {
+        historicoMedico: {
           select: {
-            tipo: true,
-            descricao: true,
-            hospital: {
-              select: {
-                nome: true
-              }
-            }
+            id: true,
+            laudo: true,
+            dataConsulta: true
           }
+        },
+        paciente: {
+          select: { id: true, nome: true }
         }
       },
       orderBy: { dataHoraAdministracao: 'desc' }
@@ -571,8 +612,8 @@ router.get('/medicacoes-hospitalares', async (req, res) => {
 
     res.json(medicacoes);
   } catch (error) {
-    console.error('Erro ao listar medicações hospitalares:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error('Erro ao listar medicações hospitalares:', error?.message || error, error?.stack || 'no-stack');
+    res.status(500).json({ message: 'Erro interno do servidor', details: error?.message || String(error) });
   }
 });
 
@@ -675,8 +716,8 @@ router.get('/historico-hospitalar', async (req, res) => {
       prisma.internacao.findMany({
         where: { pacienteId: req.user.id },
         include: {
-          hospital: { select: { nome: true } },
-          medicoResponsavel: { select: { nome: true, funcao: true } }
+          hospital: { select: { nome: true } }
+          // medicoResponsavel is stored as a plain string field (medicoResponsavelNome) on Internacao
         }
       }),
       
@@ -689,27 +730,12 @@ router.get('/historico-hospitalar', async (req, res) => {
         }
       }),
       
-      // Medicações
+      // Medicações (todas as medicações do paciente)
       prisma.medicacaoAdministrada.findMany({
-        where: { 
-          pacienteId: req.user.id,
-          OR: [
-            { internacaoId: { not: null } },
-            { procedimentoHospitalarId: { not: null } }
-          ]
-        },
+        where: { pacienteId: req.user.id },
         include: {
-          administrador: { select: { nome: true, funcao: true } },
-          internacao: { 
-            select: { 
-              hospital: { select: { nome: true } } 
-            } 
-          },
-          procedimentoHospitalar: { 
-            select: { 
-              hospital: { select: { nome: true } } 
-            } 
-          }
+          internacao: { select: { hospital: { select: { nome: true } } } },
+          historicoMedico: { select: { id: true, laudo: true, dataConsulta: true } }
         }
       }),
       

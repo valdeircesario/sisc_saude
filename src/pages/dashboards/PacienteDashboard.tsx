@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { 
-  User, 
-  Heart, 
-  Shield, 
-  FileText, 
+import React, { useState } from "react";
+import {
+  User,
+  Heart,
+  Shield,
+  FileText,
   LogOut,
   Calendar,
   Building2,
@@ -24,664 +24,934 @@ import {
   Edit,
   Save,
   Printer,
-  Download
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { api } from '../../services/api';
-import { toast } from 'react-toastify';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { generateHistoricoMedicoPDF, generateVacinasPDF } from '../../utils/pdfGenerator';
+  Download,
+  Menu,
+} from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import { api } from "../../services/api";
+import { toast } from "react-toastify";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  generateHistoricoMedicoPDF,
+  generateVacinasPDF,
+} from "../../utils/pdfGenerator";
+import LoadingSpinner from "../../components/LoadingSpinner";
+
+type InternacaoRef = {
+  id?: string;
+  hospital?: { nome?: string; endereco?: string };
+};
+type ProcedimentoRef = {
+  id?: string;
+  tipo?: string;
+  descricao?: string;
+  hospital?: { nome?: string };
+};
+export interface MedicacaoAdministrada {
+  id: string;
+  pacienteId?: string;
+  nomeMedicacao: string;
+  dataHoraAdministracao: string;
+  dosagem?: string;
+  viaAdministracao?: string;
+  administradorNomeOuCrm?: string | null;
+  internacao?: InternacaoRef | null;
+  procedimentoHospitalar?: ProcedimentoRef | null;
+  observacoes?: string | null;
+}
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "cancelada":
+      return "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
+    case "pendente":
+      return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
+    case "avaliando":
+      return "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
+    case "agendado":
+      return "bg-violet-50 text-violet-700 ring-1 ring-violet-200";
+    case "realizado":
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+    case "cancelado":
+      return "bg-rose-50 text-rose-700 ring-1 ring-rose-200";
+    case "confirmada":
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+    case "solicitada":
+      return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
+    default:
+      return "bg-slate-50 text-slate-600 ring-1 ring-slate-200";
+  }
+};
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "realizado":
+    case "realizada":
+      return <CheckCircle className="h-3.5 w-3.5" />;
+    case "agendado":
+    case "agendada":
+      return <Clock className="h-3.5 w-3.5" />;
+    case "solicitada":
+      return <AlertCircle className="h-3.5 w-3.5" />;
+    default:
+      return <Clock className="h-3.5 w-3.5" />;
+  }
+};
+const getPrioridadeColor = (prioridade: string) => {
+  switch (prioridade) {
+    case "gravissimo":
+      return "bg-red-100 text-red-800 ring-1 ring-red-300";
+    case "urgente":
+      return "bg-rose-50 text-rose-700 ring-1 ring-rose-200";
+    case "grave":
+      return "bg-orange-50 text-orange-700 ring-1 ring-orange-200";
+    case "medio":
+      return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
+    case "leve":
+      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+    default:
+      return "bg-slate-50 text-slate-600 ring-1 ring-slate-200";
+  }
+};
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
-  
-  const [activeTab, setActiveTab] = useState('home');
+
+  const [activeTab, setActiveTab] = useState("home");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showDetalhesModal, setShowDetalhesModal] = useState(false);
   const [showConsultaModal, setShowConsultaModal] = useState(false);
   const [showConfirmarModal, setShowConfirmarModal] = useState(false);
+  const [showCancelarModal, setShowCancelarModal] = useState(false);
   const [showEditarPerfilModal, setShowEditarPerfilModal] = useState(false);
-  const [showSolicitarConsultaModal, ] = useState(false);
+  const [showSolicitarConsultaModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [confirmacaoObservacoes, setConfirmacaoObservacoes] = useState('');
-  
-
-  // Estados para edição de perfil
+  const [confirmacaoObservacoes, setConfirmacaoObservacoes] = useState("");
   const [perfilData, setPerfilData] = useState({
-    endereco: '',
-    telefone: '',
-    email: ''
+    endereco: "",
+    telefone: "",
+    email: "",
   });
-
-  // Estados para solicitação de consulta
   const [consultaData, setConsultaData] = useState({
-    ubsId: '',
-    motivo: '',
-    especialidade: ''
+    ubsId: "",
+    motivo: "",
+    especialidade: "",
   });
 
-  // Queries
-  const { data: perfil } = useQuery(
-    'paciente-perfil',
-    () => api.get('/paciente/perfil').then(res => res.data)
+  // ── Queries (idênticas ao original) ─────────────────────────
+  const { data: perfil } = useQuery("paciente-perfil", () =>
+    api.get("/paciente/perfil").then((r) => r.data),
   );
-
   const { data: campanhas } = useQuery(
-    'campanhas-ativas',
-    () => api.get('/campanhas/ativas').then(res => res.data),
-    { enabled: activeTab === 'home' }
+    "campanhas-ativas",
+    () => api.get("/campanhas/ativas").then((r) => r.data),
+    { enabled: activeTab === "home" },
   );
-
   const { data: historicoMedico } = useQuery(
-    'paciente-historico-medico',
-    () => api.get('/paciente/historico-medico').then(res => res.data),
-    { enabled: activeTab === 'historico' }
+    "paciente-historico-medico",
+    () => api.get("/paciente/historico-medico").then((r) => r.data),
+    { enabled: activeTab === "historico" },
   );
-
   const { data: vacinas } = useQuery(
-    'paciente-vacinas',
-    () => api.get('/paciente/vacinas').then(res => res.data),
-    { enabled: activeTab === 'vacinas' }
+    "paciente-vacinas",
+    () => api.get("/paciente/vacinas").then((r) => r.data),
+    { enabled: activeTab === "vacinas" },
   );
-
   const { data: exames } = useQuery(
-    'paciente-exames',
-    () => api.get('/paciente/exames').then(res => res.data),
-    { enabled: activeTab === 'exames' }
+    "paciente-exames",
+    () => api.get("/paciente/exames").then((r) => r.data),
+    { enabled: activeTab === "exames" },
   );
-
   const { data: consultas } = useQuery(
-    'paciente-consultas',
-    () => api.get('/paciente/consultas').then(res => res.data),
-    { enabled: activeTab === 'consultas' }
+    "paciente-consultas",
+    () => api.get("/paciente/consultas").then((r) => r.data),
+    { enabled: activeTab === "consultas" },
   );
-
-  
-
-  
-
-   const { data: ubsList} = useQuery(
-    'ubs-list',
-    () => api.get('/paciente/ubs').then(res => res.data),
-    { enabled: showConsultaModal }
+  const { data: ubsList } = useQuery(
+    "ubs-list",
+    () => api.get("/paciente/ubs").then((r) => r.data),
+    { enabled: showConsultaModal },
   );
-
-  // Queries para funcionalidades hospitalares
   const { data: solicitacoesInternacao } = useQuery(
-    'paciente-solicitacoes-internacao',
-    () => api.get('/paciente/solicitacoes-internacao').then(res => res.data),
-    { enabled: activeTab === 'internacoes' }
+    "paciente-solicitacoes-internacao",
+    () => api.get("/paciente/solicitacoes-internacao").then((r) => r.data),
+    { enabled: activeTab === "internacoes" },
   );
-
   const { data: internacoes } = useQuery(
-    'paciente-internacoes',
-    () => api.get('/paciente/internacoes').then(res => res.data),
-    { enabled: activeTab === 'internacoes' }
+    "paciente-internacoes",
+    () => api.get("/paciente/internacoes").then((r) => r.data),
+    { enabled: activeTab === "internacoes" },
   );
-
   const { data: procedimentosHospitalares } = useQuery(
-    'paciente-procedimentos-hospitalares',
-    () => api.get('/paciente/procedimentos-hospitalares').then(res => res.data),
-    { enabled: activeTab === 'procedimentos' }
+    "paciente-procedimentos-hospitalares",
+    () => api.get("/paciente/procedimentos-hospitalares").then((r) => r.data),
+    { enabled: activeTab === "procedimentos" },
   );
-
-  const { data: medicacoesHospitalares } = useQuery(
-    'paciente-medicacoes-hospitalares',
-    () => api.get('/paciente/medicacoes-hospitalares').then(res => res.data),
-    { enabled: activeTab === 'medicacoes' }
-  );
-
+  const { data: medicacoesHospitalares, isLoading: medicacoesLoading } =
+    useQuery<MedicacaoAdministrada[]>(
+      ["paciente-medicacoes-hospitalares", perfil?.id],
+      async () => {
+        const q = perfil?.id ? `?pacienteId=${perfil.id}` : "";
+        const res = await api.get(`/paciente/medicacoes-hospitalares${q}`);
+        console.debug("medicacoes-hospitalares response", res.status, res.data);
+        return res.data as MedicacaoAdministrada[];
+      },
+      {
+        enabled: activeTab === "medicacoes" && !!perfil,
+        onError: (err: any) => {
+          toast.error(
+            err?.response?.data?.message || "Erro ao carregar medicações",
+          );
+        },
+        staleTime: 1000 * 60 * 5,
+        refetchOnWindowFocus: false,
+      },
+    );
   const { data: agendamentosHospitalares } = useQuery(
-    'paciente-agendamentos-hospitalares',
-    () => api.get('/paciente/agendamentos-hospitalares').then(res => res.data),
-    { enabled: activeTab === 'agendamentos' }
+    "paciente-agendamentos-hospitalares",
+    () => api.get("/paciente/agendamentos-hospitalares").then((r) => r.data),
+    { enabled: activeTab === "agendamentos" },
   );
-
   const { data: historicoHospitalar } = useQuery(
-    'paciente-historico-hospitalar',
-    () => api.get('/paciente/historico-hospitalar').then(res => res.data),
-    { enabled: activeTab === 'historico-hospitalar' }
+    "paciente-historico-hospitalar",
+    () => api.get("/paciente/historico-hospitalar").then((r) => r.data),
+    { enabled: activeTab === "historico-hospitalar" },
   );
 
-  // Mutations
+  // ── Mutations (confirmar agendamento) ───────────────────────
   const confirmarAgendamentoMutation = useMutation(
-    ({ id, observacoes }: { id: string; observacoes?: string }) => 
-      api.put(`/paciente/solicitacoes-internacao/${id}/confirmar-agendamento`, { observacoes }),
+    ({ id, observacoes }: { id: string; observacoes?: string }) =>
+      api.put(`/paciente/solicitacoes-internacao/${id}/confirmar-agendamento`, {
+        observacoes,
+      }),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('paciente-solicitacoes-internacao');
-        toast.success('Agendamento confirmado com sucesso!');
+        queryClient.invalidateQueries("paciente-solicitacoes-internacao");
+        toast.success("Agendamento confirmado!");
         setShowConfirmarModal(false);
         setSelectedItem(null);
-        setConfirmacaoObservacoes('');
+        setConfirmacaoObservacoes("");
       },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao confirmar agendamento');
-      }
-    }
+      onError: (e: any) =>
+        toast.error(e.response?.data?.message || "Erro ao confirmar"),
+    },
   );
-
   const confirmarAgendamentoHospitalarMutation = useMutation(
-    ({ id, observacoes }: { id: string; observacoes?: string }) => 
-      api.put(`/paciente/agendamentos-hospitalares/${id}/confirmar`, { observacoes }),
+    ({ id, observacoes }: { id: string; observacoes?: string }) =>
+      api.put(`/paciente/agendamentos-hospitalares/${id}/confirmar`, {
+        observacoes,
+      }),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('paciente-agendamentos-hospitalares');
-        toast.success('Agendamento hospitalar confirmado com sucesso!');
+        queryClient.invalidateQueries("paciente-agendamentos-hospitalares");
+        toast.success("Agendamento confirmado!");
         setShowConfirmarModal(false);
         setSelectedItem(null);
-        setConfirmacaoObservacoes('');
+        setConfirmacaoObservacoes("");
       },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao confirmar agendamento');
-      }
-    }
+      onError: (e: any) =>
+        toast.error(e.response?.data?.message || "Erro ao confirmar"),
+    },
   );
-
   const atualizarPerfilMutation = useMutation(
-    (data: any) => api.put('/paciente/perfil', data),
+    (data: any) => api.put("/paciente/perfil", data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('paciente-perfil');
-        toast.success('Perfil atualizado com sucesso!');
+        queryClient.invalidateQueries("paciente-perfil");
+        toast.success("Perfil atualizado!");
         setShowEditarPerfilModal(false);
       },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao atualizar perfil');
-      }
-    }
+      onError: (e: any) =>
+        toast.error(e.response?.data?.message || "Erro ao atualizar"),
+    },
   );
-
   const solicitarConsultaMutation = useMutation(
-    (data: any) => api.post('/paciente/solicitar-consulta', data),
+    (data: any) => api.post("/paciente/solicitar-consulta", data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('paciente-consultas');
-        toast.success('Consulta solicitada com sucesso!');
+        queryClient.invalidateQueries("paciente-consultas");
+        toast.success("Consulta solicitada!");
         setShowConsultaModal(false);
-        setConsultaData({ ubsId: '', motivo: '', especialidade: '' });
+        setConsultaData({ ubsId: "", motivo: "", especialidade: "" });
       },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao solicitar consulta');
-      }
-    }
+      onError: (e: any) =>
+        toast.error(e.response?.data?.message || "Erro ao solicitar"),
+    },
   );
-
   const confirmarConsultaMutation = useMutation(
     (id: string) => api.put(`/paciente/consultas/${id}/confirmar`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('paciente-consultas');
-        toast.success('Consulta confirmada!');
+        queryClient.invalidateQueries("paciente-consultas");
+        toast.success("Consulta confirmada!");
+      },
+      onError: (e: any) =>
+        toast.error(e.response?.data?.message || "Erro ao confirmar"),
+    },
+  );
+  // ── Estados novos ────────────────────────────────────────────
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
+
+  // ── Mutation de cancelar (adicionar junto às outras mutations) ─
+    const cancelarConsultaMutation = useMutation(
+    ({ id, motivo }: { id: string; motivo: string }) =>
+      api.put(`/paciente/consultas/${id}/cancelar`, { 
+        motivo,
+        dataCancelamento: new Date().toISOString()
+      }),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("paciente-consultas");
+        toast.success("Consulta cancelada com sucesso.");
+        setShowCancelarModal(false);
+        setSelectedItem(null);
+        setMotivoCancelamento("");
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao confirmar consulta');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao cancelar consulta.",
+        );
+      },
+    },
+  );
+  const inscreverCampanhaMutation = useMutation(
+    ({ campanhaId, data }: { campanhaId: string; data: any }) =>
+      api.post(`/campanhas/${campanhaId}/inscrever`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("campanhas-ativas");
+        toast.success("Inscrição realizada!");
+      },
+      onError: (e: any) =>
+        toast.error(e.response?.data?.message || "Erro ao inscrever"),
+    },
   );
 
-  
-
-  // Handlers
+  // ── Handlers (idênticos ao original) ────────────────────────
   const openDetalhesModal = (item: any) => {
     setSelectedItem(item);
     setShowDetalhesModal(true);
   };
-
   const handleConsultaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     solicitarConsultaMutation.mutate(consultaData);
   };
-
-  const openConfirmarModal = (item: any, tipo: 'internacao' | 'agendamento') => {
+  const openConfirmarModal = (
+    item: any,
+    tipo: "internacao" | "agendamento",
+  ) => {
     setSelectedItem({ ...item, tipoConfirmacao: tipo });
     setShowConfirmarModal(true);
   };
-
-  const openEditarPerfilModal = () => {
-    setShowEditarPerfilModal(true);
+  const openEditarPerfilModal = () => setShowEditarPerfilModal(true);
+  const calcularIdade = (nascimento?: string) => {
+    if (!nascimento) return "";
+    const born = new Date(nascimento);
+    const today = new Date();
+    let age = today.getFullYear() - born.getFullYear();
+    const m = today.getMonth() - born.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < born.getDate())) age--;
+    return age.toString();
   };
-
-  
-
+  const handleInscreverCampanha = (
+    campanhaId: string,
+    campanhaTitulo?: string,
+  ) => {
+    if (!perfil) {
+      toast.error("Perfil não carregado.");
+      return;
+    }
+    if (
+      !window.confirm(
+        `Confirmar inscrição em "${campanhaTitulo ?? "campanha selecionada"}"?`,
+      )
+    ) {
+      toast.info("Inscrição cancelada.");
+      return;
+    }
+    inscreverCampanhaMutation.mutate({
+      campanhaId,
+      data: {
+        nome: perfil.nome || "",
+        cpf: perfil.cpf || "",
+        telefone: perfil.telefone || "",
+        email: perfil.email || "",
+        endereco: perfil.endereco || "",
+        idade: calcularIdade(perfil.nascimento),
+        condicoesSaude: (perfil as any).condicoesSaude || null,
+        observacoes: "",
+      },
+    });
+  };
   const handleConfirmarAgendamento = () => {
     if (selectedItem) {
-      if (selectedItem.tipoConfirmacao === 'internacao') {
+      if (selectedItem.tipoConfirmacao === "internacao")
         confirmarAgendamentoMutation.mutate({
           id: selectedItem.id,
-          observacoes: confirmacaoObservacoes
+          observacoes: confirmacaoObservacoes,
         });
-      } else {
+      else
         confirmarAgendamentoHospitalarMutation.mutate({
           id: selectedItem.id,
-          observacoes: confirmacaoObservacoes
+          observacoes: confirmacaoObservacoes,
         });
-      }
     }
   };
-
   const handleAtualizarPerfil = (e: React.FormEvent) => {
     e.preventDefault();
     atualizarPerfilMutation.mutate(perfilData);
   };
 
-  
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pendente': return 'text-yellow-600 bg-yellow-100';
-      case 'avaliando': return 'text-blue-600 bg-blue-100';
-      case 'agendado': return 'text-purple-600 bg-purple-100';
-      case 'realizado': return 'text-green-600 bg-green-100';
-      case 'cancelado': return 'text-red-600 bg-red-100';
-      case 'confirmada': return 'text-green-600 bg-green-100';
-      case 'solicitada': return 'text-yellow-600 bg-yellow-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  
-
-   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'realizado':
-      case 'realizada':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'agendado':
-      case 'agendada':
-        return <Clock className="h-4 w-4" />;
-      case 'solicitada':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
-  };
-
-  const getPrioridadeColor = (prioridade: string) => {
-    switch (prioridade) {
-      case 'gravissimo': return 'text-red-800 bg-red-200';
-      case 'urgente': return 'text-red-600 bg-red-100';
-      case 'grave': return 'text-orange-600 bg-orange-100';
-      case 'medio': return 'text-yellow-600 bg-yellow-100';
-      case 'leve': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
+  // ── Navegação ────────────────────────────────────────────────
   const navigation = [
-    { name: 'Perfil', key: 'perfil', icon: User },
-    { name: 'Consultas', key: 'consultas', icon: Stethoscope },
-    { name: 'Vacinas', key: 'vacinas', icon: Shield },
-    { name: 'Exames', key: 'exames', icon: FileText },
-    { name: 'Internações', key: 'internacoes', icon: Building2 },
-    { name: 'Procedimentos', key: 'procedimentos', icon: Activity },
-    { name: 'Medicações', key: 'medicacoes', icon: Pill },
-    { name: 'Agendamentos', key: 'agendamentos', icon: Calendar },
-    { name: 'Histórico Médico', key: 'historico', icon: Heart },
-    { name: 'Histórico Hospitalar', key: 'historico-hospitalar', icon: History },
+    { name: "Início", key: "home", icon: Activity },
+    { name: "Meu Perfil", key: "perfil", icon: User },
+    { name: "Consultas", key: "consultas", icon: Stethoscope },
+    { name: "Vacinas", key: "vacinas", icon: Shield },
+    { name: "Exames", key: "exames", icon: FileText },
+    { name: "Internações", key: "internacoes", icon: Building2 },
+    { name: "Procedimentos", key: "procedimentos", icon: Activity },
+    { name: "Medicações", key: "medicacoes", icon: Pill },
+    { name: "Agendamentos", key: "agendamentos", icon: Calendar },
+    { name: "Histórico Médico", key: "historico", icon: Heart },
+    {
+      name: "Histórico Hospitalar",
+      key: "historico-hospitalar",
+      icon: History,
+    },
   ];
 
+  // ── Reutilizável: cabeçalho de seção ────────────────────────
+  const SectionHeader = ({
+    icon: Icon,
+    title,
+    color = "teal",
+  }: {
+    icon: any;
+    title: string;
+    color?: string;
+  }) => (
+    <div className="mb-6 flex items-center gap-3">
+      <div
+        className={`flex h-9 w-9 items-center justify-center rounded-xl bg-${color}-50`}
+      >
+        <Icon className={`h-5 w-5 text-${color}-600`} />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+    </div>
+  );
+
+  // ── Card vazio reutilizável ──────────────────────────────────
+  const EmptyState = ({
+    icon: Icon,
+    message,
+  }: {
+    icon: any;
+    message: string;
+  }) => (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50">
+        <Icon className="h-8 w-8 text-slate-300" />
+      </div>
+      <p className="text-sm font-medium text-slate-400">{message}</p>
+    </div>
+  );
+
+  // ── Badge de status ──────────────────────────────────────────
+  const StatusBadge = ({ status }: { status: string }) => (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusColor(status)}`}
+    >
+      {getStatusIcon(status)}
+      <span className="capitalize">{status}</span>
+    </span>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header */}
-      <header className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <User className="h-8 w-8 text-orange-800" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Meu Portal de Saúde</h1>
-                <p className="text-sm text-gray-600">Bem-vindo, {user?.nome}</p>
-              </div>
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+      {/* ── SIDEBAR ─────────────────────────────────────────── */}
+      {/* Overlay mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-white border-r border-gray-100 shadow-sm transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        {/* Logo da sidebar */}
+        <div className="flex h-16 items-center gap-2.5 border-b border-gray-100 px-5">
+          <Heart className="h-5 w-5 text-rose-500" />
+          <span className="text-base font-bold text-teal-800 tracking-tight">
+            SISC Saúde
+          </span>
+        </div>
+
+        {/* Avatar do paciente */}
+        <div className="px-5 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50">
+              <User className="h-5 w-5 text-teal-600" />
             </div>
-            
-            <button
-              onClick={logout}
-              className="flex items-center space-x-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-800 transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sair</span>
-            </button>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-gray-800">
+                {user?.nome}
+              </p>
+              <p className="text-xs text-gray-400">Paciente</p>
+            </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="lg:w-64">
-            <nav className="bg-white rounded-2xl shadow-lg p-4">
-              <ul className="space-y-2">
-                {navigation.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.key}>
-                      <button
-                        onClick={() => setActiveTab(item.key)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${
-                          activeTab === item.key
-                            ? 'bg-green-500 text-white'
-                            : 'text-gray-700 hover:bg-gray-100'
-                        }`}
-                      >
-                        <Icon className="h-5 w-5" />
-                        <span className="font-medium">{item.name}</span>
-                      </button>
-                    </li>
-                  );
+        {/* Itens de navegação */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const active = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => {
+                  setActiveTab(item.key);
+                  setSidebarOpen(false);
+                }}
+                className={`group w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                  active
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "text-gray-600 hover:bg-slate-50 hover:text-gray-900"
+                }`}
+              >
+                <Icon
+                  className={`h-4 w-4 flex-shrink-0 ${active ? "text-white" : "text-gray-400 group-hover:text-gray-600"}`}
+                />
+                <span className="truncate">{item.name}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Botão sair */}
+        <div className="border-t border-gray-100 p-3">
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-150"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair do sistema
+          </button>
+        </div>
+      </aside>
+
+      {/* ── ÁREA PRINCIPAL ──────────────────────────────────── */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Topbar */}
+        <header className="flex h-16 items-center justify-between border-b border-gray-100 bg-white px-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-sm font-bold text-gray-900">
+                {navigation.find((n) => n.key === activeTab)?.name ??
+                  "Portal do Paciente"}
+              </h1>
+              <p className="text-xs text-gray-400 hidden sm:block">
+                {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
                 })}
-              </ul>
-            </nav>
+              </p>
+            </div>
           </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-100">
+              <div className="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse" />
+              Online
+            </span>
+          </div>
+        </header>
 
-          {/* Main Content */}
-          <div className="flex-1">
-
-             {/* Home Tab */}
-            {activeTab === 'home' && (
-              <div className="space-y-8">
-                {/* Welcome Card */}
-                <div className="bg-gradient-to-r from-green-500 via-green-900 to-green-500 rounded-3xl shadow-2xl p-8 text-white relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-32 translate-x-32"></div>
-                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24"></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <Activity className="h-12 w-12 text-white" />
-                      <div>
-                        <h2 className="text-3xl font-bold">Olá, {user?.nome}!</h2>
-                        <p className="text-blue-100 text-lg">Como está sua saúde hoje?</p>
+        {/* Conteúdo scrollável */}
+        <main className="flex-1 overflow-y-auto p-5 lg:p-7">
+          {/* ── HOME ──────────────────────────────────────── */}
+          {activeTab === "home" && (
+            <div className="space-y-6 max-w-5xl mx-auto">
+              {/* Boas-vindas */}
+              <div className="rounded-2xl bg-gradient-to-br from-teal-800 via-teal-700 to-blue-700 p-6 text-white relative overflow-hidden">
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/5"
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -bottom-12 -left-8 h-36 w-36 rounded-full bg-white/5"
+                />
+                <div className="relative">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-teal-200 mb-2">
+                    Portal do Paciente
+                  </p>
+                  <h2 className="text-2xl font-bold text-white mb-1">
+                    Olá, {user?.nome}! 👋
+                  </h2>
+                  <p className="text-sm text-white/70 mb-6">
+                    Como está sua saúde hoje?
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      {
+                        icon: Calendar,
+                        label: "Próxima Consulta",
+                        sub: "Em breve",
+                      },
+                      {
+                        icon: Shield,
+                        label: "Vacinas em Dia",
+                        sub: "Atualizado",
+                      },
+                      { icon: FileText, label: "Exames", sub: "Disponíveis" },
+                    ].map(({ icon: Icon, label, sub }) => (
+                      <div
+                        key={label}
+                        className="rounded-xl bg-white/10 border border-white/15 p-3 backdrop-blur-sm"
+                      >
+                        <Icon className="h-5 w-5 text-teal-200 mb-2" />
+                        <p className="text-xs font-semibold text-white">
+                          {label}
+                        </p>
+                        <p className="text-xs text-white/60 mt-0.5">{sub}</p>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-                      <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                        <Calendar className="h-8 w-8 mb-2" />
-                        <p className="text-sm font-medium">Próxima Consulta</p>
-                        <p className="text-xs text-blue-100">Em breve</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                        <Shield className="h-8 w-8 mb-2" />
-                        <p className="text-sm font-medium">Vacinas em Dia</p>
-                        <p className="text-xs text-blue-100">Atualizado</p>
-                      </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                        <FileText className="h-8 w-8 mb-2" />
-                        <p className="text-sm font-medium">Exames</p>
-                        <p className="text-xs text-blue-100">Disponíveis</p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
+              </div>
 
-                <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl">
-                      <Users className="h-6 w-6 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Campanhas e Notícias</h2>
+              {/* Ações rápidas */}
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-700 uppercase tracking-widest mb-4">
+                  Ações Rápidas
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    {
+                      icon: Calendar,
+                      label: "Solicitar Consulta",
+                      sub: "Agendar atendimento",
+                      color: "blue",
+                      action: () => setShowConsultaModal(true),
+                    },
+                    {
+                      icon: FileText,
+                      label: "Ver Exames",
+                      sub: "Resultados e laudos",
+                      color: "emerald",
+                      action: () => setActiveTab("exames"),
+                    },
+                    {
+                      icon: Shield,
+                      label: "Cartão de Vacinas",
+                      sub: "Histórico de imunização",
+                      color: "violet",
+                      action: () => setActiveTab("vacinas"),
+                    },
+                  ].map(({ icon: Icon, label, sub, color, action }) => (
+                    <button
+                      key={label}
+                      onClick={action}
+                      className={`flex items-center gap-3 rounded-xl border border-${color}-100 bg-${color}-50 p-4 text-left transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md`}
+                    >
+                      <div
+                        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-${color}-100`}
+                      >
+                        <Icon className={`h-4.5 w-4.5 text-${color}-600`} />
+                      </div>
+                      <div>
+                        <p className={`text-sm font-bold text-${color}-900`}>
+                          {label}
+                        </p>
+                        <p className={`text-xs text-${color}-500`}>{sub}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Campanhas */}
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="mb-5 flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50">
+                    <Users className="h-4 w-4 text-teal-600" />
                   </div>
-                  
-                  {campanhas && campanhas.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {campanhas.map((campanha: any) => (
-                        <div key={campanha.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800">
+                  <h3 className="text-base font-bold text-gray-900">
+                    Campanhas Ativas
+                  </h3>
+                </div>
+
+                {campanhas && campanhas.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {campanhas.map((campanha: any) => (
+                      <div
+                        key={campanha.id}
+                        className="flex flex-col rounded-xl border border-gray-100 bg-slate-50 overflow-hidden hover:border-teal-200 hover:shadow-md transition-all duration-150"
+                      >
+                        <div className="h-1 bg-gradient-to-r from-teal-500 to-blue-500" />
+                        <div className="p-4 flex flex-col flex-1 gap-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-700 ring-1 ring-teal-200 capitalize">
                               {campanha.tipo}
                             </span>
-                            <span className="text-sm text-gray-500 font-medium">
-                              {format(new Date(campanha.dataIni), 'dd/MM/yyyy', { locale: ptBR })}
+                            <span className="text-xs text-gray-400">
+                              {format(
+                                new Date(campanha.dataIni),
+                                "dd/MM/yyyy",
+                                { locale: ptBR },
+                              )}
                             </span>
                           </div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-3">
+                          <h4 className="text-sm font-bold text-gray-900 leading-snug">
                             {campanha.titulo}
-                          </h3>
-                          <p className="text-gray-600 mb-4 leading-relaxed">{campanha.descricao}</p>
-                          <div className="bg-gray-50 rounded-xl p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <MapPin className="h-4 w-4 text-gray-500" />
-                              <p className="font-semibold text-gray-900">{campanha.ubs.nome}</p>
+                          </h4>
+                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
+                            {campanha.descricao}
+                          </p>
+                          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                                <MapPin className="h-3 w-3 text-gray-400" />{" "}
+                                {campanha.ubs.nome}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {campanha.ubs.endereco}
+                              </p>
                             </div>
-                            <p className="text-gray-600 text-sm">{campanha.ubs.endereco}</p>
-                            </div>
-                          </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg">Nenhuma campanha ativa no momento</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl">
-                      <Activity className="h-6 w-6 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900">Ações Rápidas</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <button
-                      onClick={() => setShowConsultaModal(true)}
-                      className="group flex items-center space-x-4 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl hover:from-blue-100 hover:to-indigo-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border border-blue-100"
-                    >
-                      <div className="p-3 bg-blue-500 rounded-xl group-hover:bg-blue-600 transition-colors">
-                        <Calendar className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-blue-900">Solicitar</p>
-                        <p className="text-sm text-green-500">Consulta</p>
-                      </div>
-                    </button>
-                    
-                    <button
-                      onClick={() => setActiveTab('exames')}
-                      className="group flex items-center space-x-4 p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl hover:from-green-100 hover:to-emerald-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border border-green-100"
-                    >
-                      <div className="p-3 bg-green-500 rounded-xl group-hover:bg-green-600 transition-colors">
-                        <FileText className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-green-900">Ver</p>
-                        <p className="text-sm text-green-700">Exames</p>
-                      </div>
-                    </button>
-                    
-                    <button
-                      onClick={() => setActiveTab('vacinas')}
-                      className="group flex items-center space-x-4 p-6 bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl hover:from-purple-100 hover:to-violet-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg border border-purple-100"
-                    >
-                      <div className="p-3 bg-orange-400 rounded-xl group-hover:bg-orange-600 transition-colors">
-                        <Shield className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-orange-600">Cartão de</p>
-                        <p className="text-sm text-orange-400">Vacinas</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}   
-
-            {/* Perfil Tab */}
-            {activeTab === 'perfil' && perfil && (
-              <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl">
-                        <User className="h-6 w-6 text-white" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-gray-800">Meu Perfil</h2>
-                    </div>
-                    <div className="h-1 w-24 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"></div>
-                  </div>
-                  <button
-                    onClick={openEditarPerfilModal}
-                    className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                  >
-                    <Edit className="w-5 h-5" />
-                    <span>Editar Perfil</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <User className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">Nome Completo</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium">{perfil.nome}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <FileText className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">CPF</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium">{perfil.cpf}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Shield className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">CNS</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium">{perfil.cns}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Calendar className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">Data de Nascimento</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium">
-                      {format(new Date(perfil.nascimento), 'dd/MM/yyyy', { locale: ptBR })}
-                    </p>
-                  </div>
-                  
-                  <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Mail className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">Email</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium break-words">{perfil.email}</p>
-                  </div>
-                  
-                  <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <Phone className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">Telefone</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium">{perfil.telefone}</p>
-                  </div>
-                  
-                  <div className="md:col-span-2 lg:col-span-3 bg-white rounded-2xl border border-gray-100 p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <MapPin className="h-5 w-5 text-blue-500" />
-                      <label className="text-sm font-bold text-blue-600 uppercase tracking-wide">Endereço</label>
-                    </div>
-                    <p className="text-gray-800 text-lg font-medium">{perfil.endereco}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Consultas Tab */}
-            {activeTab === 'consultas' && (
-              <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-3 bg-gradient-to-r from-blue-300 to-indigo-400 rounded-2xl">
-                        <Calendar className="h-6 w-6 text-white" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-gray-900">Minhas Consultas</h2>
-                    </div>
-                    <div className="h-1 w-24 bg-gradient-to-r from-blue-300 to-indigo-400 rounded-full"></div>
-                  </div>
-                  <button
-                    onClick={() => setShowConsultaModal(true)}
-                    className="flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-blue-300 to-indigo-400 text-white rounded-2xl hover:from-blue-500 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
-                  >
-                    <Calendar className="h-5 w-5" />
-                    <span>Solicitar Consulta</span>
-                  </button>
-                </div>
-                
-                {consultas && consultas.length > 0 ? (
-                  <div className="space-y-6">
-                    {consultas.map((consulta: any) => (
-                      <div key={consulta.id} className="bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 p-6 transform hover:-translate-y-1">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{consulta.especialidade}</h3>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="h-4 w-4 text-gray-500" />
-                              <p className="text-gray-600 font-medium">{consulta.ubs.nome}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(consulta.status)}`}>
-                              {getStatusIcon(consulta.status)}
-                              <span className="ml-1 capitalize">{consulta.status}</span>
-                            </span>
+                            <button
+                              onClick={() =>
+                                handleInscreverCampanha(
+                                  campanha.id,
+                                  campanha.titulo,
+                                )
+                              }
+                              className="flex-shrink-0 ml-3 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
+                            >
+                              Inscrever-se
+                            </button>
                           </div>
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Users}
+                    message="Nenhuma campanha ativa no momento"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── PERFIL ──────────────────────────────────────── */}
+          {activeTab === "perfil" && perfil && (
+            <div className="max-w-4xl mx-auto space-y-5">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <SectionHeader icon={User} title="Meu Perfil" />
+                  <button
+                    onClick={openEditarPerfilModal}
+                    className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-150"
+                  >
+                    <Edit className="h-4 w-4" /> Editar
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    {
+                      icon: User,
+                      label: "Nome Completo",
+                      value: perfil.nome,
+                      span: false,
+                    },
+                    {
+                      icon: FileText,
+                      label: "CPF",
+                      value: perfil.cpf,
+                      span: false,
+                    },
+                    {
+                      icon: Shield,
+                      label: "CNS",
+                      value: perfil.cns,
+                      span: false,
+                    },
+                    {
+                      icon: Calendar,
+                      label: "Data de Nascimento",
+                      value: format(new Date(perfil.nascimento), "dd/MM/yyyy", {
+                        locale: ptBR,
+                      }),
+                      span: false,
+                    },
+                    {
+                      icon: Mail,
+                      label: "Email",
+                      value: perfil.email,
+                      span: false,
+                    },
+                    {
+                      icon: Phone,
+                      label: "Telefone",
+                      value: perfil.telefone,
+                      span: false,
+                    },
+                    {
+                      icon: MapPin,
+                      label: "Endereço",
+                      value: perfil.endereco,
+                      span: true,
+                    },
+                  ].map(({ icon: Icon, label, value, span }) => (
+                    <div
+                      key={label}
+                      className={`rounded-xl border border-gray-100 bg-slate-50 p-4 ${span ? "sm:col-span-2 lg:col-span-3" : ""}`}
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon className="h-3.5 w-3.5 text-teal-500" />
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                          {label}
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-800 break-words">
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── CONSULTAS ───────────────────────────────────── */}
+          {activeTab === "consultas" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <SectionHeader icon={Stethoscope} title="Minhas Consultas" />
+                  <button
+                    onClick={() => setShowConsultaModal(true)}
+                    className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-150"
+                  >
+                    <Calendar className="h-4 w-4" /> Solicitar
+                  </button>
+                </div>
+
+                {consultas && consultas.length > 0 ? (
+                  <div className="space-y-3">
+                    {consultas.map((consulta: any) => (
+                      <div
+                        key={consulta.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-teal-200 hover:shadow-sm transition-all duration-150"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
                           <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Motivo</label>
-                            <div className="bg-gray-50 rounded-xl p-4">
-                              <p className="text-gray-900 font-medium">{consulta.motivo}</p>
-                            </div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {consulta.especialidade}
+                            </p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" /> {consulta.ubs.nome}
+                            </p>
                           </div>
-                          
+                          <StatusBadge status={consulta.status} />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                          <div className="rounded-lg bg-white border border-gray-100 p-3">
+                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                              Motivo
+                            </p>
+                            <p className="text-gray-700 font-medium">
+                              {consulta.motivo}
+                            </p>
+                          </div>
+
                           {consulta.dataAgendada && (
-                            <div>
-                              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Data Agendada</label>
-                              <p className="text-gray-900 font-medium">
-                                {format(new Date(consulta.dataAgendada), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            <div className="rounded-lg bg-white border border-gray-100 p-3">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Data Agendada
+                              </p>
+                              <p className="text-gray-700 font-medium">
+                                {format(
+                                  new Date(consulta.dataAgendada),
+                                  "dd/MM/yyyy HH:mm",
+                                  { locale: ptBR },
+                                )}
                               </p>
                             </div>
                           )}
-                          
+
                           {consulta.funcionario && (
-                            <div>
-                              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Profissional</label>
-                              <div className="bg-gray-50 rounded-xl p-4">
-                                <p className="text-gray-900 font-semibold">{consulta.funcionario.nome}</p>
-                                <p className="text-gray-600">{consulta.funcionario.funcao}</p>
-                              </div>
+                            <div className="rounded-lg bg-white border border-gray-100 p-3">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Profissional
+                              </p>
+                              <p className="text-gray-700 font-medium">
+                                {consulta.funcionario.nome}
+                              </p>
+                              <p className="text-gray-400">
+                                {consulta.funcionario.funcao}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="rounded-lg bg-white border border-gray-100 p-3">
+                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                              Local
+                            </p>
+                            <p className="text-gray-700 font-medium">
+                              {consulta.ubs.endereco}
+                            </p>
+                            <p className="text-gray-400 flex items-center gap-1 mt-0.5">
+                              <Phone className="h-3 w-3" />{" "}
+                              {consulta.ubs.telefone}
+                            </p>
+                          </div>
+
+                          {consulta.observacoes && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-3">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Observação
+                              </p>
+                              <p className="text-gray-700 font-medium">
+                                {consulta.observacoes}
+                              </p>
                             </div>
                           )}
                         </div>
-                        
-                        <div className="mt-6">
-                          <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Local</label>
-                          <div className="bg-gray-50 rounded-xl p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <MapPin className="h-4 w-4 text-gray-500" />
-                              <p className="text-gray-900 font-medium">{consulta.ubs.endereco}</p>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Phone className="h-4 w-4 text-gray-500" />
-                              <p className="text-gray-600">{consulta.ubs.telefone}</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {consulta.status === 'agendada' && (
-                          <div className="mt-6">
+
+                        {consulta.status === "agendada" && (
+                          <div className="mt-4 pt-3 border-t border-gray-100 flex gap-2">
                             <button
-                              onClick={() => confirmarConsultaMutation.mutate(consulta.id)}
-                              className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+                              onClick={() =>
+                                confirmarConsultaMutation.mutate(consulta.id)
+                              }
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 hover:-translate-y-0.5 transition-all shadow-sm shadow-emerald-100"
                             >
-                              Confirmar Consulta
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              Confirmar
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedItem(consulta);
+                                setMotivoCancelamento("");
+                                setShowCancelarModal(true);
+                              }}
+                              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-600 hover:text-white hover:-translate-y-0.5 transition-all"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                              Cancelar
                             </button>
                           </div>
                         )}
@@ -689,419 +959,330 @@ const PacienteDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-20">
-                    <div className="mx-auto w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-6">
-                      <Calendar className="w-16 h-16 text-blue-400" />
+                  <EmptyState
+                    icon={Calendar}
+                    message="Nenhuma consulta encontrada"
+                  />
+                )}
+
+                {/* ── MODAL DE CANCELAMENTO ─────────────────────────────── */}
+                {showCancelarModal && selectedItem && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden">
+                      {/* Cabeçalho */}
+                      <div className="bg-gradient-to-r from-rose-600 to-rose-500 px-6 py-5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 border border-white/20">
+                              <X className="h-4.5 w-4.5 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-base font-bold text-white">
+                                Cancelar Consulta
+                              </h3>
+                              <p className="text-xs text-rose-200 mt-0.5">
+                                Esta ação não poderá ser desfeita
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowCancelarModal(false);
+                              setSelectedItem(null);
+                              setMotivoCancelamento("");
+                            }}
+                            className="rounded-lg p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="p-6 space-y-5">
+                        {/* Resumo da consulta */}
+                        <div className="rounded-xl bg-slate-50 border border-gray-100 p-4 space-y-2">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
+                            Consulta selecionada
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Stethoscope className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                            <p className="text-sm font-bold text-gray-800">
+                              {selectedItem.especialidade}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                            <p className="text-xs text-gray-500">
+                              {selectedItem.ubs?.nome}
+                            </p>
+                          </div>
+                          {selectedItem.dataAgendada && (
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                              <p className="text-xs text-gray-500">
+                                {format(
+                                  new Date(selectedItem.dataAgendada),
+                                  "dd/MM/yyyy 'às' HH:mm",
+                                  { locale: ptBR },
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Campo de motivo */}
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                            <FileText className="h-3 w-3 text-rose-400" />
+                            Motivo do Cancelamento
+                            <span className="text-rose-400">*</span>
+                          </label>
+                          <textarea
+                            value={motivoCancelamento}
+                            onChange={(e) =>
+                              setMotivoCancelamento(e.target.value)
+                            }
+                            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 focus:outline-none transition-all resize-none"
+                            rows={3}
+                            placeholder="Descreva o motivo do cancelamento..."
+                            required
+                          />
+                          <p className="text-xs text-gray-400">
+                            O motivo será registrado no histórico da consulta.
+                          </p>
+                        </div>
+
+                        {/* Botões */}
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => {
+                              if (!motivoCancelamento.trim()) {
+                                toast.warning(
+                                  "Informe o motivo do cancelamento.",
+                                );
+                                return;
+                              }
+                              cancelarConsultaMutation.mutate({
+                                id: selectedItem.id,
+                                motivo: motivoCancelamento.trim(),
+                              });
+                            }}
+                            disabled={
+                              cancelarConsultaMutation.isLoading ||
+                              !motivoCancelamento.trim()
+                            }
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 hover:-translate-y-0.5 transition-all shadow-sm shadow-rose-100 disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+                          >
+                            {cancelarConsultaMutation.isLoading ? (
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            ) : (
+                              <>
+                                <X className="h-3.5 w-3.5" />
+                                Confirmar Cancelamento
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowCancelarModal(false);
+                              setSelectedItem(null);
+                              setMotivoCancelamento("");
+                            }}
+                            className="flex flex-1 items-center justify-center rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-600 mb-3">Nenhuma consulta encontrada</h3>
-                    <p className="text-gray-500 max-w-md mx-auto text-lg">
-                      Não há consultas registradas para este paciente no momento.
-                    </p>
                   </div>
                 )}
               </div>
-            )}
-
-            {/* Modal Solicitar Consulta */}
-      {showSolicitarConsultaModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg mx-4 transform transition-all">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="p-3 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl">
-                <Calendar className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900">Solicitar Consulta</h3>
             </div>
-            
-            <form onSubmit={handleConsultaSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-300 mb-2 uppercase tracking-wide">UBS</label>
-                <select
-                  value={consultaData.ubsId}
-                  onChange={(e) => setConsultaData({ ...consultaData, ubsId: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
-                  required
-                >
-                  <option value="">Selecione uma UBS</option>
-                  {ubsList?.map((ubs: any) => (
-                    <option key={ubs.id} value={ubs.id}>{ubs.nome}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Especialidade</label>
-                <input
-                  type="text"
-                  value={consultaData.especialidade}
-                  onChange={(e) => setConsultaData({ ...consultaData, especialidade: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
-                  placeholder="Ex: Clínico Geral, Cardiologia..."
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Motivo</label>
-                <textarea
-                  value={consultaData.motivo}
-                  onChange={(e) => setConsultaData({ ...consultaData, motivo: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg resize-none"
-                  rows={4}
-                  placeholder="Descreva o motivo da consulta..."
-                  required
-                />
-              </div>
-              
-              <div className="flex space-x-4 pt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-300 to-indigo-400 text-white py-4 px-6 rounded-2xl hover:from-blue-500 hover:to-indigo-600 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  Solicitar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowConsultaModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-4 px-6 rounded-2xl hover:bg-gray-300 transition-all duration-200 font-semibold"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+          )}
 
-            {/* Histórico Médico Tab */}
-            {activeTab === 'historico' && (
-              <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-3 bg-gradient-to-r from-green-500 to-green-700 rounded-2xl">
-                        <Heart className="h-6 w-6 text-white" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-gray-900">Histórico Médico</h2>
-                    </div>
-                    <div className="h-1 w-24 bg-gradient-to-r from-green-500 to-green-700 rounded-full"></div>
-                  </div>
+          {/* ── HISTÓRICO MÉDICO ────────────────────────────── */}
+          {activeTab === "historico" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <SectionHeader
+                    icon={Heart}
+                    title="Histórico Médico"
+                    color="rose"
+                  />
                   {historicoMedico && historicoMedico.length > 0 && (
                     <button
-                      onClick={() => generateHistoricoMedicoPDF(historicoMedico, perfil)}
-                      className="flex items-center gap-3 bg-gradient-to-r from-green-300 to-green-500 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      onClick={() =>
+                        generateHistoricoMedicoPDF(historicoMedico, perfil)
+                      }
+                      className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all"
                     >
-                      <Printer className="w-5 h-5" />
-                      <span>Imprimir PDF</span>
+                      <Printer className="h-4 w-4" /> Imprimir PDF
                     </button>
                   )}
                 </div>
-                
+
                 {historicoMedico && historicoMedico.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {historicoMedico.map((item: any) => (
-                      <div 
-                        key={item.id} 
-                        className="bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group transform hover:-translate-y-1"
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-150"
                       >
-                        <div className="bg-gradient-to-r from-green-400 via-green-300 to-green-400 p-6 text-green-900">
-                          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-                            <div className="flex-1">
-                              <h3 className="text-2xl font-bold mb-3 leading-tight">{item.diagnostico}</h3>
-                              <div className="flex items-center gap-2 text-green-900">
-                                <Calendar className="w-5 h-5" />
-                                <span className="font-semibold text-lg">
-                                  {format(new Date(item.dataConsulta), 'dd/MM/yyyy', { locale: ptBR })}
-                                </span>
-                              </div>
+                        <div className="bg-gradient-to-r from-teal-700 to-teal-600 px-5 py-4 text-white">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-base font-bold leading-snug">
+                                {item.diagnostico}
+                              </p>
+                              <p className="text-xs text-teal-200 mt-1 flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {format(
+                                  new Date(item.dataConsulta),
+                                  "dd/MM/yyyy",
+                                  { locale: ptBR },
+                                )}
+                              </p>
                             </div>
-                            
-                            <div className="lg:text-right bg-white/20 rounded-2xl p-4 backdrop-blur-sm">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Stethoscope className="w-5 h-5" />
-                                <p className="font-bold">{item.funcionario.nome}</p>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-xs font-bold text-white">
+                                {item.funcionario.nome}
+                              </p>
+                              <p className="text-xs text-teal-200">
+                                {item.funcionario.funcao}
+                              </p>
+                              <p className="text-xs text-teal-300">
+                                {item.funcionario.ubs.nome}
+                              </p>
                             </div>
-                              <p className="text-sm text-green-990 mb-1">{item.funcionario.funcao}</p>
-                              <p className="text-sm text-green-990">{item.funcionario.ubs.nome}</p>
                           </div>
                         </div>
-                        </div>
-
-                        <div className="p-8">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            {item.doenca && (
-                              <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-orange-200 p-5 rounded-2xl">
-                                <div className="flex items-center gap-3 mb-3">
-                                  <AlertCircle className="w-6 h-6 text-orange-500" />
-                                  <p className="text-sm font-bold text-orange-800 uppercase tracking-wide">Doença</p>
-                                </div>
-                                <p className="text-red-800 font-semibold text-lg">{item.doenca}</p>
-                              </div>
-                            )}
-                            
-                            {item.medicacao && (
-                              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-5 rounded-2xl">
-                                <div className="flex items-center gap-3 mb-3">
-                                  <CheckCircle className="w-6 h-6 text-green-500" />
-                                  <p className="text-sm font-bold text-green-700 uppercase tracking-wide">Medicação</p>
-                                </div>
-                                <p className="text-green-800 font-semibold text-lg">{item.medicacao}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="space-y-6">
-                            {item.laudo && (
-                              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <FileText className="w-6 h-6 text-blue-500" />
-                                  <h4 className="font-bold text-blue-700 uppercase tracking-wide">Laudo Médico</h4>
-                                </div>
-                                <div className="bg-white rounded-xl p-5 border border-blue-100 shadow-sm">
-                                  <p className="text-gray-800 leading-relaxed text-lg">{item.laudo}</p>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {item.observacoes && (
-                              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 border border-amber-200">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <AlertCircle className="w-6 h-6 text-amber-600" />
-                                  <h4 className="font-bold text-amber-800 uppercase tracking-wide">Observações</h4>
-                                </div>
-                                <div className="bg-white rounded-xl p-5 border border-amber-100 shadow-sm">
-                                  <p className="text-gray-800 leading-relaxed text-lg">{item.observacoes}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                        <div className="bg-slate-50 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {item.doenca && (
+                            <div className="rounded-lg border border-rose-100 bg-white p-3">
+                              <p className="text-xs font-bold text-rose-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" /> Doença
+                              </p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {item.doenca}
+                              </p>
+                            </div>
+                          )}
+                          {item.medicacao && (
+                            <div className="rounded-lg border border-emerald-100 bg-white p-3">
+                              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3" /> Medicação
+                              </p>
+                              <p className="text-sm font-semibold text-gray-800">
+                                {item.medicacao}
+                              </p>
+                            </div>
+                          )}
+                          {item.laudo && (
+                            <div className="rounded-lg border border-sky-100 bg-white p-3 sm:col-span-2">
+                              <p className="text-xs font-bold text-sky-600 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                <FileText className="h-3 w-3" /> Laudo Médico
+                              </p>
+                              <p className="text-sm text-gray-700 leading-relaxed">
+                                {item.laudo}
+                              </p>
+                            </div>
+                          )}
+                          {item.observacoes && (
+                            <div className="rounded-lg border border-amber-100 bg-white p-3 sm:col-span-2">
+                              <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" /> Observações
+                              </p>
+                              <p className="text-sm text-gray-700 leading-relaxed">
+                                {item.observacoes}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
-      
                 ) : (
-                  <div className="text-center py-20">
-                    <div className="mx-auto w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mb-6">
-                      <Heart className="w-16 h-16 text-blue-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-600 mb-3">Nenhum histórico encontrado</h3>
-                    <p className="text-gray-500 max-w-md mx-auto text-lg">
-                      Não há registros médicos disponíveis para este paciente no momento.
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={Heart}
+                    message="Nenhum histórico médico encontrado"
+                  />
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Internações Tab */}
-            {activeTab === 'internacoes' && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Minhas Internações</h2>
-                
-                {/* Solicitações de Internação */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Solicitações de Internação</h3>
-                  {solicitacoesInternacao && solicitacoesInternacao.length > 0 ? (
-                    <div className="space-y-4">
-                      {solicitacoesInternacao.map((solicitacao: any) => (
-                        <div key={solicitacao.id} className="border border-gray-200 rounded-xl p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h4 className="text-lg font-semibold text-gray-900">{solicitacao.hospital.nome}</h4>
-                              <p className="text-sm text-gray-600">
-                                Solicitado em: {format(new Date(solicitacao.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                              </p>
-                            </div>
-                            <div className="flex space-x-2">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(solicitacao.status)}`}>
-                                {solicitacao.status}
-                              </span>
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPrioridadeColor(solicitacao.prioridade)}`}>
-                                {solicitacao.prioridade}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
-                            <div>
-                              <p className="font-medium text-gray-700">Tipo:</p>
-                              <p className="text-gray-600">{solicitacao.tipo}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700">Motivo:</p>
-                              <p className="text-gray-600">{solicitacao.motivo}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700">Médico Solicitante:</p>
-                              <p className="text-gray-600">{solicitacao.funcionario.nome}</p>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700">UBS:</p>
-                              <p className="text-gray-600">{solicitacao.ubs.nome}</p>
-                            </div>
-                          </div>
-
-                          {solicitacao.dataAgendada && (
-                            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-                              <p className="font-medium text-blue-800">Agendado para:</p>
-                              <p className="text-blue-700">
-                                {format(new Date(solicitacao.dataAgendada), 'dd/MM/yyyy', { locale: ptBR })}
-                                {solicitacao.horaAgendada && ` às ${solicitacao.horaAgendada}`}
-                              </p>
-                              {solicitacao.local && <p className="text-blue-700">Local: {solicitacao.local}</p>}
-                            </div>
-                          )}
-
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => openDetalhesModal(solicitacao)}
-                              className="flex items-center space-x-1 px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span>Ver Detalhes</span>
-                            </button>
-
-                            {solicitacao.status === 'agendado' && (
-                              <button
-                                onClick={() => openConfirmarModal(solicitacao, 'internacao')}
-                                className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors text-sm"
-                              >
-                                <Check className="h-4 w-4" />
-                                <span>Confirmar Agendamento</span>
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <Building2 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Nenhuma solicitação de internação encontrada.</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Internações Realizadas */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Internações Realizadas</h3>
-                  {internacoes && internacoes.length > 0 ? (
-                    <div className="space-y-4">
-                      {internacoes.map((internacao: any) => (
-                        <div key={internacao.id} className="border border-gray-200 rounded-xl p-4">
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h4 className="text-lg font-semibold text-gray-900">{internacao.hospital.nome}</h4>
-                              <p className="text-sm text-gray-600">
-                                Entrada: {format(new Date(internacao.dataEntrada), 'dd/MM/yyyy', { locale: ptBR })}
-                                {internacao.dataSaida && ` - Saída: ${format(new Date(internacao.dataSaida), 'dd/MM/yyyy', { locale: ptBR })}`}
-                              </p>
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${internacao.dataSaida ? 'text-green-600 bg-green-100' : 'text-blue-600 bg-blue-100'}`}>
-                              {internacao.dataSaida ? 'Finalizada' : 'Em andamento'}
-                            </span>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
-                            <div>
-                              <p className="font-medium text-gray-700">Motivo:</p>
-                              <p className="text-gray-600">{internacao.motivo}</p>
-                            </div>
-                            {internacao.medicoResponsavel && (
-                              <div>
-                                <p className="font-medium text-gray-700">Médico Responsável:</p>
-                                <p className="text-gray-600">{internacao.medicoResponsavel.nome}</p>
-                              </div>
-                            )}
-                            {internacao.diagnostico && (
-                              <div className="md:col-span-2">
-                                <p className="font-medium text-gray-700">Diagnóstico:</p>
-                                <p className="text-gray-600">{internacao.diagnostico}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => openDetalhesModal(internacao)}
-                            className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors text-sm"
-                          >
-                            <Eye className="h-4 w-4" />
-                            <span>Ver Detalhes</span>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6">
-                      <Building2 className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Nenhuma internação encontrada.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Outras abas mantidas do código anterior */}
-            {activeTab === 'vacinas' && (
-              <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div>
-                    <div className="flex items-center space-x-3 mb-4">
-                      <div className="p-3 bg-gradient-to-r from-green-300 to-green-600 rounded-2xl">
-                        <Shield className="h-6 w-6 text-white" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-gray-900">Cartão de Vacinas</h2>
-                    </div>
-                    <div className="h-1 w-24 bg-gradient-to-r from-green-300 to-green-600 rounded-full"></div>
-                  </div>
+          {/* ── VACINAS ─────────────────────────────────────── */}
+          {activeTab === "vacinas" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <SectionHeader
+                    icon={Shield}
+                    title="Cartão de Vacinas"
+                    color="violet"
+                  />
                   {vacinas && vacinas.length > 0 && (
                     <button
                       onClick={() => generateVacinasPDF(vacinas, perfil)}
-                      className="flex items-center gap-3 bg-gradient-to-r from-green-300 to-green-500 hover:from-green-700 hover:to-green-800 text-white px-6 py-3 rounded-2xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all"
                     >
-                      <Printer className="w-5 h-5" />
-                      <span>Imprimir PDF</span>
+                      <Printer className="h-4 w-4" /> Imprimir PDF
                     </button>
                   )}
                 </div>
-                
                 {vacinas && vacinas.length > 0 ? (
-                  <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-lg">
-                    <table className="min-w-full divide-y divide-gray-200 bg-white">
-                      <thead className="bg-gradient-to-r from-purple-50 to-violet-50">
+                  <div className="overflow-x-auto rounded-xl border border-gray-100">
+                    <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
+                      <thead className="bg-slate-50">
                         <tr>
-                          <th className="px-8 py-4 text-left text-sm font-bold text-green-600 uppercase tracking-wider">
-                            Vacina
-                          </th>
-                          <th className="px-8 py-4 text-left text-sm font-bold text-green-500 uppercase tracking-wider">
-                            Data de Aplicação
-                          </th>
-                          <th className="px-8 py-4 text-left text-sm font-bold text-green-500 uppercase tracking-wider">
-                            Lote
-                          </th>
-                          <th className="px-8 py-4 text-left text-sm font-bold text-green-500 uppercase tracking-wider">
-                            Próxima Dose
-                          </th>
+                          {[
+                            "Vacina",
+                            "Aplicado por",
+                            "Data",
+                            "Lote",
+                            "Próxima Dose",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
+                            >
+                              {h}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-100">
+                      <tbody className="divide-y divide-gray-50">
                         {vacinas.map((vacina: any) => (
-                          <tr key={vacina.id} className="hover:bg-purple-50 transition-colors duration-200">
-                            <td className="px-8 py-5 whitespace-nowrap text-base font-semibold text-gray-900">
+                          <tr
+                            key={vacina.id}
+                            className="hover:bg-slate-50 transition-colors"
+                          >
+                            <td className="px-4 py-3 font-semibold text-gray-800">
                               {vacina.nome}
                             </td>
-                            <td className="px-8 py-5 whitespace-nowrap text-base text-gray-700">
-                              {format(new Date(vacina.dataApl), 'dd/MM/yyyy', { locale: ptBR })}
+                            <td className="px-4 py-3 text-gray-600">
+                              {vacina.funcionario
+                                ? `CRM: ${vacina.funcionario.crm || "N/A"}`
+                                : "—"}
                             </td>
-                            <td className="px-8 py-5 whitespace-nowrap text-base text-gray-700">
+                            <td className="px-4 py-3 text-gray-600">
+                              {format(new Date(vacina.dataApl), "dd/MM/yyyy", {
+                                locale: ptBR,
+                              })}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
                               {vacina.lote}
                             </td>
-                            <td className="px-8 py-5 whitespace-nowrap text-base text-gray-700">
-                              {vacina.proximaDose 
-                                ? format(new Date(vacina.proximaDose), 'dd/MM/yyyy', { locale: ptBR })
-                                : 'Não aplicável'
-                              }
+                            <td className="px-4 py-3 text-gray-600">
+                              {vacina.proximaDose
+                                ? format(
+                                    new Date(vacina.proximaDose),
+                                    "dd/MM/yyyy",
+                                    { locale: ptBR },
+                                  )
+                                : "—"}
                             </td>
                           </tr>
                         ))}
@@ -1109,274 +1290,198 @@ const PacienteDashboard: React.FC = () => {
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-20">
-                    <div className="mx-auto w-32 h-32 bg-gradient-to-br from-purple-100 to-violet-100 rounded-full flex items-center justify-center mb-6">
-                      <Shield className="w-16 h-16 text-purple-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-600 mb-3">Nenhuma vacina registrada</h3>
-                    <p className="text-gray-500 max-w-md mx-auto text-lg">
-                      Não há vacinas registradas para este paciente no momento.
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={Shield}
+                    message="Nenhuma vacina registrada"
+                  />
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {activeTab === 'exames' && (
-              <div className="bg-white/70 backdrop-blur-md rounded-3xl shadow-xl border border-white/50 p-8">
-                <div className="flex items-center space-x-3 mb-8">
-                  <div className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl">
-                    <FileText className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-gray-900">Meus Exames</h2>
-                    <div className="h-1 w-24 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full mt-2"></div>
-                  </div>
-                </div>
-                
+          {/* ── EXAMES ──────────────────────────────────────── */}
+          {activeTab === "exames" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader
+                  icon={FileText}
+                  title="Meus Exames"
+                  color="emerald"
+                />
                 {exames && exames.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     {exames.map((exame: any) => (
-                      <div key={exame.id} className="bg-white rounded-3xl border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 p-6 transform hover:-translate-y-1">
-                        <div className="flex justify-between items-start mb-4">
+                      <div
+                        key={exame.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-teal-200 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
                           <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">{exame.tipo}</h3>
-                            <div className="flex items-center space-x-2">
-                              <MapPin className="h-4 w-4 text-gray-500" />
-                              <p className="text-gray-600 font-medium">{exame.laboratorio.nome}</p>
-                            </div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {exame.tipo}
+                            </p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" />{" "}
+                              {exame.laboratorio.nome}
+                            </p>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(exame.status)}`}>
-                              {getStatusIcon(exame.status)}
-                              <span className="ml-1 capitalize">{exame.status}</span>
+                          <StatusBadge status={exame.status} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                          {exame.dataAgendada && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Agendado
+                              </p>
+                              <p className="text-gray-700">
+                                {format(
+                                  new Date(exame.dataAgendada),
+                                  "dd/MM/yyyy HH:mm",
+                                  { locale: ptBR },
+                                )}
+                              </p>
+                            </div>
+                          )}
+                          {exame.dataRealizado && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Realizado
+                              </p>
+                              <p className="text-gray-700">
+                                {format(
+                                  new Date(exame.dataRealizado),
+                                  "dd/MM/yyyy",
+                                  { locale: ptBR },
+                                )}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        {exame.resultado && (
+                          <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
+                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                              Resultado
+                            </p>
+                            <p className="text-gray-700">{exame.resultado}</p>
+                          </div>
+                        )}
+                        {exame.arquivoPdf && (
+                          <a
+                            href={`http://localhost:3001/api/exames/download/${exame.arquivoPdf}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
+                          >
+                            <Download className="h-3.5 w-3.5" /> Baixar Laudo
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={FileText}
+                    message="Nenhum exame encontrado"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── INTERNAÇÕES ─────────────────────────────────── */}
+          {activeTab === "internacoes" && (
+            <div className="max-w-4xl mx-auto space-y-5">
+              {/* Solicitações */}
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader
+                  icon={Building2}
+                  title="Solicitações de Internação"
+                />
+                {solicitacoesInternacao && solicitacoesInternacao.length > 0 ? (
+                  <div className="space-y-3">
+                    {solicitacoesInternacao.map((s: any) => (
+                      <div
+                        key={s.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {s.hospital.nome}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {format(
+                                new Date(s.createdAt),
+                                "dd/MM/yyyy HH:mm",
+                                { locale: ptBR },
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex gap-1.5 flex-wrap justify-end">
+                            <StatusBadge status={s.status} />
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getPrioridadeColor(s.prioridade)}`}
+                            >
+                              {s.prioridade}
                             </span>
                           </div>
                         </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {exame.dataAgendada && (
-                            <div>
-                              <label className="block text-sm font-bold text-gray-600 mb-2 uppercase tracking-wide">Data Agendada</label>
-                              <p className="text-gray-900 font-medium">
-                                {format(new Date(exame.dataAgendada), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                              </p>
-                </div>
-                          )}
-                          
-                          {exame.dataRealizado && (
-                            <div>
-                              <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Data Realizada</label>
-                              <p className="text-gray-900 font-medium">
-                                {format(new Date(exame.dataRealizado), 'dd/MM/yyyy', { locale: ptBR })}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {exame.resultado && (
-                          <div className="mt-4">
-                            <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Resultado</label>
-                            <div className="bg-gray-50 rounded-xl p-4">
-                              <p className="text-gray-900 font-medium">{exame.resultado}</p>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {exame.arquivoPdf && (
-                          <div className="mt-6">
-                            <a
-                              href={`http://localhost:3001/api/exames/download/${exame.arquivoPdf}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center space-x-3 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-semibold"
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mb-3">
+                          {[
+                            ["Tipo", s.tipo],
+                            ["Motivo", s.motivo],
+                            ["Médico", s.funcionario.nome],
+                            ["UBS", s.ubs.nome],
+                          ].map(([l, v]) => (
+                            <div
+                              key={l}
+                              className="rounded-lg bg-white border border-gray-100 p-2.5"
                             >
-                              <Download className="h-5 w-5" />
-                              <span>Baixar Laudo</span>
-                            </a>
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                {l}
+                              </p>
+                              <p className="text-gray-700 font-medium">{v}</p>
+                            </div>
+                          ))}
+                        </div>
+                        {s.dataAgendada && (
+                          <div className="rounded-lg bg-sky-50 border border-sky-100 p-3 text-xs mb-3">
+                            <p className="font-bold text-sky-600 mb-1">
+                              Agendado para
+                            </p>
+                            <p className="text-sky-700">
+                              {format(new Date(s.dataAgendada), "dd/MM/yyyy", {
+                                locale: ptBR,
+                              })}
+                              {s.horaAgendada && ` às ${s.horaAgendada}`}
+                            </p>
+                            {s.local && (
+                              <p className="text-sky-700 mt-0.5">
+                                Local: {s.local}
+                              </p>
+                            )}
+                            {s.recomendacoes && (
+                              <p className="text-sky-700 mt-0.5">
+                                {s.recomendacoes}
+                              </p>
+                            )}
                           </div>
                         )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-20">
-                    <div className="mx-auto w-32 h-32 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mb-6">
-                      <FileText className="w-16 h-16 text-green-400" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-600 mb-3">Nenhum exame encontrado</h3>
-                    <p className="text-gray-500 max-w-md mx-auto text-lg">
-                      Não há exames registrados para este paciente no momento.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Procedimentos, Medicações, Agendamentos e Histórico Hospitalar mantidos do código anterior */}
-            {activeTab === 'procedimentos' && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Procedimentos Hospitalares</h2>
-                {procedimentosHospitalares && procedimentosHospitalares.length > 0 ? (
-                  <div className="space-y-4">
-                    {procedimentosHospitalares.map((procedimento: any) => (
-                      <div key={procedimento.id} className="border border-gray-200 rounded-xl p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">{procedimento.tipo}</h3>
-                            <p className="text-sm text-gray-600">
-                              {format(new Date(procedimento.dataRealizacao), 'dd/MM/yyyy', { locale: ptBR })} - {procedimento.hospital.nome}
-                            </p>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(procedimento.status)}`}>
-                            {procedimento.status}
-                          </span>
-                        </div>
-                        
-                        <div className="mb-4">
-                          <p className="font-medium text-gray-700 mb-1">Descrição:</p>
-                          <p className="text-gray-600 text-sm">{procedimento.descricao}</p>
-                        </div>
-
-                        {procedimento.medicoRealizou && (
-                          <div className="mb-4">
-                            <p className="font-medium text-gray-700">Médico:</p>
-                            <p className="text-gray-600 text-sm">{procedimento.medicoRealizou.nome} - {procedimento.medicoRealizou.funcao}</p>
-                          </div>
-                        )}
-
-                        <button
-                          onClick={() => openDetalhesModal(procedimento)}
-                          className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors text-sm"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span>Ver Detalhes</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Nenhum procedimento hospitalar encontrado.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'medicacoes' && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Medicações Hospitalares</h2>
-                {medicacoesHospitalares && medicacoesHospitalares.length > 0 ? (
-                  <div className="space-y-4">
-                    {medicacoesHospitalares.map((medicacao: any) => (
-                      <div key={medicacao.id} className="border border-gray-200 rounded-xl p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">{medicacao.nomeMedicacao}</h3>
-                            <p className="text-sm text-gray-600">
-                              {format(new Date(medicacao.dataHoraAdministracao), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                            </p>
-                          </div>
-                          <div className="text-right text-sm">
-                            <p className="font-medium text-gray-700">
-                              {medicacao.internacao?.hospital?.nome || medicacao.procedimentoHospitalar?.hospital?.nome}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          {medicacao.dosagem && (
-                            <div>
-                              <p className="font-medium text-gray-700">Dosagem:</p>
-                              <p className="text-gray-600">{medicacao.dosagem}</p>
-                            </div>
-                          )}
-                          {medicacao.viaAdministracao && (
-                            <div>
-                              <p className="font-medium text-gray-700">Via:</p>
-                              <p className="text-gray-600">{medicacao.viaAdministracao}</p>
-                            </div>
-                          )}
-                          {medicacao.administrador && (
-                            <div>
-                              <p className="font-medium text-gray-700">Administrado por:</p>
-                              <p className="text-gray-600">{medicacao.administrador.nome}</p>
-                            </div>
-                          )}
-                          {medicacao.observacoes && (
-                            <div className="md:col-span-2">
-                              <p className="font-medium text-gray-700">Observações:</p>
-                              <p className="text-gray-600">{medicacao.observacoes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Pill className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Nenhuma medicação hospitalar encontrada.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'agendamentos' && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Agendamentos Hospitalares</h2>
-                {agendamentosHospitalares && agendamentosHospitalares.length > 0 ? (
-                  <div className="space-y-4">
-                    {agendamentosHospitalares.map((agendamento: any) => (
-                      <div key={agendamento.id} className="border border-gray-200 rounded-xl p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="text-lg font-semibold text-gray-900">{agendamento.hospital.nome}</h3>
-                            <p className="text-sm text-gray-600">
-                              {format(new Date(agendamento.dataAgendamento), 'dd/MM/yyyy', { locale: ptBR })} às {agendamento.horaAgendamento}
-                            </p>
-                          </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(agendamento.status)}`}>
-                            {agendamento.status}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
-                          <div>
-                            <p className="font-medium text-gray-700">Tipo:</p>
-                            <p className="text-gray-600">{agendamento.tipo}</p>
-                          </div>
-                          {agendamento.medico && (
-                            <div>
-                              <p className="font-medium text-gray-700">Médico:</p>
-                              <p className="text-gray-600">{agendamento.medico.nome}</p>
-                            </div>
-                          )}
-                          {agendamento.solicitacaoInternacao && (
-                            <div className="md:col-span-2">
-                              <p className="font-medium text-gray-700">Relacionado à:</p>
-                              <p className="text-gray-600">{agendamento.solicitacaoInternacao.tipo} - {agendamento.solicitacaoInternacao.motivo}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex gap-2">
                           <button
-                            onClick={() => openDetalhesModal(agendamento)}
-                            className="flex items-center space-x-1 px-3 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                            onClick={() => openDetalhesModal(s)}
+                            className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
                           >
-                            <Eye className="h-4 w-4" />
-                            <span>Ver Detalhes</span>
+                            <Eye className="h-3.5 w-3.5" /> Ver Detalhes
                           </button>
-
-                          {agendamento.status === 'agendado' && (
+                          {s.status === "agendado" && (
                             <button
-                              onClick={() => openConfirmarModal(agendamento, 'agendamento')}
-                              className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors text-sm"
+                              onClick={() =>
+                                openConfirmarModal(s, "internacao")
+                              }
+                              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
                             >
-                              <Check className="h-4 w-4" />
-                              <span>Confirmar</span>
+                              <Check className="h-3.5 w-3.5" /> Confirmar
                             </button>
                           )}
                         </div>
@@ -1384,228 +1489,717 @@ const PacienteDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">Nenhum agendamento hospitalar encontrado.</p>
-                  </div>
+                  <EmptyState
+                    icon={Building2}
+                    message="Nenhuma solicitação encontrada"
+                  />
                 )}
               </div>
-            )}
 
-            {activeTab === 'historico-hospitalar' && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Histórico Hospitalar Completo</h2>
-                
+              {/* Internações realizadas */}
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader
+                  icon={Building2}
+                  title="Internações Realizadas"
+                />
+                {internacoes && internacoes.length > 0 ? (
+                  <div className="space-y-3">
+                    {internacoes.map((i: any) => (
+                      <div
+                        key={i.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {i.hospital.nome}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Entrada:{" "}
+                              {format(new Date(i.dataEntrada), "dd/MM/yyyy", {
+                                locale: ptBR,
+                              })}
+                              {i.dataSaida &&
+                                ` · Saída: ${format(new Date(i.dataSaida), "dd/MM/yyyy", { locale: ptBR })}`}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${i.dataSaida ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-sky-50 text-sky-700 ring-1 ring-sky-200"}`}
+                          >
+                            {i.dataSaida ? "Finalizada" : "Em andamento"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                          <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                              Motivo
+                            </p>
+                            <p className="text-gray-700">{i.motivo}</p>
+                          </div>
+                          {i.medicoResponsavel && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Médico Responsável
+                              </p>
+                              <p className="text-gray-700">
+                                {i.medicoResponsavel.nome}
+                              </p>
+                            </div>
+                          )}
+                          {i.diagnostico && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5 sm:col-span-2">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Diagnóstico
+                              </p>
+                              <p className="text-gray-700">{i.diagnostico}</p>
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => openDetalhesModal(i)}
+                          className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> Ver Detalhes
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Building2}
+                    message="Nenhuma internação encontrada"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── PROCEDIMENTOS ───────────────────────────────── */}
+          {activeTab === "procedimentos" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader
+                  icon={Activity}
+                  title="Procedimentos Hospitalares"
+                />
+                {procedimentosHospitalares &&
+                procedimentosHospitalares.length > 0 ? (
+                  <div className="space-y-3">
+                    {procedimentosHospitalares.map((p: any) => (
+                      <div
+                        key={p.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {p.tipo}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {format(
+                                new Date(p.dataRealizacao),
+                                "dd/MM/yyyy",
+                                { locale: ptBR },
+                              )}{" "}
+                              · {p.hospital.nome}
+                            </p>
+                          </div>
+                          <StatusBadge status={p.status} />
+                        </div>
+                        <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
+                          <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                            Descrição
+                          </p>
+                          <p className="text-gray-700">{p.descricao}</p>
+                        </div>
+                        {p.medicoRealizou && (
+                          <p className="text-xs text-gray-500 mb-3">
+                            {p.medicoRealizou.nome} · {p.medicoRealizou.funcao}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => openDetalhesModal(p)}
+                          className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> Ver Detalhes
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Activity}
+                    message="Nenhum procedimento encontrado"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── MEDICAÇÕES ──────────────────────────────────── */}
+          {activeTab === "medicacoes" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader icon={Pill} title="Medicações Hospitalares" />
+                {medicacoesLoading ? (
+                  <div className="flex flex-col items-center py-16">
+                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal-100 border-t-teal-600 mb-3" />
+                    <p className="text-sm text-gray-400">
+                      Carregando medicações...
+                    </p>
+                  </div>
+                ) : medicacoesHospitalares &&
+                  medicacoesHospitalares.length > 0 ? (
+                  <div className="overflow-x-auto rounded-xl border border-gray-100">
+                    <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          {[
+                            "Medicação",
+                            "Data/Hora",
+                            "Dosagem",
+                            "Via",
+                            "Administrado por",
+                            "Hospital",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
+                            >
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {medicacoesHospitalares.map((m) => (
+                          <tr
+                            key={m.id}
+                            className="hover:bg-slate-50 transition-colors"
+                          >
+                            <td className="px-4 py-3 font-semibold text-gray-800">
+                              {m.nomeMedicacao}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {format(
+                                new Date(m.dataHoraAdministracao),
+                                "dd/MM/yyyy HH:mm",
+                                { locale: ptBR },
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {m.dosagem || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {m.viaAdministracao || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {m.administradorNomeOuCrm || "—"}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600">
+                              {m.internacao?.hospital?.nome || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Pill}
+                    message="Nenhuma medicação hospitalar encontrada"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── AGENDAMENTOS ────────────────────────────────── */}
+          {activeTab === "agendamentos" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader
+                  icon={Calendar}
+                  title="Agendamentos Hospitalares"
+                />
+                {agendamentosHospitalares &&
+                agendamentosHospitalares.length > 0 ? (
+                  <div className="space-y-3">
+                    {agendamentosHospitalares.map((a: any) => (
+                      <div
+                        key={a.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {a.hospital.nome}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {format(
+                                new Date(a.dataAgendamento),
+                                "dd/MM/yyyy",
+                                { locale: ptBR },
+                              )}{" "}
+                              às {a.horaAgendamento}
+                            </p>
+                          </div>
+                          <StatusBadge status={a.status} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                          <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                              Tipo
+                            </p>
+                            <p className="text-gray-700">{a.tipo}</p>
+                          </div>
+                          {a.medico && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Médico
+                              </p>
+                              <p className="text-gray-700">{a.medico.nome}</p>
+                            </div>
+                          )}
+                          {a.solicitacaoInternacao && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5 col-span-2">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Relacionado à
+                              </p>
+                              <p className="text-gray-700">
+                                {a.solicitacaoInternacao.tipo} ·{" "}
+                                {a.solicitacaoInternacao.motivo}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => openDetalhesModal(a)}
+                            className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> Detalhes
+                          </button>
+                          {a.status === "agendado" && (
+                            <button
+                              onClick={() =>
+                                openConfirmarModal(a, "agendamento")
+                              }
+                              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
+                            >
+                              <Check className="h-3.5 w-3.5" /> Confirmar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={Calendar}
+                    message="Nenhum agendamento hospitalar encontrado"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── HISTÓRICO HOSPITALAR ────────────────────────── */}
+          {activeTab === "historico-hospitalar" && (
+            <div className="max-w-4xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                <SectionHeader icon={History} title="Histórico Hospitalar" />
                 {historicoHospitalar && (
-                  <div className="mb-6">
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
-                        <p className="text-2xl font-bold text-green-600">{historicoHospitalar.resumo?.totalSolicitacoes || 0}</p>
-                        <p className="text-sm text-green-800">Solicitações</p>
-                      </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
-                        <p className="text-2xl font-bold text-green-600">{historicoHospitalar.resumo?.totalInternacoes || 0}</p>
-                        <p className="text-sm text-green-800">Internações</p>
-                      </div>
-                      <div className="text-center p-4 bg-purple-50 rounded-lg">
-                        <p className="text-2xl font-bold text-purple-600">{historicoHospitalar.resumo?.totalProcedimentos || 0}</p>
-                        <p className="text-sm text-green-500">Procedimentos</p>
-                      </div>
-                      <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                        <p className="text-2xl font-bold text-yellow-600">{historicoHospitalar.resumo?.totalMedicacoes || 0}</p>
-                        <p className="text-sm text-yellow-800">Medicações</p>
-                      </div>
-                      <div className="text-center p-4 bg-red-50 rounded-lg">
-                        <p className="text-2xl font-bold text-red-600">{historicoHospitalar.resumo?.totalAgendamentos || 0}</p>
-                        <p className="text-sm text-red-800">Agendamentos</p>
-                      </div>
+                  <>
+                    {/* Resumo */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+                      {[
+                        {
+                          label: "Solicitações",
+                          val: historicoHospitalar.resumo?.totalSolicitacoes,
+                          color: "sky",
+                        },
+                        {
+                          label: "Internações",
+                          val: historicoHospitalar.resumo?.totalInternacoes,
+                          color: "emerald",
+                        },
+                        {
+                          label: "Procedimentos",
+                          val: historicoHospitalar.resumo?.totalProcedimentos,
+                          color: "violet",
+                        },
+                        {
+                          label: "Medicações",
+                          val: historicoHospitalar.resumo?.totalMedicacoes,
+                          color: "amber",
+                        },
+                        {
+                          label: "Agendamentos",
+                          val: historicoHospitalar.resumo?.totalAgendamentos,
+                          color: "rose",
+                        },
+                      ].map(({ label, val, color }) => (
+                        <div
+                          key={label}
+                          className={`rounded-xl bg-${color}-50 border border-${color}-100 p-3 text-center`}
+                        >
+                          <p className={`text-2xl font-bold text-${color}-600`}>
+                            {val || 0}
+                          </p>
+                          <p
+                            className={`text-xs font-medium text-${color}-500 mt-0.5`}
+                          >
+                            {label}
+                          </p>
+                        </div>
+                      ))}
                     </div>
 
-                    {historicoHospitalar.historico && historicoHospitalar.historico.length > 0 ? (
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Linha do Tempo</h3>
-                        {historicoHospitalar.historico.map((item: any, index: number) => (
-                          <div key={`${item.tipo}-${item.id}`} className="flex items-start space-x-4">
-                            <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                    {/* Timeline */}
+                    {historicoHospitalar.historico &&
+                    historicoHospitalar.historico.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+                          Linha do Tempo
+                        </p>
+                        {historicoHospitalar.historico.map((item: any) => (
+                          <div
+                            key={`${item.tipo}-${item.id}`}
+                            className="flex gap-3"
+                          >
+                            <div className="flex flex-col items-center">
+                              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100">
+                                <div className="h-2 w-2 rounded-full bg-teal-500" />
+                              </div>
+                              <div className="mt-1 w-px flex-1 bg-gray-100" />
                             </div>
-                            <div className="flex-1 border border-gray-200 rounded-lg p-4">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h4 className="font-semibold text-gray-900">
-                                    {item.tipo === 'solicitacao' && 'Solicitação de Internação'}
-                                    {item.tipo === 'internacao' && 'Internação'}
-                                    {item.tipo === 'procedimento' && 'Procedimento'}
-                                    {item.tipo === 'medicacao' && 'Medicação'}
-                                    {item.tipo === 'agendamento' && 'Agendamento'}
-                                  </h4>
-                                  <p className="text-sm text-gray-600">
-                                    {format(new Date(item.data), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                                  </p>
-                                </div>
-                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                                  {item.tipo}
+                            <div className="flex-1 rounded-xl border border-gray-100 bg-slate-50 p-3 mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-xs font-bold text-gray-800 capitalize">
+                                  {item.tipo === "solicitacao" &&
+                                    "Solicitação de Internação"}
+                                  {item.tipo === "internacao" && "Internação"}
+                                  {item.tipo === "procedimento" &&
+                                    "Procedimento"}
+                                  {item.tipo === "medicacao" && "Medicação"}
+                                  {item.tipo === "agendamento" && "Agendamento"}
+                                </p>
+                                <span className="text-xs text-gray-400">
+                                  {format(
+                                    new Date(item.data),
+                                    "dd/MM/yyyy HH:mm",
+                                    { locale: ptBR },
+                                  )}
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-700">
-                                {item.tipo === 'solicitacao' && `${item.hospital?.nome} - ${item.motivo}`}
-                                {item.tipo === 'internacao' && `${item.hospital?.nome} - ${item.motivo}`}
-                                {item.tipo === 'procedimento' && `${item.hospital?.nome} - ${item.tipo}: ${item.descricao}`}
-                                {item.tipo === 'medicacao' && `${item.nomeMedicacao} - ${item.dosagem || 'Dosagem não informada'}`}
-                                {item.tipo === 'agendamento' && `${item.hospital?.nome} - ${item.tipo}`}
+                              <p className="text-xs text-gray-500">
+                                {item.tipo === "solicitacao" &&
+                                  `${item.hospital?.nome} — ${item.motivo}`}
+                                {item.tipo === "internacao" &&
+                                  `${item.hospital?.nome} — ${item.motivo}`}
+                                {item.tipo === "procedimento" &&
+                                  `${item.hospital?.nome} — ${item.descricao}`}
+                                {item.tipo === "medicacao" &&
+                                  `${item.nomeMedicacao} — ${item.dosagem || "Dosagem não informada"}`}
+                                {item.tipo === "agendamento" &&
+                                  `${item.hospital?.nome} — ${item.tipo}`}
                               </p>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-600">Nenhum histórico hospitalar encontrado.</p>
-                      </div>
+                      <EmptyState
+                        icon={History}
+                        message="Nenhum histórico hospitalar encontrado"
+                      />
                     )}
-                  </div>
+                  </>
                 )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* Modal de Editar Perfil */}
-      {showEditarPerfilModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Editar Perfil</h3>
-              <button
-                onClick={() => setShowEditarPerfilModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
+      {/* ── MODAIS ──────────────────────────────────────────── */}
+
+      {/* Modal Solicitar Consulta */}
+      {showConsultaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden">
+            {/* Cabeçalho com gradiente */}
+            <div className="bg-gradient-to-r from-teal-700 to-teal-600 px-6 py-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 border border-white/20">
+                    <Calendar className="h-4.5 w-4.5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Solicitar Consulta
+                    </h3>
+                    <p className="text-xs text-teal-200 mt-0.5">
+                      Preencha os dados para agendamento
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowConsultaModal(false)}
+                  className="rounded-lg p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
+            {/* Corpo do formulário */}
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <form onSubmit={handleConsultaSubmit} className="space-y-5">
+                {/* UBS */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3 text-teal-500" />
+                    Unidade de Saúde (UBS)
+                  </label>
+                  <select
+                    value={consultaData.ubsId}
+                    onChange={(e) =>
+                      setConsultaData({
+                        ...consultaData,
+                        ubsId: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all"
+                    required
+                  >
+                    <option value="">Selecione uma UBS</option>
+                    {ubsList?.map((ubs: any) => (
+                      <option key={ubs.id} value={ubs.id}>
+                        {ubs.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Especialidade — grid de pills clicáveis */}
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <Stethoscope className="h-3 w-3 text-teal-500" />
+                    Especialidade
+                  </label>
+
+                  {/* Pills de seleção rápida */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      { label: "Clínico Geral", icon: "🩺" },
+                      { label: "Cardiologia", icon: "❤️" },
+                      { label: "Pediatria", icon: "👶" },
+                      { label: "Ginecologia", icon: "🌸" },
+                      { label: "Ortopedia", icon: "🦴" },
+                      { label: "Dermatologia", icon: "🔬" },
+                      { label: "Neurologia", icon: "🧠" },
+                      { label: "Oftalmologia", icon: "👁️" },
+                      { label: "Odontologia", icon: "🦷" },
+                      { label: "Psicologia", icon: "💬" },
+                      { label: "Endocrinologia", icon: "⚗️" },
+                      { label: "Outra", icon: "➕" },
+                    ].map(({ label, icon }) => {
+                      const selected = consultaData.especialidade === label;
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() =>
+                            setConsultaData({
+                              ...consultaData,
+                              especialidade: label === "Outra" ? "" : label,
+                            })
+                          }
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold text-left transition-all duration-150 hover:-translate-y-0.5 ${
+                            selected
+                              ? "border-teal-400 bg-teal-50 text-teal-700 shadow-sm shadow-teal-100"
+                              : "border-gray-200 bg-gray-50 text-gray-600 hover:border-teal-200 hover:bg-teal-50/50 hover:text-teal-700"
+                          }`}
+                        >
+                          <span className="text-sm">{icon}</span>
+                          <span className="truncate">{label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Campo livre para "Outra" ou confirmação do selecionado */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={consultaData.especialidade}
+                      onChange={(e) =>
+                        setConsultaData({
+                          ...consultaData,
+                          especialidade: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all"
+                      placeholder="Ou digite outra especialidade..."
+                      required
+                    />
+                    {consultaData.especialidade && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConsultaData({
+                            ...consultaData,
+                            especialidade: "",
+                          })
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Motivo */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
+                    <FileText className="h-3 w-3 text-teal-500" />
+                    Motivo da Consulta
+                  </label>
+                  <textarea
+                    value={consultaData.motivo}
+                    onChange={(e) =>
+                      setConsultaData({
+                        ...consultaData,
+                        motivo: e.target.value,
+                      })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all resize-none"
+                    rows={3}
+                    placeholder="Descreva brevemente o motivo da consulta, sintomas ou queixa principal..."
+                    required
+                  />
+                  <p className="text-xs text-gray-400">
+                    Seja específico para facilitar o atendimento
+                  </p>
+                </div>
+
+                {/* Resumo da seleção */}
+                {(consultaData.ubsId || consultaData.especialidade) && (
+                  <div className="rounded-xl bg-teal-50 border border-teal-100 p-3">
+                    <p className="text-xs font-bold text-teal-700 uppercase tracking-widest mb-2">
+                      Resumo
+                    </p>
+                    <div className="space-y-1">
+                      {consultaData.ubsId && (
+                        <p className="text-xs text-teal-600 flex items-center gap-1.5">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="font-medium">
+                            {
+                              ubsList?.find(
+                                (u: any) => u.id === consultaData.ubsId,
+                              )?.nome
+                            }
+                          </span>
+                        </p>
+                      )}
+                      {consultaData.especialidade && (
+                        <p className="text-xs text-teal-600 flex items-center gap-1.5">
+                          <Stethoscope className="h-3 w-3 flex-shrink-0" />
+                          <span className="font-medium">
+                            {consultaData.especialidade}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Botões */}
+                <div className="flex gap-3 pt-1">
+                  <button
+                    type="submit"
+                    disabled={solicitarConsultaMutation.isLoading}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700 hover:-translate-y-0.5 transition-all shadow-sm shadow-teal-200 disabled:opacity-50 disabled:hover:translate-y-0"
+                  >
+                    {solicitarConsultaMutation.isLoading ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <>
+                        <Calendar className="h-4 w-4" />
+                        Solicitar Consulta
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowConsultaModal(false)}
+                    className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Perfil */}
+      {showEditarPerfilModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50">
+                  <Edit className="h-4 w-4 text-teal-600" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900">
+                  Editar Perfil
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowEditarPerfilModal(false)}
+                className="rounded-lg p-1.5 hover:bg-slate-100 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
             <form onSubmit={handleAtualizarPerfil} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Endereço
-                </label>
-                <input
-                  type="text"
-                  value={perfilData.endereco}
-                  onChange={(e) => setPerfilData({ ...perfilData, endereco: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone
-                </label>
-                <input
-                  type="tel"
-                  value={perfilData.telefone}
-                  onChange={(e) => setPerfilData({ ...perfilData, telefone: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={perfilData.email}
-                  onChange={(e) => setPerfilData({ ...perfilData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowEditarPerfilModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Cancelar
-                </button>
+              {[
+                { label: "Endereço", key: "endereco", type: "text" },
+                { label: "Telefone", key: "telefone", type: "tel" },
+                { label: "Email", key: "email", type: "email" },
+              ].map(({ label, key, type }) => (
+                <div key={key} className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                    {label}
+                  </label>
+                  <input
+                    type={type}
+                    value={(perfilData as any)[key]}
+                    onChange={(e) =>
+                      setPerfilData({ ...perfilData, [key]: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all"
+                  />
+                </div>
+              ))}
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
                   disabled={atualizarPerfilMutation.isLoading}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
                 >
-                  <Save className="h-4 w-4" />
-                  <span>{atualizarPerfilMutation.isLoading ? 'Salvando...' : 'Salvar'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showConsultaModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-lg mx-4 transform transition-all">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="p-3 bg-gradient-to-r from-blue-300 to-blue-500 rounded-2xl">
-                <Calendar className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900">Solicitar Consulta</h3>
-            </div>
-            
-            <form onSubmit={handleConsultaSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">UBS</label>
-                <select
-                  value={consultaData.ubsId}
-                  onChange={(e) => setConsultaData({ ...consultaData, ubsId: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
-                  required
-                >
-                  <option value="">Selecione uma UBS</option>
-                  {ubsList?.map((ubs: any) => (
-                    <option key={ubs.id} value={ubs.id}>{ubs.nome}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Especialidade</label>
-                <input
-                  type="text"
-                  value={consultaData.especialidade}
-                  onChange={(e) => setConsultaData({ ...consultaData, especialidade: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg"
-                  placeholder="Ex: Clínico Geral, Cardiologia..."
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Motivo</label>
-                <textarea
-                  value={consultaData.motivo}
-                  onChange={(e) => setConsultaData({ ...consultaData, motivo: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-lg resize-none"
-                  rows={4}
-                  placeholder="Descreva o motivo da consulta..."
-                  required
-                />
-              </div>
-              
-              <div className="flex space-x-4 pt-6">
-                <button
-                  type="submit"
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-4 px-6 rounded-2xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  Solicitar
+                  <Save className="h-4 w-4" />{" "}
+                  {atualizarPerfilMutation.isLoading ? "Salvando..." : "Salvar"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowConsultaModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-700 py-4 px-6 rounded-2xl hover:bg-gray-300 transition-all duration-200 font-semibold"
+                  onClick={() => setShowEditarPerfilModal(false)}
+                  className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1615,87 +2209,228 @@ const PacienteDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Modal de Detalhes */}
+      {/* Modal Detalhes */}
       {showDetalhesModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Detalhes</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between mb-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-teal-50">
+                  <Building2 className="h-4.5 w-4.5 text-teal-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    {selectedItem.hospital?.nome ||
+                      selectedItem.titulo ||
+                      "Detalhes"}
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {selectedItem.tipo ||
+                      (selectedItem.status
+                        ? `Status: ${selectedItem.status}`
+                        : "")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {selectedItem.dataEntrada && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">Entrada</p>
+                    <p className="text-xs font-semibold text-gray-700">
+                      {format(
+                        new Date(selectedItem.dataEntrada),
+                        "dd/MM/yyyy",
+                        { locale: ptBR },
+                      )}
+                    </p>
+                  </div>
+                )}
+                {selectedItem.dataSaida && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">Saída</p>
+                    <p className="text-xs font-semibold text-gray-700">
+                      {format(new Date(selectedItem.dataSaida), "dd/MM/yyyy", {
+                        locale: ptBR,
+                      })}
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowDetalhesModal(false)}
+                  className="rounded-lg p-1.5 hover:bg-slate-100 text-gray-400 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
+              {[
+                ["Motivo", selectedItem.motivo],
+                ["Médico Responsável", selectedItem.medicoResponsavel?.nome],
+                [
+                  "Local",
+                  selectedItem.local || selectedItem.hospital?.endereco,
+                ],
+                ["Diagnóstico", selectedItem.diagnostico],
+                [
+                  "Observações",
+                  selectedItem.observacoes || selectedItem.recomendacoes,
+                ],
+              ].map(([l, v]) =>
+                v ? (
+                  <div
+                    key={l}
+                    className="rounded-xl bg-slate-50 border border-gray-100 p-3"
+                  >
+                    <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                      {l}
+                    </p>
+                    <p className="text-gray-700">{v}</p>
+                  </div>
+                ) : null,
+              )}
+            </div>
+            {((selectedItem.medicacoes && selectedItem.medicacoes.length > 0) ||
+              (selectedItem.medicacoesAdministradas &&
+                selectedItem.medicacoesAdministradas.length > 0)) && (
+              <div className="rounded-xl border border-gray-100 overflow-hidden text-xs">
+                <div className="hidden sm:grid grid-cols-6 gap-3 bg-slate-50 px-4 py-2.5 font-bold text-gray-400 uppercase tracking-wide">
+                  {[
+                    "Medicação",
+                    "Data/Hora",
+                    "Dosagem",
+                    "Via",
+                    "Administrado por",
+                    "Observações",
+                  ].map((h) => (
+                    <span key={h}>{h}</span>
+                  ))}
+                </div>
+                <div className="max-h-48 overflow-y-auto divide-y divide-gray-50">
+                  {(
+                    selectedItem.medicacoes ||
+                    selectedItem.medicacoesAdministradas ||
+                    []
+                  ).map((m: any) => (
+                    <div
+                      key={m.id || m.nomeMedicacao}
+                      className="grid grid-cols-1 sm:grid-cols-6 gap-2 px-4 py-3"
+                    >
+                      <span className="font-semibold text-gray-800">
+                        {m.nomeMedicacao || m.nome || "—"}
+                      </span>
+                      <span className="text-gray-600">
+                        {format(
+                          new Date(
+                            m.dataHoraAdministracao ||
+                              m.dataHora ||
+                              m.createdAt ||
+                              Date.now(),
+                          ),
+                          "dd/MM/yyyy HH:mm",
+                          { locale: ptBR },
+                        )}
+                      </span>
+                      <span className="text-gray-600">{m.dosagem || "—"}</span>
+                      <span className="text-gray-600">
+                        {m.viaAdministracao || m.via || "—"}
+                      </span>
+                      <span className="text-gray-600">
+                        {m.administradorNomeOuCrm || "—"}
+                      </span>
+                      <span className="text-gray-600 truncate">
+                        {m.observacoes || "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="mt-5 flex justify-end">
               <button
                 onClick={() => setShowDetalhesModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
               >
-                <X className="h-6 w-6" />
+                Fechar
               </button>
-            </div>
-            
-            <div className="space-y-4">
-              <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-auto">
-                {JSON.stringify(selectedItem, null, 2)}
-              </pre>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Confirmação */}
+      {/* Modal Confirmar Agendamento */}
       {showConfirmarModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Confirmar Agendamento</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                </div>
+                <h3 className="text-base font-bold text-gray-900">
+                  Confirmar Agendamento
+                </h3>
+              </div>
               <button
                 onClick={() => setShowConfirmarModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="rounded-lg p-1.5 hover:bg-slate-100 text-gray-400 transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            
-            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">
-                {selectedItem.hospital?.nome || 'Hospital'}
+            <div className="rounded-xl bg-slate-50 border border-gray-100 p-3 mb-4 text-sm">
+              <p className="font-bold text-gray-800">
+                {selectedItem.hospital?.nome || "Hospital"}
               </p>
-              <p className="text-sm text-gray-600">
-                {selectedItem.dataAgendada && format(new Date(selectedItem.dataAgendada), 'dd/MM/yyyy', { locale: ptBR })}
-                {selectedItem.dataAgendamento && format(new Date(selectedItem.dataAgendamento), 'dd/MM/yyyy', { locale: ptBR })}
-                {selectedItem.horaAgendada && ` às ${selectedItem.horaAgendada}`}
-                {selectedItem.horaAgendamento && ` às ${selectedItem.horaAgendamento}`}
+              <p className="text-gray-500 text-xs mt-1">
+                {selectedItem.dataAgendada &&
+                  format(new Date(selectedItem.dataAgendada), "dd/MM/yyyy", {
+                    locale: ptBR,
+                  })}
+                {selectedItem.dataAgendamento &&
+                  format(new Date(selectedItem.dataAgendamento), "dd/MM/yyyy", {
+                    locale: ptBR,
+                  })}
+                {(selectedItem.horaAgendada || selectedItem.horaAgendamento) &&
+                  ` às ${selectedItem.horaAgendada || selectedItem.horaAgendamento}`}
               </p>
             </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="flex flex-col gap-1.5 mb-4">
+              <label
+                htmlFor="confirmacaoObservacoes"
+                className="text-xs font-bold uppercase tracking-widest text-gray-500"
+              >
                 Observações (opcional)
               </label>
               <textarea
+                id="confirmacaoObservacoes"
                 value={confirmacaoObservacoes}
                 onChange={(e) => setConfirmacaoObservacoes(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all resize-none"
                 rows={3}
                 placeholder="Alguma observação sobre a confirmação..."
               />
             </div>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowConfirmarModal(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancelar
-              </button>
+            <div className="flex gap-3">
               <button
                 onClick={handleConfirmarAgendamento}
-                disabled={confirmarAgendamentoMutation.isLoading || confirmarAgendamentoHospitalarMutation.isLoading}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                disabled={
+                  confirmarAgendamentoMutation.isLoading ||
+                  confirmarAgendamentoHospitalarMutation.isLoading
+                }
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
               >
                 <Check className="h-4 w-4" />
-                <span>
-                  {(confirmarAgendamentoMutation.isLoading || confirmarAgendamentoHospitalarMutation.isLoading) 
-                    ? 'Confirmando...' 
-                    : 'Confirmar'
-                  }
-                </span>
+                {confirmarAgendamentoMutation.isLoading ||
+                confirmarAgendamentoHospitalarMutation.isLoading
+                  ? "Confirmando..."
+                  : "Confirmar"}
+              </button>
+              <button
+                onClick={() => setShowConfirmarModal(false)}
+                className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
+              >
+                Cancelar
               </button>
             </div>
           </div>
@@ -1703,6 +2438,6 @@ const PacienteDashboard: React.FC = () => {
       )}
     </div>
   );
-};
+};;
 
 export default PacienteDashboard;

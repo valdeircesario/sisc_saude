@@ -396,5 +396,127 @@ router.delete('/laboratorios/:id', async (req, res) => {
   }
 });
 
+// --------------------------------------
+// CRUD para UPAs (Unidades de Pronto Atendimento)
+// Segue o mesmo padrão de criação/edição/deleção dos outros recursos do admin
+// --------------------------------------
+
+// Listar UPAs
+router.get('/upas', async (req, res) => {
+  try {
+    const upas = await prisma.upa.findMany({
+      select: {
+        id: true,
+        nome: true,
+        endereco: true,
+        telefone: true,
+        cnpj: true,
+        email: true,
+        createdAt: true
+      }
+    });
+    res.json(upas);
+  } catch (error) {
+    console.error('Erro ao listar UPAs:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Cadastrar UPA
+router.post('/upas', async (req, res) => {
+  try {
+    const { nome, endereco, telefone, cnpj, email, senha } = req.body;
+
+    const upaExistente = await prisma.upa.findFirst({
+      where: {
+        OR: [
+          { email: email ? email.toLowerCase() : undefined },
+          { cnpj }
+        ]
+      }
+    });
+
+    if (upaExistente) {
+      return res.status(400).json({ message: 'UPA já cadastrada com estes dados' });
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 12);
+
+    const novaUpa = await prisma.upa.create({
+      data: {
+        nome,
+        endereco,
+        telefone,
+        cnpj,
+        email: email ? email.toLowerCase() : null,
+        senha: senhaHash
+      }
+    });
+
+    res.status(201).json({
+      id: novaUpa.id,
+      nome: novaUpa.nome,
+      endereco: novaUpa.endereco,
+      telefone: novaUpa.telefone,
+      cnpj: novaUpa.cnpj,
+      email: novaUpa.email
+    });
+  } catch (error) {
+    console.error('Erro ao cadastrar UPA:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Editar UPA
+router.put('/upas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, endereco, telefone, cnpj, email, senha } = req.body;
+
+    const dados = {
+      nome,
+      endereco,
+      telefone,
+      cnpj,
+      email: email ? email.toLowerCase() : null
+    };
+
+    if (senha) {
+      dados.senha = await bcrypt.hash(senha, 12);
+    }
+
+    const upaAtualizada = await prisma.upa.update({
+      where: { id },
+      data: dados
+    });
+
+    res.json({
+      id: upaAtualizada.id,
+      nome: upaAtualizada.nome,
+      endereco: upaAtualizada.endereco,
+      telefone: upaAtualizada.telefone,
+      cnpj: upaAtualizada.cnpj,
+      email: upaAtualizada.email
+    });
+  } catch (error) {
+    console.error('Erro ao editar UPA:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Deletar UPA
+router.delete('/upas/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.upa.delete({ where: { id } });
+
+    res.json({ message: 'UPA deletada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao deletar UPA:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 
 export default router;
