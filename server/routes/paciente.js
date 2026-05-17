@@ -153,6 +153,8 @@ router.post('/solicitar-consulta', async (req, res) => {
   }
 });
 
+
+
 // Listar consultas do paciente
 router.get('/consultas', async (req, res) => {
   try {
@@ -201,6 +203,46 @@ router.put('/consultas/:id/confirmar', async (req, res) => {
     res.json(consultaAtualizada);
   } catch (error) {
     console.error('Erro ao confirmar consulta:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Cancelar consulta
+router.put('/consultas/:id/cancelar', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { motivo, dataCancelamento } = req.body;
+
+    // Verificar se a consulta existe e pertence ao paciente
+    const consulta = await prisma.consulta.findUnique({
+      where: { 
+        id,
+        pacienteId: req.user.id
+      }
+    });
+
+    if (!consulta) {
+      return res.status(404).json({ message: 'Consulta não encontrada' });
+    }
+
+    // Atualizar status para cancelada e adicionar data de cancelamento
+    const consultaAtualizada = await prisma.consulta.update({
+      where: { id },
+      data: {
+        status: 'cancelada',
+        dataCancelamento: dataCancelamento ? new Date(dataCancelamento) : new Date(),
+        motivo: motivo
+          ? `${consulta.motivo || ''}\n[PACIENTE CANCELOU]: ${motivo}`
+          : consulta.motivo
+      }
+    });
+
+    res.json({
+      message: 'Consulta cancelada com sucesso',
+      consulta: consultaAtualizada
+    });
+  } catch (error) {
+    console.error('Erro ao cancelar consulta:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
 });

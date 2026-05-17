@@ -79,18 +79,21 @@ const RegisterPacientePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <Link to="/" className="inline-flex items-center space-x-3 text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors mb-6">
+          <Link
+            to="/"
+            className="inline-flex items-center space-x-3 text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors mb-6"
+          >
             <Heart className="h-10 w-10 text-red-500" />
             <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            SISC- Saúde
+              SISC- Saúde
             </span>
           </Link>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Cadastro de Paciente
           </h1>
@@ -99,291 +102,330 @@ const RegisterPacientePage: React.FC = () => {
           </p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100"
         >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Dados Pessoais */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <User className="h-5 w-5 mr-2 text-blue-600" />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+            {/* ── DADOS PESSOAIS ─────────────────────────────── */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h3 className="mb-5 flex items-center gap-2.5 text-sm font-bold uppercase tracking-widest text-teal-700">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50">
+                  <User className="h-4 w-4 text-teal-600" />
+                </span>
                 Dados Pessoais
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome Completo *
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Nome Completo <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    {...register('nome', { required: 'Nome é obrigatório' })}
+                    {...register("nome", { required: "Nome é obrigatório" })}
                     type="text"
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     placeholder="Seu nome completo"
                   />
                   {errors.nome && (
-                    <p className="mt-1 text-sm text-red-600">{errors.nome.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.nome.message}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CPF *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    CPF <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    {...register('cpf', { 
-                      required: 'CPF é obrigatório',
+                    {...register("cpf", {
+                      required: "CPF é obrigatório",
                       pattern: {
                         value: /^\d{3}\.\d{3}\.\d{3}-\d{2}$/,
-                        message: 'CPF inválido'
-                      }
+                        message: "CPF inválido",
+                      },
                     })}
                     type="text"
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     placeholder="000.000.000-00"
                     onChange={(e) => {
                       e.target.value = formatCPF(e.target.value);
                     }}
                   />
                   {errors.cpf && (
-                    <p className="mt-1 text-sm text-red-600">{errors.cpf.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.cpf.message}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CNS (Cartão Nacional de Saúde) *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    CNS — Cartão Nacional de Saúde{" "}
+                    <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    {...register('cns', { 
-                      required: 'CNS é obrigatório',
+                    {...register("cns", {
+                      required: "CNS é obrigatório",
                       minLength: {
                         value: 15,
-                        message: 'CNS deve ter 15 dígitos'
-                      }
+                        message: "CNS deve ter 15 dígitos",
+                      },
                     })}
                     type="text"
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     placeholder="123456789012345"
                     maxLength={15}
                   />
                   {errors.cns && (
-                    <p className="mt-1 text-sm text-red-600">{errors.cns.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.cns.message}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Data de Nascimento *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Data de Nascimento <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Calendar className="h-5 w-5 text-gray-400" />
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                      <Calendar className="h-4 w-4 text-gray-400" />
                     </div>
                     <input
-                      {...register('nascimento', { required: 'Data de nascimento é obrigatória' })}
+                      {...register("nascimento", {
+                        required: "Data de nascimento é obrigatória",
+                      })}
                       type="date"
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     />
                   </div>
                   {errors.nascimento && (
-                    <p className="mt-1 text-sm text-red-600">{errors.nascimento.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.nascimento.message}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Endereço */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+            {/* ── ENDEREÇO ───────────────────────────────────── */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h3 className="mb-5 flex items-center gap-2.5 text-sm font-bold uppercase tracking-widest text-teal-700">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50">
+                  <MapPin className="h-4 w-4 text-teal-600" />
+                </span>
                 Endereço
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Endereço Completo *
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                <div className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Endereço Completo <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    {...register('endereco', { required: 'Endereço é obrigatório' })}
+                    {...register("endereco", {
+                      required: "Endereço é obrigatório",
+                    })}
                     type="text"
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     placeholder="Rua, número, bairro, cidade"
                   />
                   {errors.endereco && (
-                    <p className="mt-1 text-sm text-red-600">{errors.endereco.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.endereco.message}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CEP *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    CEP <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    {...register('cep', { 
-                      required: 'CEP é obrigatório',
+                    {...register("cep", {
+                      required: "CEP é obrigatório",
                       pattern: {
                         value: /^\d{5}-\d{3}$/,
-                        message: 'CEP inválido'
-                      }
+                        message: "CEP inválido",
+                      },
                     })}
                     type="text"
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     placeholder="00000-000"
                     onChange={(e) => {
                       e.target.value = formatCEP(e.target.value);
                     }}
                   />
                   {errors.cep && (
-                    <p className="mt-1 text-sm text-red-600">{errors.cep.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.cep.message}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Contato */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Phone className="h-5 w-5 mr-2 text-blue-600" />
+            {/* ── CONTATO ────────────────────────────────────── */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h3 className="mb-5 flex items-center gap-2.5 text-sm font-bold uppercase tracking-widest text-teal-700">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50">
+                  <Phone className="h-4 w-4 text-teal-600" />
+                </span>
                 Contato
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Telefone *
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Telefone <span className="text-rose-500">*</span>
                   </label>
                   <input
-                    {...register('telefone', { required: 'Telefone é obrigatório' })}
+                    {...register("telefone", {
+                      required: "Telefone é obrigatório",
+                    })}
                     type="text"
-                    className="block w-full px-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                    className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                     placeholder="(11) 99999-9999"
                     onChange={(e) => {
                       e.target.value = formatPhone(e.target.value);
                     }}
                   />
                   {errors.telefone && (
-                    <p className="mt-1 text-sm text-red-600">{errors.telefone.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.telefone.message}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Email <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                      <Mail className="h-4 w-4 text-gray-400" />
                     </div>
                     <input
-                      {...register('email', { 
-                        required: 'Email é obrigatório',
+                      {...register("email", {
+                        required: "Email é obrigatório",
                         pattern: {
                           value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: 'Email inválido'
-                        }
+                          message: "Email inválido",
+                        },
                       })}
                       type="email"
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                       placeholder="seu@email.com"
                     />
                   </div>
                   {errors.email && (
-                    <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.email.message}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Senha */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+            {/* ── SEGURANÇA ──────────────────────────────────── */}
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <h3 className="mb-5 flex items-center gap-2.5 text-sm font-bold uppercase tracking-widest text-teal-700">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50">
+                  <CreditCard className="h-4 w-4 text-teal-600" />
+                </span>
                 Segurança
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Senha *
+
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Senha <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      {...register('senha', { 
-                        required: 'Senha é obrigatória',
+                      {...register("senha", {
+                        required: "Senha é obrigatória",
                         minLength: {
                           value: 6,
-                          message: 'Senha deve ter pelo menos 6 caracteres'
-                        }
+                          message: "Senha deve ter pelo menos 6 caracteres",
+                        },
                       })}
-                      type={showPassword ? 'text' : 'password'}
-                      className="block w-full px-3 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      type={showPassword ? "text" : "password"}
+                      className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                       placeholder="Mínimo 6 caracteres"
                     />
                     <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <EyeOff className="h-4 w-4" />
                       ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <Eye className="h-4 w-4" />
                       )}
                     </button>
                   </div>
                   {errors.senha && (
-                    <p className="mt-1 text-sm text-red-600">{errors.senha.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.senha.message}
+                    </p>
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirmar Senha *
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Confirmar Senha <span className="text-rose-500">*</span>
                   </label>
                   <div className="relative">
                     <input
-                      {...register('confirmarSenha', { 
-                        required: 'Confirmação de senha é obrigatória',
-                        validate: value => value === senha || 'As senhas não coincidem'
+                      {...register("confirmarSenha", {
+                        required: "Confirmação de senha é obrigatória",
+                        validate: (value) =>
+                          value === senha || "As senhas não coincidem",
                       })}
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      className="block w-full px-3 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      type={showConfirmPassword ? "text" : "password"}
+                      className="block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
                       placeholder="Confirme sua senha"
                     />
                     <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                     >
                       {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <EyeOff className="h-4 w-4" />
                       ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        <Eye className="h-4 w-4" />
                       )}
                     </button>
                   </div>
                   {errors.confirmarSenha && (
-                    <p className="mt-1 text-sm text-red-600">{errors.confirmarSenha.message}</p>
+                    <p className="flex items-center gap-1 text-xs text-rose-500">
+                      <span>⚠</span> {errors.confirmarSenha.message}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
+            {/* ── BOTÃO SUBMIT ───────────────────────────────── */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center px-4 py-4 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-teal-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-teal-700 hover:shadow-teal-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
-                  <UserPlus className="h-5 w-5 mr-2" />
+                  <UserPlus className="h-5 w-5" />
                   Criar Conta
                 </>
               )}
@@ -392,9 +434,9 @@ const RegisterPacientePage: React.FC = () => {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Já tem uma conta?{' '}
-              <Link 
-                to="/login-paciente" 
+              Já tem uma conta?{" "}
+              <Link
+                to="/login-paciente"
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Faça login aqui
@@ -404,8 +446,8 @@ const RegisterPacientePage: React.FC = () => {
         </motion.div>
 
         <div className="text-center mt-6">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             ← Voltar ao início

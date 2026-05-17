@@ -4,8 +4,16 @@ import { api } from '../services/api';
 interface User {
   id: string;
   nome: string;
+  funcao: string; // Adicionado campo funcao à interface User
   email: string;
-  tipo: 'admin' | 'ubs' | 'funcionario' | 'laboratorio' | 'paciente' | 'hospital' | 'upa';
+  tipo:
+    | "admin"
+    | "ubs"
+    | "funcionario"
+    | "laboratorio"
+    | "paciente"
+    | "hospital"
+    | "upa";
   ubsId?: string;
   hospitalId?: string; // Adicionado hospitalId à interface User
 }

@@ -48,7 +48,7 @@ router.post('/login-paciente', async (req, res) => {
     const token = jwt.sign(
       { 
         id: paciente.id, 
-        email: paciente.email, 
+        email: paciente.email,
         tipo: 'paciente',
         nome: paciente.nome 
       },
@@ -135,6 +135,7 @@ router.post('/login-sistema', async (req, res) => {
         email: usuario.email, 
         tipo,
         nome: usuario.nome,
+        funcao: tipo === 'funcionario' ? usuario.funcao : undefined,
         ubsId: tipo === 'funcionario' ? usuario.ubsId : undefined
       },
       process.env.JWT_SECRET,
@@ -148,6 +149,7 @@ router.post('/login-sistema', async (req, res) => {
         nome: usuario.nome,
         email: usuario.email,
         tipo,
+        funcao: tipo === 'funcionario' ? usuario.funcao : undefined,
         ubsId: tipo === 'funcionario' ? usuario.ubsId : undefined
       }
     });

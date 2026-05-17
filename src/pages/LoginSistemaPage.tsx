@@ -29,10 +29,14 @@ const LoginSistemaPage: React.FC = () => {
         toast.error('Acesso negado. Este portal é exclusivo para profissionais de saúde.');
         setLoading(false);
         return;
+      
       }
+      
 
       login(token, user);
       toast.success(`Bem-vindo, ${user.nome}!`);
+
+      console.log(user);
 
       // Redirecionar baseado no tipo de usuário
       switch (user.tipo) {
@@ -65,80 +69,101 @@ const LoginSistemaPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div 
+    <div className="min-h-screen bg-[#f0f7f5] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full space-y-8"
       >
+        {/* Logo e título */}
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center space-x-3 text-3xl font-bold text-blue-600 hover:text-blue-700 transition-colors mb-6">
-            <Settings className="h-10 w-10 text-blue-600" />
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-3 mb-5 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-10 h-10 bg-[#0F6E56] rounded-xl flex items-center justify-center">
+              <Settings className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-lg font-semibold text-[#085041] tracking-tight">
               Sistema de Gestão
             </span>
           </Link>
-          
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Acesso Profissional
+
+          <h2 className="text-2xl font-semibold text-[#085041] mb-2">
+            Acesso profissional
           </h2>
-          <p className="text-gray-600">
-            Área exclusiva para administradores e profissionais/entidades de saúde (UBS, UPA, hospitais, laboratórios, funcionários)
+          <p className="text-sm text-[#0F6E56] leading-relaxed">
+            Área exclusiva para administradores e profissionais de saúde — UBS,
+            UPA, hospitais, laboratórios.
           </p>
         </div>
 
-        <motion.div 
+        {/* Card do formulário */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100"
+          className="bg-white rounded-2xl border border-[#9FE1CB] p-7 space-y-5"
         >
-          <div className="flex items-center justify-center mb-6">
-            <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-purple-100 px-4 py-2 rounded-xl">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">Área Restrita</span>
+          {/* Badge área restrita */}
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 bg-[#E1F5EE] border border-[#9FE1CB] rounded-full px-4 py-1.5">
+              <Shield className="h-4 w-4 text-[#0F6E56]" />
+              <span className="text-xs font-medium text-[#085041]">
+                Área restrita
+              </span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email Institucional
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-[#085041] mb-1.5"
+              >
+                Email institucional
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className="h-4 w-4 text-[#5DCAA5]" />
                 </div>
                 <input
-                  {...register('email', { 
-                    required: 'Email é obrigatório',
+                  {...register("email", {
+                    required: "Email é obrigatório",
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Email inválido'
-                    }
+                      message: "Email inválido",
+                    },
                   })}
                   type="email"
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-2.5 border border-[#9FE1CB] rounded-xl bg-[#f7fdfb] text-[#085041] text-sm placeholder:text-[#5DCAA5]/60 focus:ring-2 focus:ring-[#5DCAA5] focus:border-transparent transition-all"
                   placeholder="usuario@instituicao.com"
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
+            {/* Senha */}
             <div>
-              <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="senha"
+                className="block text-sm font-medium text-[#085041] mb-1.5"
+              >
                 Senha
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className="h-4 w-4 text-[#5DCAA5]" />
                 </div>
                 <input
-                  {...register('senha', { required: 'Senha é obrigatória' })}
-                  type={showPassword ? 'text' : 'password'}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  {...register("senha", { required: "Senha é obrigatória" })}
+                  type={showPassword ? "text" : "password"}
+                  className="block w-full pl-10 pr-10 py-2.5 border border-[#9FE1CB] rounded-xl bg-[#f7fdfb] text-[#085041] text-sm placeholder:text-[#5DCAA5]/60 focus:ring-2 focus:ring-[#5DCAA5] focus:border-transparent transition-all"
                   placeholder="Sua senha"
                 />
                 <button
@@ -147,40 +172,52 @@ const LoginSistemaPage: React.FC = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-4 w-4 text-[#5DCAA5] hover:text-[#0F6E56] transition-colors" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-4 w-4 text-[#5DCAA5] hover:text-[#0F6E56] transition-colors" />
                   )}
                 </button>
               </div>
               {errors.senha && (
-                <p className="mt-1 text-sm text-red-600">{errors.senha.message}</p>
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.senha.message}
+                </p>
               )}
             </div>
 
+            {/* Botão */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#0F6E56] px-6 py-3 text-sm font-medium text-white transition-all hover:bg-[#085041] focus:outline-none focus:ring-2 focus:ring-[#5DCAA5] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               ) : (
                 <>
-                  <LogIn className="h-5 w-5 mr-2" />
-                  Acessar Sistema
+                  <LogIn className="h-4 w-4" />
+                  Acessar sistema
                 </>
               )}
             </button>
           </form>
-
-          
         </motion.div>
 
+        {/* Divisor segurança */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-[#9FE1CB]" />
+          <span className="text-[11px] text-[#0F6E56] flex items-center gap-1.5">
+            <Lock className="h-3 w-3" />
+            Conexão segura e criptografada
+          </span>
+          <div className="flex-1 h-px bg-[#9FE1CB]" />
+        </div>
+
+        {/* Voltar */}
         <div className="text-center">
-          <Link 
-            to="/" 
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          <Link
+            to="/"
+            className="text-xs text-[#0F6E56] hover:text-[#085041] transition-colors inline-flex items-center gap-1"
           >
             ← Voltar ao início
           </Link>

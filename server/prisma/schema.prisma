@@ -36,6 +36,8 @@ model UBS {
   campanhas              Campanha[]
   consultas              Consulta[]
   solicitacoesInternacao SolicitacaoInternacao[]
+  medicamentos           Medicamento[]
+  medicacoesPaciente     MedicacaoPaciente[]
 
   @@map("ubs")
 }
@@ -229,6 +231,7 @@ model Funcionario {
   agendamentosHospitalares AgendamentoHospitalar[]
   vacinas                  Vacina[]
   cirurgiasRealizadas      Cirurgia[]
+  medicacoesPaciente       MedicacaoPaciente[]
 
   @@map("funcionarios")
 }
@@ -286,6 +289,7 @@ model Paciente {
   upaSolicitacoesExame    UpaSolicitacaoExame[]
   upaVacinas               UpaVacina[]
   encaminhamentos          Encaminhamento[]
+  medicacoesPaciente       MedicacaoPaciente[]
 
   @@map("pacientes")
 }
@@ -522,6 +526,7 @@ model HistoricoMedico {
   id            String   @id @default(cuid())
   pacienteId    String
   funcionarioId String
+  consultaId    String?  @unique 
   laudo         String
   doenca        String?
   diagnostico   String
@@ -533,6 +538,7 @@ model HistoricoMedico {
 
   paciente                Paciente                @relation(fields: [pacienteId], references: [id])
   funcionario             Funcionario             @relation(fields: [funcionarioId], references: [id])
+  consulta                Consulta?               @relation(fields: [consultaId], references: [id])
   medicacoesAdministradas MedicacaoAdministrada[]
 
   @@map("historico_medico")
@@ -623,15 +629,57 @@ model Consulta {
   motivo        String
   especialidade String
   dataAgendada  DateTime?
+  dataCancelamento DateTime?
   status        String    @default("solicitada")
   observacoes   String?
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime @updatedAt
 
   paciente    Paciente     @relation(fields: [pacienteId], references: [id])
   ubs         UBS          @relation(fields: [ubsId], references: [id])
   funcionario Funcionario? @relation(fields: [funcionarioId], references: [id])
+  historicoMedico HistoricoMedico?
 
   @@map("consultas")
+}
+
+model Medicamento {
+  id           String    @id @default(cuid())
+  nome         String
+  descricao    String?   @default("")
+  lote         String
+  quantidade   Int       @default(0)
+  observacoes  String?
+  dataValidade DateTime
+  vencido      Boolean   @default(false)
+  ubsId        String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  ubs          UBS        @relation(fields: [ubsId], references: [id])
+  movimentacoes MedicacaoPaciente[]
+
+  @@map("medicamentos")
+}
+
+model MedicacaoPaciente {
+  id             String    @id @default(cuid())
+  medicamentoId  String
+  pacienteId     String
+  funcionarioId  String
+  ubsId          String
+  quantidade     Int
+  dataRetirada   DateTime
+  fornecidoPor   String
+  observacoes    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  medicamento    Medicamento @relation(fields: [medicamentoId], references: [id])
+  paciente       Paciente    @relation(fields: [pacienteId], references: [id])
+  funcionario    Funcionario @relation(fields: [funcionarioId], references: [id])
+  ubs            UBS         @relation(fields: [ubsId], references: [id])
+
+  @@map("medicacoes_paciente")
 }
 

@@ -1,16 +1,16 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import { prisma } from '../config/database.js';
-import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import express from "express";
+import bcrypt from "bcryptjs";
+import { prisma } from "../config/database.js";
+import { authenticateToken, authorizeRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Middleware para UBS
 router.use(authenticateToken);
-router.use(authorizeRole(['ubs']));
+router.use(authorizeRole(["ubs"]));
 
 // Listar todos os hospitais cadastrados
-router.get('/hospitais', async (req, res) => {
+router.get("/hospitais", async (req, res) => {
   try {
     const hospitais = await prisma.hospitais.findMany({
       select: {
@@ -20,20 +20,20 @@ router.get('/hospitais', async (req, res) => {
         telefone: true,
         email: true,
         cnpj: true,
-        createdAt: true
+        createdAt: true,
       },
-      orderBy: { nome: 'asc' }
+      orderBy: { nome: "asc" },
     });
 
     res.json(hospitais);
   } catch (error) {
-    console.error('Erro ao listar hospitais:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar hospitais:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Obter detalhes de um hospital específico
-router.get('/hospitais/:id', async (req, res) => {
+router.get("/hospitais/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -46,34 +46,36 @@ router.get('/hospitais/:id', async (req, res) => {
         telefone: true,
         email: true,
         cnpj: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
 
     if (!hospital) {
-      return res.status(404).json({ message: 'Hospital não encontrado' });
+      return res.status(404).json({ message: "Hospital não encontrado" });
     }
 
     res.json(hospital);
   } catch (error) {
-    console.error('Erro ao obter hospital:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao obter hospital:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Listar todos os pacientes
-router.get('/pacientes', async (req, res) => {
+router.get("/pacientes", async (req, res) => {
   try {
     const { busca } = req.query;
-    
-    const where = busca ? {
-      OR: [
-        { nome: { contains: busca, mode: 'insensitive' } },
-        { cpf: { contains: busca } },
-        { cns: { contains: busca } },
-        { email: { contains: busca, mode: 'insensitive' } }
-      ]
-    } : {};
+
+    const where = busca
+      ? {
+          OR: [
+            { nome: { contains: busca, mode: "insensitive" } },
+            { cpf: { contains: busca } },
+            { cns: { contains: busca } },
+            { email: { contains: busca, mode: "insensitive" } },
+          ],
+        }
+      : {};
 
     const pacientes = await prisma.paciente.findMany({
       where,
@@ -87,20 +89,20 @@ router.get('/pacientes', async (req, res) => {
         nascimento: true,
         telefone: true,
         email: true,
-        createdAt: true
+        createdAt: true,
       },
-      orderBy: { nome: 'asc' }
+      orderBy: { nome: "asc" },
     });
 
     res.json(pacientes);
   } catch (error) {
-    console.error('Erro ao listar pacientes:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar pacientes:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Obter detalhes de um paciente específico
-router.get('/pacientes/:id', async (req, res) => {
+router.get("/pacientes/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -116,23 +118,23 @@ router.get('/pacientes/:id', async (req, res) => {
         nascimento: true,
         telefone: true,
         email: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
 
     if (!paciente) {
-      return res.status(404).json({ message: 'Paciente não encontrado' });
+      return res.status(404).json({ message: "Paciente não encontrado" });
     }
 
     res.json(paciente);
   } catch (error) {
-    console.error('Erro ao obter paciente:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao obter paciente:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Obter histórico médico de um paciente
-router.get('/pacientes/:id/historico', async (req, res) => {
+router.get("/pacientes/:id/historico", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -146,24 +148,24 @@ router.get('/pacientes/:id/historico', async (req, res) => {
             crm: true,
             ubs: {
               select: {
-                nome: true
-              }
-            }
-          }
-        }
+                nome: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: { dataConsulta: 'desc' }
+      orderBy: { dataConsulta: "desc" },
     });
 
     res.json(historico);
   } catch (error) {
-    console.error('Erro ao obter histórico médico:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao obter histórico médico:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Obter consultas de um paciente
-router.get('/pacientes/:id/consultas', async (req, res) => {
+router.get("/pacientes/:id/consultas", async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -173,25 +175,26 @@ router.get('/pacientes/:id/consultas', async (req, res) => {
         funcionario: {
           select: {
             nome: true,
-            funcao: true
-          }
-        }
+            funcao: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     res.json(consultas);
   } catch (error) {
-    console.error('Erro ao obter consultas do paciente:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao obter consultas do paciente:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Agendar consulta para um paciente específico
-router.post('/pacientes/:id/agendar-consulta', async (req, res) => {
+router.post("/pacientes/:id/agendar-consulta", async (req, res) => {
   try {
     const { id } = req.params;
-    const { especialidade, motivo, dataAgendada, funcionarioId, observacoes } = req.body;
+    const { especialidade, motivo, dataAgendada, funcionarioId, observacoes } =
+      req.body;
 
     const novaConsulta = await prisma.consulta.create({
       data: {
@@ -202,27 +205,27 @@ router.post('/pacientes/:id/agendar-consulta', async (req, res) => {
         dataAgendada: new Date(dataAgendada),
         funcionarioId,
         observacoes,
-        status: 'agendada'
+        status: "agendada",
       },
       include: {
         paciente: {
-          select: { nome: true, email: true }
+          select: { nome: true, email: true },
         },
         funcionario: {
-          select: { nome: true, funcao: true }
-        }
-      }
+          select: { nome: true, funcao: true },
+        },
+      },
     });
 
     res.status(201).json(novaConsulta);
   } catch (error) {
-    console.error('Erro ao agendar consulta:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao agendar consulta:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Editar dados do paciente
-router.put('/pacientes/:id', async (req, res) => {
+router.put("/pacientes/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { endereco, telefone } = req.body;
@@ -239,19 +242,19 @@ router.put('/pacientes/:id', async (req, res) => {
         cep: true,
         nascimento: true,
         telefone: true,
-        email: true
-      }
+        email: true,
+      },
     });
 
     res.json(pacienteAtualizado);
   } catch (error) {
-    console.error('Erro ao editar paciente:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao editar paciente:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Listar funcionários da UBS
-router.get('/funcionarios', async (req, res) => {
+router.get("/funcionarios", async (req, res) => {
   try {
     const funcionarios = await prisma.funcionario.findMany({
       where: { ubsId: req.user.id },
@@ -263,32 +266,31 @@ router.get('/funcionarios', async (req, res) => {
         cpf: true,
         telefone: true,
         email: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
     res.json(funcionarios);
   } catch (error) {
-    console.error('Erro ao listar funcionários:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar funcionários:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Cadastrar funcionário
-router.post('/funcionarios', async (req, res) => {
+router.post("/funcionarios", async (req, res) => {
   try {
     const { nome, funcao, crm, cpf, telefone, email, senha } = req.body;
 
     const funcExistente = await prisma.funcionario.findFirst({
       where: {
-        OR: [
-          { email: email.toLowerCase() },
-          { cpf }
-        ]
-      }
+        OR: [{ email: email.toLowerCase() }, { cpf }],
+      },
     });
 
     if (funcExistente) {
-      return res.status(400).json({ message: 'Funcionário já cadastrado com estes dados' });
+      return res
+        .status(400)
+        .json({ message: "Funcionário já cadastrado com estes dados" });
     }
 
     const senhaHash = await bcrypt.hash(senha, 12);
@@ -302,8 +304,8 @@ router.post('/funcionarios', async (req, res) => {
         telefone,
         email: email.toLowerCase(),
         senha: senhaHash,
-        ubsId: req.user.id
-      }
+        ubsId: req.user.id,
+      },
     });
 
     res.status(201).json({
@@ -313,16 +315,16 @@ router.post('/funcionarios', async (req, res) => {
       crm: novoFunc.crm,
       cpf: novoFunc.cpf,
       telefone: novoFunc.telefone,
-      email: novoFunc.email
+      email: novoFunc.email,
     });
   } catch (error) {
-    console.error('Erro ao cadastrar funcionário:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao cadastrar funcionário:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Editar funcionário
-router.put('/funcionarios/:id', async (req, res) => {
+router.put("/funcionarios/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, funcao, crm, cpf, telefone, email, senha } = req.body;
@@ -333,7 +335,7 @@ router.put('/funcionarios/:id', async (req, res) => {
       crm,
       cpf,
       telefone,
-      email: email.toLowerCase()
+      email: email.toLowerCase(),
     };
 
     if (senha) {
@@ -341,11 +343,11 @@ router.put('/funcionarios/:id', async (req, res) => {
     }
 
     const funcAtualizado = await prisma.funcionario.update({
-      where: { 
+      where: {
         id,
-        ubsId: req.user.id // Só pode editar funcionários da própria UBS
+        ubsId: req.user.id, // Só pode editar funcionários da própria UBS
       },
-      data: dados
+      data: dados,
     });
 
     res.json({
@@ -355,35 +357,35 @@ router.put('/funcionarios/:id', async (req, res) => {
       crm: funcAtualizado.crm,
       cpf: funcAtualizado.cpf,
       telefone: funcAtualizado.telefone,
-      email: funcAtualizado.email
+      email: funcAtualizado.email,
     });
   } catch (error) {
-    console.error('Erro ao editar funcionário:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao editar funcionário:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Deletar funcionário
-router.delete('/funcionarios/:id', async (req, res) => {
+router.delete("/funcionarios/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     await prisma.funcionario.delete({
-      where: { 
+      where: {
         id,
-        ubsId: req.user.id
-      }
+        ubsId: req.user.id,
+      },
     });
 
-    res.json({ message: 'Funcionário deletado com sucesso' });
+    res.json({ message: "Funcionário deletado com sucesso" });
   } catch (error) {
-    console.error('Erro ao deletar funcionário:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao deletar funcionário:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Criar campanha
-router.post('/campanhas', async (req, res) => {
+router.post("/campanhas", async (req, res) => {
   try {
     const { titulo, descricao, tipo, dataIni, dataFim } = req.body;
 
@@ -394,160 +396,161 @@ router.post('/campanhas', async (req, res) => {
         tipo,
         dataIni: new Date(dataIni),
         dataFim: dataFim ? new Date(dataFim) : null,
-        ubsId: req.user.id
-      }
+        ubsId: req.user.id,
+      },
     });
 
     res.status(201).json(novaCampanha);
   } catch (error) {
-    console.error('Erro ao criar campanha:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao criar campanha:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Listar campanhas da UBS
-router.get('/campanhas', async (req, res) => {
+router.get("/campanhas", async (req, res) => {
   try {
     const campanhas = await prisma.campanha.findMany({
       where: { ubsId: req.user.id },
       include: {
         _count: {
           select: {
-            inscricoes: true
-          }
-        }
+            inscricoes: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
     res.json(campanhas);
   } catch (error) {
-    console.error('Erro ao listar campanhas:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar campanhas:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Editar campanha
-router.put('/campanhas/:id', async (req, res) => {
+router.put("/campanhas/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { titulo, descricao, tipo, dataIni, dataFim } = req.body;
 
     const campanhaAtualizada = await prisma.campanha.update({
-      where: { 
+      where: {
         id,
-        ubsId: req.user.id // Só pode editar campanhas da própria UBS
+        ubsId: req.user.id, // Só pode editar campanhas da própria UBS
       },
       data: {
         titulo,
         descricao,
         tipo,
         dataIni: new Date(dataIni),
-        dataFim: dataFim ? new Date(dataFim) : null
-      }
+        dataFim: dataFim ? new Date(dataFim) : null,
+      },
     });
 
     res.json(campanhaAtualizada);
   } catch (error) {
-    console.error('Erro ao editar campanha:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao editar campanha:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Deletar campanha
-router.delete('/campanhas/:id', async (req, res) => {
+router.delete("/campanhas/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     // Verificar se há inscrições na campanha
     const inscricoes = await prisma.inscricaoCampanha.count({
-      where: { campanhaId: id }
+      where: { campanhaId: id },
     });
 
     if (inscricoes > 0) {
-      return res.status(400).json({ 
-        message: 'Não é possível excluir campanha com inscrições' 
+      return res.status(400).json({
+        message: "Não é possível excluir campanha com inscrições",
       });
     }
 
     await prisma.campanha.delete({
-      where: { 
+      where: {
         id,
-        ubsId: req.user.id // Só pode deletar campanhas da própria UBS
-      }
+        ubsId: req.user.id, // Só pode deletar campanhas da própria UBS
+      },
     });
 
-    res.json({ message: 'Campanha excluída com sucesso' });
+    res.json({ message: "Campanha excluída com sucesso" });
   } catch (error) {
-    console.error('Erro ao deletar campanha:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao deletar campanha:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Listar inscrições de uma campanha
-router.get('/campanhas/:id/inscricoes', async (req, res) => {
+router.get("/campanhas/:id/inscricoes", async (req, res) => {
   try {
     const { id } = req.params;
 
     // Verificar se a campanha pertence à UBS
     const campanha = await prisma.campanha.findFirst({
-      where: { id, ubsId: req.user.id }
+      where: { id, ubsId: req.user.id },
     });
 
     if (!campanha) {
-      return res.status(404).json({ message: 'Campanha não encontrada' });
+      return res.status(404).json({ message: "Campanha não encontrada" });
     }
 
     const inscricoes = await prisma.inscricaoCampanha.findMany({
       where: { campanhaId: id },
-      orderBy: [
-        { pontuacao: 'desc' },
-        { createdAt: 'asc' }
-      ]
+      orderBy: [{ pontuacao: "desc" }, { createdAt: "asc" }],
     });
 
     res.json(inscricoes);
   } catch (error) {
-    console.error('Erro ao listar inscrições:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar inscrições:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Agendar atendimento para inscrito na campanha
-router.put('/campanhas/:campanhaId/inscricoes/:inscricaoId/agendar', async (req, res) => {
-  try {
-    const { campanhaId, inscricaoId } = req.params;
-    const { dataAgendada, horaAgendada, localAtendimento, observacoes } = req.body;
+router.put(
+  "/campanhas/:campanhaId/inscricoes/:inscricaoId/agendar",
+  async (req, res) => {
+    try {
+      const { campanhaId, inscricaoId } = req.params;
+      const { dataAgendada, horaAgendada, localAtendimento, observacoes } =
+        req.body;
 
-    // Verificar se a campanha pertence à UBS
-    const campanha = await prisma.campanha.findFirst({
-      where: { id: campanhaId, ubsId: req.user.id }
-    });
+      // Verificar se a campanha pertence à UBS
+      const campanha = await prisma.campanha.findFirst({
+        where: { id: campanhaId, ubsId: req.user.id },
+      });
 
-    if (!campanha) {
-      return res.status(404).json({ message: 'Campanha não encontrada' });
-    }
-
-    const inscricaoAtualizada = await prisma.inscricaoCampanha.update({
-      where: { id: inscricaoId },
-      data: {
-        dataAgendada: dataAgendada ? new Date(dataAgendada) : null,
-        horaAgendada,
-        localAtendimento,
-        observacoes,
-        tipoAgendamento: 'campanha',
-        status: 'agendado'
+      if (!campanha) {
+        return res.status(404).json({ message: "Campanha não encontrada" });
       }
-    });
 
-    res.json(inscricaoAtualizada);
-  } catch (error) {
-    console.error('Erro ao agendar atendimento:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+      const inscricaoAtualizada = await prisma.inscricaoCampanha.update({
+        where: { id: inscricaoId },
+        data: {
+          dataAgendada: dataAgendada ? new Date(dataAgendada) : null,
+          horaAgendada,
+          localAtendimento,
+          observacoes,
+          tipoAgendamento: "campanha",
+          status: "agendado",
+        },
+      });
+
+      res.json(inscricaoAtualizada);
+    } catch (error) {
+      console.error("Erro ao agendar atendimento:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
 
 // Listar solicitações de consulta
-router.get('/consultas', async (req, res) => {
+router.get("/consultas", async (req, res) => {
   try {
     const consultas = await prisma.consulta.findMany({
       where: { ubsId: req.user.id },
@@ -556,48 +559,52 @@ router.get('/consultas', async (req, res) => {
           select: {
             nome: true,
             cpf: true,
-            telefone: true
-          }
+            telefone: true,
+          },
         },
         funcionario: {
           select: {
             nome: true,
-            funcao: true
-          }
-        }
+            funcao: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     res.json(consultas);
   } catch (error) {
-    console.error('Erro ao listar consultas:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar consultas:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Agendar consulta
-router.put('/consultas/:id/agendar', async (req, res) => {
+router.put("/consultas/:id/agendar", async (req, res) => {
   try {
     const { id } = req.params;
     const { dataAgendada, funcionarioId, observacoes } = req.body;
 
     // Verificar se a consulta pertence à UBS
     const consulta = await prisma.consulta.findFirst({
-      where: { id, ubsId: req.user.id }
+      where: { id, ubsId: req.user.id },
     });
 
     if (!consulta) {
-      return res.status(404).json({ message: 'Consulta não encontrada' });
+      return res.status(404).json({ message: "Consulta não encontrada" });
     }
 
     // Verificar se o funcionário pertence à UBS
     const funcionario = await prisma.funcionario.findFirst({
-      where: { id: funcionarioId, ubsId: req.user.id }
+      where: { id: funcionarioId, ubsId: req.user.id },
     });
 
     if (!funcionario) {
-      return res.status(400).json({ message: 'Funcionário não encontrado ou não pertence a esta UBS' });
+      return res
+        .status(400)
+        .json({
+          message: "Funcionário não encontrado ou não pertence a esta UBS",
+        });
     }
 
     const consultaAtualizada = await prisma.consulta.update({
@@ -606,86 +613,148 @@ router.put('/consultas/:id/agendar', async (req, res) => {
         dataAgendada: new Date(dataAgendada),
         funcionarioId,
         observacoes,
-        status: 'agendada'
+        status: "agendada",
       },
       include: {
         paciente: {
-          select: { nome: true, email: true }
+          select: { nome: true, email: true },
         },
         funcionario: {
-          select: { nome: true, funcao: true }
-        }
-      }
+          select: { nome: true, funcao: true },
+        },
+      },
     });
 
     res.json(consultaAtualizada);
   } catch (error) {
-    console.error('Erro ao agendar consulta:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao agendar consulta:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
+// Cancelar consulta
+router.put("/consultas/:id/cancelamento", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { observacoes } = req.body;
+
+    // Verificar se a consulta pertence à UBS
+    const consulta = await prisma.consulta.findFirst({
+      where: { id, ubsId: req.user.id },
+    });
+
+    if (!consulta) {
+      return res.status(404).json({ message: "Consulta não encontrada" });
+    }
+
+    // Impede cancelar uma consulta já cancelada ou realizada
+    if (consulta.status === "cancelada") {
+      return res.status(400).json({ message: "Consulta já está cancelada" });
+    }
+
+    if (consulta.status === "realizada") {
+      return res
+        .status(400)
+        .json({ message: "Não é possível cancelar uma consulta já realizada" });
+    }
+
+    const consultaCancelada = await prisma.consulta.update({
+      where: { id },
+      data: {
+        status: "cancelada",
+        dataCancelamento: new Date(),
+        observacoes: observacoes || "Consulta cancelada",
+      },
+      include: {
+        paciente: {
+          select: { nome: true, email: true },
+        },
+        funcionario: {
+          select: { nome: true, funcao: true },
+        },
+      },
+    });
+
+    res.json({
+      message: "Consulta cancelada com sucesso",
+      consulta: consultaCancelada,
+    });
+  } catch (error) {
+    console.error("Erro ao cancelar consulta:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Solicitar internação ao hospital
-router.post('/solicitar-internacao', async (req, res) => {
+router.post("/solicitar-internacao", async (req, res) => {
   try {
-    const { 
-      pacienteId, 
-      hospitalId, 
-      funcionarioId, 
-      tipo, 
-      motivo, 
-      detalhes, 
-      laudoMedico, 
-      prioridade 
+    const {
+      pacienteId,
+      hospitalId,
+      funcionarioId,
+      tipo,
+      motivo,
+      detalhes,
+      laudoMedico,
+      prioridade,
     } = req.body;
 
     // Validações
-    if (!pacienteId || !hospitalId || !funcionarioId || !tipo || !motivo || !detalhes || !laudoMedico) {
-      return res.status(400).json({ 
-        message: 'Todos os campos obrigatórios devem ser preenchidos' 
+    if (
+      !pacienteId ||
+      !hospitalId ||
+      !funcionarioId ||
+      !tipo ||
+      !motivo ||
+      !detalhes ||
+      !laudoMedico
+    ) {
+      return res.status(400).json({
+        message: "Todos os campos obrigatórios devem ser preenchidos",
       });
     }
 
     // Verificar se o paciente existe
     const paciente = await prisma.paciente.findUnique({
       where: { id: pacienteId },
-      select: { id: true, nome: true, cpf: true, cns: true }
+      select: { id: true, nome: true, cpf: true, cns: true },
     });
 
     if (!paciente) {
-      return res.status(404).json({ message: 'Paciente não encontrado' });
+      return res.status(404).json({ message: "Paciente não encontrado" });
     }
 
     // Verificar se o hospital existe
     const hospitais = await prisma.hospitais.findUnique({
-      where: { 
-        id: hospitalId },
-      select: { id: true, nome: true, email: true }
+      where: {
+        id: hospitalId,
+      },
+      select: { id: true, nome: true, email: true },
     });
 
     if (!hospitais) {
-      return res.status(404).json({ message: 'Hospital não encontrado' });
+      return res.status(404).json({ message: "Hospital não encontrado" });
     }
 
     // Verificar se o funcionário pertence à UBS
     const funcionario = await prisma.funcionario.findFirst({
-      where: { 
-        id: funcionarioId, 
-        ubsId: req.user.id 
+      where: {
+        id: funcionarioId,
+        ubsId: req.user.id,
       },
-      select: { id: true, nome: true, funcao: true, crm: true }
+      select: { id: true, nome: true, funcao: true, crm: true },
     });
 
     if (!funcionario) {
-      return res.status(400).json({ 
-        message: 'Funcionário não encontrado ou não pertence a esta UBS' 
+      return res.status(400).json({
+        message: "Funcionário não encontrado ou não pertence a esta UBS",
       });
     }
 
     // Obter dados da UBS
     const ubs = await prisma.uBS.findUnique({
       where: { id: req.user.id },
-      select: { id: true, nome: true, email: true, telefone: true }
+      select: { id: true, nome: true, email: true, telefone: true },
     });
 
     // Criar solicitação de internação
@@ -699,8 +768,8 @@ router.post('/solicitar-internacao', async (req, res) => {
         motivo,
         detalhes,
         laudoMedico,
-        prioridade: prioridade || 'medio',
-        status: 'pendente'
+        prioridade: prioridade || "medio",
+        status: "pendente",
       },
       include: {
         paciente: {
@@ -710,30 +779,30 @@ router.post('/solicitar-internacao', async (req, res) => {
             cns: true,
             nascimento: true,
             telefone: true,
-            endereco: true
-          }
+            endereco: true,
+          },
         },
         hospital: {
           select: {
             nome: true,
-            email: true
-          }
+            email: true,
+          },
         },
         ubs: {
           select: {
             nome: true,
             email: true,
-            telefone: true
-          }
+            telefone: true,
+          },
         },
         funcionario: {
           select: {
             nome: true,
             funcao: true,
-            crm: true
-          }
-        }
-      }
+            crm: true,
+          },
+        },
+      },
     });
 
     // Log da solicitação
@@ -743,30 +812,29 @@ router.post('/solicitar-internacao', async (req, res) => {
       hospital: hospital.nome,
       ubs: ubs.nome,
       tipo,
-      prioridade
+      prioridade,
     });
 
     res.status(201).json({
-      message: 'Solicitação de internação enviada com sucesso',
-      solicitacao: solicitacaoInternacao
+      message: "Solicitação de internação enviada com sucesso",
+      solicitacao: solicitacaoInternacao,
     });
-
   } catch (error) {
-    console.error('Erro ao solicitar internação:', error);
-    res.status(500).json({ 
-      message: 'Erro interno do servidor',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    console.error("Erro ao solicitar internação:", error);
+    res.status(500).json({
+      message: "Erro interno do servidor",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 });
 
 // Listar solicitações de internação da UBS
-router.get('/solicitacoes-internacao', async (req, res) => {
+router.get("/solicitacoes-internacao", async (req, res) => {
   try {
     const { status } = req.query;
 
     const where = {
-      ubsId: req.user.id
+      ubsId: req.user.id,
     };
 
     if (status) {
@@ -780,43 +848,40 @@ router.get('/solicitacoes-internacao', async (req, res) => {
           select: {
             nome: true,
             cpf: true,
-            cns: true
-          }
+            cns: true,
+          },
         },
         hospital: {
           select: {
-            nome: true
-          }
+            nome: true,
+          },
         },
         funcionario: {
           select: {
             nome: true,
-            funcao: true
-          }
-        }
+            funcao: true,
+          },
+        },
       },
-      orderBy: [
-        { prioridade: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: [{ prioridade: "desc" }, { createdAt: "desc" }],
     });
 
     res.json(solicitacoes);
   } catch (error) {
-    console.error('Erro ao listar solicitações de internação:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao listar solicitações de internação:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Obter detalhes de uma solicitação de internação
-router.get('/solicitacoes-internacao/:id', async (req, res) => {
+router.get("/solicitacoes-internacao/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
     const solicitacao = await prisma.solicitacaoInternacao.findFirst({
-      where: { 
-        id, 
-        ubsId: req.user.id 
+      where: {
+        id,
+        ubsId: req.user.id,
       },
       include: {
         paciente: {
@@ -827,81 +892,83 @@ router.get('/solicitacoes-internacao/:id', async (req, res) => {
             nascimento: true,
             telefone: true,
             endereco: true,
-            email: true
-          }
+            email: true,
+          },
         },
         hospital: {
           select: {
             nome: true,
             email: true,
             telefone: true,
-            endereco: true
-          }
+            endereco: true,
+          },
         },
         ubs: {
           select: {
             nome: true,
             email: true,
-            telefone: true
-          }
+            telefone: true,
+          },
         },
         funcionario: {
           select: {
             nome: true,
             funcao: true,
             crm: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     if (!solicitacao) {
-      return res.status(404).json({ message: 'Solicitação de internação não encontrada' });
+      return res
+        .status(404)
+        .json({ message: "Solicitação de internação não encontrada" });
     }
 
     res.json(solicitacao);
   } catch (error) {
-    console.error('Erro ao obter solicitação de internação:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao obter solicitação de internação:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Cancelar solicitação de internação (apenas se estiver pendente)
-router.put('/solicitacoes-internacao/:id/cancelar', async (req, res) => {
+router.put("/solicitacoes-internacao/:id/cancelar", async (req, res) => {
   try {
     const { id } = req.params;
     const { motivoCancelamento } = req.body;
 
     const solicitacao = await prisma.solicitacaoInternacao.findFirst({
-      where: { 
-        id, 
+      where: {
+        id,
         ubsId: req.user.id,
-        status: 'pendente'
-      }
+        status: "pendente",
+      },
     });
 
     if (!solicitacao) {
-      return res.status(404).json({ 
-        message: 'Solicitação não encontrada ou não pode ser cancelada' 
+      return res.status(404).json({
+        message: "Solicitação não encontrada ou não pode ser cancelada",
       });
     }
 
     const solicitacaoAtualizada = await prisma.solicitacaoInternacao.update({
       where: { id },
       data: {
-        status: 'cancelada',
-        observacoes: motivoCancelamento
-      }
+        status: "cancelada",
+        observacoes: motivoCancelamento,
+      },
     });
 
     res.json({
-      message: 'Solicitação de internação cancelada com sucesso',
-      solicitacao: solicitacaoAtualizada
+      message: "Solicitação de internação cancelada com sucesso",
+      solicitacao: solicitacaoAtualizada,
     });
   } catch (error) {
-    console.error('Erro ao cancelar solicitação de internação:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao cancelar solicitação de internação:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 

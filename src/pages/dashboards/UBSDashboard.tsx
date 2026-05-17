@@ -18,7 +18,8 @@ import {
   Heart,
   X,
   Save,
-  Send
+  Send,
+  Pill
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
@@ -65,78 +66,195 @@ const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; chi
 };
 
 // Componente Card de Funcionário
-const FuncionarioCard: React.FC<{ 
-  funcionario: any; 
-  onEdit: (func: any) => void; 
-  onDelete: (id: string) => void; 
+const FuncionarioCard: React.FC<{
+  funcionario: any;
+  onEdit: (func: any) => void;
+  onDelete: (id: string) => void;
 }> = ({ funcionario, onEdit, onDelete }) => (
-  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-    <h3 className="text-lg font-semibold text-gray-900 mb-3">{funcionario.nome}</h3>
-    <div className="space-y-2 text-sm text-gray-600 mb-4">
-      <p><span className="font-medium">Função:</span> {funcionario.funcao}</p>
-      {funcionario.crm && <p><span className="font-medium">CRM:</span> {funcionario.crm}</p>}
-      <p><span className="font-medium">CPF:</span> {funcionario.cpf}</p>
-      <p><span className="font-medium">Telefone:</span> {funcionario.telefone}</p>
-      <p><span className="font-medium">Email:</span> {funcionario.email}</p>
+  <div className="flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-xl hover:shadow-md transition-shadow bg-white">
+    {/* Avatar */}
+    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-green-100 text-green-800 flex items-center justify-center font-semibold text-xs">
+      {funcionario.nome
+        .split(" ")
+        .slice(0, 2)
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()}
     </div>
-    <div className="flex space-x-2">
-      <button 
-        onClick={() => onEdit(funcionario)}
-        className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-      >
-        <Edit className="w-4 h-4 mr-1" /> Editar
-      </button>
-      <button 
-        onClick={() => onDelete(funcionario.id)}
-        className="flex items-center px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
-      >
-        <Trash2 className="w-4 h-4 mr-1" /> Excluir
-      </button>
+
+    {/* Corpo */}
+    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+      {/* Linha 1 — informações */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+          {funcionario.nome}
+        </span>
+        <span className="w-px h-3.5 bg-gray-200 hidden sm:block" />
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          Função{" "}
+          <span className="text-gray-800 font-medium">
+            {funcionario.funcao}
+          </span>
+        </span>
+        {funcionario.crm && (
+          <span className="text-xs text-gray-500 whitespace-nowrap">
+            CRM{" "}
+            <span className="text-gray-800 font-medium">{funcionario.crm}</span>
+          </span>
+        )}
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          CPF{" "}
+          <span className="text-gray-800 font-medium">{funcionario.cpf}</span>
+        </span>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          Tel{" "}
+          <span className="text-gray-800 font-medium">
+            {funcionario.telefone}
+          </span>
+        </span>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          E-mail{" "}
+          <span className="text-gray-800 font-medium">{funcionario.email}</span>
+        </span>
+      </div>
+
+      {/* Linha 2 — ações */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onEdit(funcionario)}
+          className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors text-xs font-medium"
+        >
+          <Edit className="h-3 w-3" /> Editar
+        </button>
+        <button
+          onClick={() => onDelete(funcionario.id)}
+          className="flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+        >
+          <Trash2 className="h-3 w-3" /> Excluir
+        </button>
+      </div>
     </div>
   </div>
 );
 
 // Componente Card de Paciente
-const PacienteCard: React.FC<{ 
-  paciente: any; 
-  onEdit: (paciente: any) => void; 
+const PacienteCard: React.FC<{
+  paciente: any;
+  onEdit: (paciente: any) => void;
   onHistorico: (paciente: any) => void;
   onConsulta: (paciente: any) => void;
   onInternacao: (paciente: any) => void;
 }> = ({ paciente, onEdit, onHistorico, onConsulta, onInternacao }) => (
-  <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-    <h3 className="text-lg font-semibold text-gray-900 mb-3">{paciente.nome}</h3>
-    <div className="space-y-2 text-sm text-gray-600 mb-4">
-      <p><span className="font-medium">CPF:</span> {paciente.cpf} | <span className="font-medium">CNS:</span> {paciente.cns}</p>
-      <p><span className="font-medium">Telefone:</span> {paciente.telefone}</p>
-      <p><span className="font-medium">Endereço:</span> {paciente.endereco}</p>
-      <p><span className="font-medium">Nascimento:</span> {format(new Date(paciente.nascimento), 'dd/MM/yyyy', { locale: ptBR })}</p>
+  <div className="flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-xl hover:shadow-md transition-shadow bg-white">
+    {/* Avatar */}
+    <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-semibold text-xs">
+      {paciente.nome
+        .split(" ")
+        .slice(0, 2)
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()}
     </div>
-    <div className="flex flex-wrap gap-2">
-      <button 
-        onClick={() => onEdit(paciente)}
-        className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+
+    {/* Corpo */}
+    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+      {/* Linha 1 — informações */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+          {paciente.nome}
+        </span>
+        <span className="w-px h-3.5 bg-gray-200 hidden sm:block" />
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          CPF <span className="text-gray-800 font-medium">{paciente.cpf}</span>
+        </span>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          CNS <span className="text-gray-800 font-medium">{paciente.cns}</span>
+        </span>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          Tel{" "}
+          <span className="text-gray-800 font-medium">{paciente.telefone}</span>
+        </span>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          Nasc.{" "}
+          <span className="text-gray-800 font-medium">
+            {format(new Date(paciente.nascimento), "dd/MM/yyyy", {
+              locale: ptBR,
+            })}
+          </span>
+        </span>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          End.{" "}
+          <span className="text-gray-800 font-medium">{paciente.endereco}</span>
+        </span>
+      </div>
+
+      {/* Linha 2 — ações */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onEdit(paciente)}
+          className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors text-xs font-medium whitespace-nowrap"
+        >
+          <Edit className="h-3 w-3" /> Editar
+        </button>
+        <button
+          onClick={() => onHistorico(paciente)}
+          className="flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200 transition-colors text-xs font-medium whitespace-nowrap"
+        >
+          <Heart className="h-3 w-3" /> Histórico
+        </button>
+        <button
+          onClick={() => onConsulta(paciente)}
+          className="flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200 transition-colors text-xs font-medium whitespace-nowrap"
+        >
+          <Calendar className="h-3 w-3" /> Consulta
+        </button>
+        <button
+          onClick={() => onInternacao(paciente)}
+          className="flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-xs font-medium whitespace-nowrap"
+        >
+          <Building2 className="h-3 w-3" /> Internação
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// Componente Card de Medicamento
+const MedicamentoCard: React.FC<{
+  medicamento: any;
+  onEdit: (medicamento: any) => void;
+}> = ({ medicamento, onEdit }) => (
+  <div className="flex flex-col gap-3 px-4 py-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow bg-white">
+    <div className="flex items-start justify-between gap-4">
+      <div className="space-y-1">
+        <h3 className="text-base font-semibold text-gray-900">{medicamento.nome}</h3>
+        <p className="text-sm text-gray-500">{medicamento.descricao || 'Sem descrição'}</p>
+      </div>
+      <button
+        onClick={() => onEdit(medicamento)}
+        className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-full hover:bg-blue-700 transition-colors"
       >
-        <Edit className="w-4 h-4 mr-1" /> Editar
+        <Edit className="w-4 h-4" /> Editar
       </button>
-      <button 
-        onClick={() => onHistorico(paciente)}
-        className="flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
-      >
-        <Heart className="w-4 h-4 mr-1" /> Histórico
-      </button>
-      <button 
-        onClick={() => onConsulta(paciente)}
-        className="flex items-center px-3 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition-colors"
-      >
-        <Calendar className="w-4 h-4 mr-1" /> Consulta
-      </button>
-      <button 
-        onClick={() => onInternacao(paciente)}
-        className="flex items-center px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
-      >
-        <Building2 className="w-4 h-4 mr-1" /> Internação
-      </button>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-600">
+      <div>
+        <span className="font-medium text-gray-900">Lote:</span> {medicamento.lote}
+      </div>
+      <div>
+        <span className="font-medium text-gray-900">Quantidade:</span> {medicamento.quantidade}
+      </div>
+      <div>
+        <span className="font-medium text-gray-900">Validade:</span> {medicamento.dataValidade ? format(new Date(medicamento.dataValidade), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}
+      </div>
+      <div className="sm:col-span-3">
+        <span className="font-medium text-gray-900">Status:</span>{' '}
+        {medicamento.vencido ? (
+          <span className="text-red-600">Vencido</span>
+        ) : (
+          <span className="text-green-600">Válido</span>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -197,49 +315,91 @@ const CampanhaCard: React.FC<{
 };
 
 // Componente Card de Consulta
-const ConsultaCard: React.FC<{ 
-  consulta: any; 
-  onAgendar: (consulta: any) => void; 
-}> = ({ consulta, onAgendar }) => {
+const ConsultaCard: React.FC<{
+  consulta: any;
+  onAgendar: (consulta: any) => void;
+  onCancelamento: (consulta: any) => void; // ← nova prop adicionada
+}> = ({ consulta, onAgendar, onCancelamento }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'solicitada': return 'bg-yellow-100 text-yellow-800';
-      case 'agendada': return 'bg-blue-100 text-blue-800';
-      case 'realizada': return 'bg-green-100 text-green-800';
-      case 'cancelada': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "solicitada":
+        return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
+      case "agendada":
+        return "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
+      case "realizada":
+        return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
+      case "cancelada":
+        return "bg-rose-50 text-rose-700 ring-1 ring-rose-200";
+      default:
+        return "bg-slate-50 text-slate-600 ring-1 ring-slate-200";
     }
   };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
-        <h3 className="text-lg font-semibold text-gray-900">{consulta.paciente.nome}</h3>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(consulta.status)}`}>
+        <h3 className="text-lg font-semibold text-gray-900">
+          {consulta.paciente.nome}
+        </h3>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(consulta.status)}`}
+        >
           {consulta.status}
         </span>
       </div>
       <div className="space-y-2 text-sm text-gray-600 mb-4">
-        <p><span className="font-medium">Especialidade:</span> {consulta.especialidade}</p>
-        <p><span className="font-medium">Motivo:</span> {consulta.motivo}</p>
-        <p><span className="font-medium">Solicitada em:</span> {format(new Date(consulta.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
+        <p>
+          <span className="font-medium">Especialidade:</span>{" "}
+          {consulta.especialidade}
+        </p>
+        <p>
+          <span className="font-medium">Motivo:</span> {consulta.motivo}
+        </p>
+        <p>
+          <span className="font-medium">Solicitada em:</span>{" "}
+          {format(new Date(consulta.createdAt), "dd/MM/yyyy HH:mm", {
+            locale: ptBR,
+          })}
+        </p>
         {consulta.dataAgendada && (
-          <p><span className="font-medium">Agendada para:</span> {format(new Date(consulta.dataAgendada), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
+          <p>
+            <span className="font-medium">Agendada para:</span>{" "}
+            {format(new Date(consulta.dataAgendada), "dd/MM/yyyy HH:mm", {
+              locale: ptBR,
+            })}
+          </p>
         )}
         {consulta.funcionario && (
-          <p><span className="font-medium">Médico:</span> {consulta.funcionario.nome}</p>
+          <p>
+            <span className="font-medium">Médico:</span>{" "}
+            {consulta.funcionario.nome}
+          </p>
         )}
         {consulta.observacoes && (
-          <p><span className="font-medium">Observações:</span> {consulta.observacoes}</p>
+          <p>
+            <span className="font-medium">Observações:</span>{" "}
+            {consulta.observacoes}
+          </p>
         )}
       </div>
-      {consulta.status === 'solicitada' && (
-        <button 
-          onClick={() => onAgendar(consulta)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-        >
-          <Calendar className="w-4 h-4 mr-2" /> Agendar
-        </button>
+
+      {consulta.status === "solicitada" && (
+        <div className="flex gap-2 pt-3 border-t border-gray-100">
+          <button
+            onClick={() => onAgendar(consulta)}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-teal-700 hover:-translate-y-0.5 transition-all shadow-sm shadow-teal-100"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            Agendar
+          </button>
+          <button
+            onClick={() => onCancelamento(consulta)}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-600 hover:text-white hover:-translate-y-0.5 transition-all"
+          >
+            <X className="h-3.5 w-3.5" />
+            Cancelar
+          </button>
+        </div>
       )}
     </div>
   );
@@ -254,6 +414,7 @@ const UBSDashboard: React.FC = () => {
   const [showFuncModal, setShowFuncModal] = useState(false);
   const [showCampanhaModal, setShowCampanhaModal] = useState(false);
   const [showAgendamentoModal, setShowAgendamentoModal] = useState(false);
+  const [showCancelamentoModal, setShowCancelamentoModal] = useState(false);
   const [showPacienteModal, setShowPacienteModal] = useState(false);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
   const [showInscricoesModal, setShowInscricoesModal] = useState(false);
@@ -261,8 +422,18 @@ const UBSDashboard: React.FC = () => {
   const [showConsultaPacienteModal, setShowConsultaPacienteModal] = useState(false);
   const [showEditCampanhaModal, setShowEditCampanhaModal] = useState(false);
   const [showInternacaoModal, setShowInternacaoModal] = useState(false);
+  const [showMedModal, setShowMedModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [editingCampanha, setEditingCampanha] = useState<any>(null);
+  const [editingMed, setEditingMed] = useState<any>(null);
+  const [medData, setMedData] = useState({
+    nome: '',
+    descricao: '',
+    lote: '',
+    quantidade: '',
+    dataValidade: '',
+    vencido: false
+  });
   const [selectedConsulta, setSelectedConsulta] = useState<any>(null);
   const [selectedPaciente, setSelectedPaciente] = useState<any>(null);
   const [selectedCampanha, setSelectedCampanha] = useState<any>(null);
@@ -292,6 +463,10 @@ const UBSDashboard: React.FC = () => {
     dataAgendada: '',
     funcionarioId: '',
     observacoes: ''
+  });
+
+  const [cancelamentoData, setCancelamentoData] = useState({
+    observacoes: ""
   });
 
   const [pacienteEditData, setPacienteEditData] = useState({
@@ -336,7 +511,7 @@ const UBSDashboard: React.FC = () => {
   const { data: funcionarios, isLoading: loadingFuncionarios } = useQuery(
     'ubs-funcionarios',
     () => api.get('/ubs/funcionarios').then(res => res.data),
-    { enabled: activeTab === 'funcionarios' || showAgendamentoModal || showConsultaPacienteModal || showInternacaoModal }
+    { enabled: activeTab === 'funcionarios' || showAgendamentoModal || showCancelamentoModal || showConsultaPacienteModal || showInternacaoModal }
   );
 
   const { data: pacientes, isLoading: loadingPacientes } = useQuery(
@@ -393,20 +568,22 @@ const UBSDashboard: React.FC = () => {
 
   // Query para buscar hospitais
   const { data: hospitaisList, isLoading: loadingHospitais } = useQuery(
-  'hospitais',
-  () => api.get('/routes/hospitais-publico').then(res => res.data),
-  { 
-    enabled: showInternacaoModal,
-    onError: (error) => {
-      console.error('Erro ao carregar hospitais:', error);
-      toast.error('Erro ao carregar lista de hospitais');
+    'hospitais',
+    () => api.get('/routes/hospitais-publico').then(res => res.data),
+    {
+      enabled: showInternacaoModal,
+      onError: (error) => {
+        console.error('Erro ao carregar hospitais:', error);
+        toast.error('Erro ao carregar lista de hospitais');
+      }
     }
-  }
+  );
 
-
-);
-
-  
+  const { data: medicamentos, isLoading: loadingMedicamentos } = useQuery(
+    ['ubs-medicamentos', searchTerm],
+    () => api.get('/medicamentos').then(res => res.data),
+    { enabled: activeTab === 'medicamentos' }
+  );
 
   // Mutations
   const createFuncMutation = useMutation(
@@ -510,6 +687,24 @@ const UBSDashboard: React.FC = () => {
       }
     }
   );
+  const cancelamentoConsultaMutation = useMutation(
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/ubs/consultas/${id}/cancelamento`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("ubs-consultas");
+        toast.success("Consulta cancelada com sucesso!");
+        setShowCancelamentoModal(false);
+        setSelectedConsulta(null);
+        resetCancelamentoForm();
+      },
+      onError: (error: any) => {
+        toast.error(
+          error.response?.data?.message || "Erro ao canc consulta",
+        );
+      },
+    },
+  );
 
   const editPacienteMutation = useMutation(
     ({ id, data }: { id: string; data: any }) => api.put(`/ubs/pacientes/${id}`, data),
@@ -540,6 +735,7 @@ const UBSDashboard: React.FC = () => {
       }
     }
   );
+  
 
   const agendarAtendimentoCampanhaMutation = useMutation(
     ({ campanhaId, inscricaoId, data }: { campanhaId: string; inscricaoId: string; data: any }) => 
@@ -568,6 +764,36 @@ const UBSDashboard: React.FC = () => {
       },
       onError: (error: any) => {
         toast.error(error.response?.data?.message || 'Erro ao solicitar internação');
+      }
+    }
+  );
+
+  const createMedMutation = useMutation(
+    (data: any) => api.post('/medicamentos', data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['ubs-medicamentos']);
+        toast.success('Medicamento cadastrado com sucesso!');
+        setShowMedModal(false);
+        resetMedForm();
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao cadastrar medicamento');
+      }
+    }
+  );
+
+  const updateMedMutation = useMutation(
+    ({ id, data }: { id: string; data: any }) => api.put(`/medicamentos/${id}`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['ubs-medicamentos']);
+        toast.success('Medicamento atualizado com sucesso!');
+        setShowMedModal(false);
+        resetMedForm();
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao atualizar medicamento');
       }
     }
   );
@@ -615,6 +841,12 @@ const UBSDashboard: React.FC = () => {
     });
   };
 
+   const resetCancelamentoForm = () => {
+    setCancelamentoData({
+      observacoes: ''
+    });
+  };
+
   const resetConsultaPacienteForm = () => {
     setConsultaPacienteData({
       especialidade: '',
@@ -644,6 +876,18 @@ const UBSDashboard: React.FC = () => {
       laudoMedico: '',
       prioridade: 'media'
     });
+  };
+
+  const resetMedForm = () => {
+    setMedData({
+      nome: '',
+      descricao: '',
+      lote: '',
+      quantidade: '',
+      dataValidade: '',
+      vencido: false
+    });
+    setEditingMed(null);
   };
 
   // Handlers
@@ -678,6 +922,15 @@ const UBSDashboard: React.FC = () => {
       agendarConsultaMutation.mutate({ 
         id: selectedConsulta.id, 
         data: agendamentoData 
+      });
+    }
+  };
+  const handleCancelamentoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedConsulta) {
+      cancelamentoConsultaMutation.mutate({
+        id: selectedConsulta.id,
+        data: cancelamentoData,
       });
     }
   };
@@ -723,6 +976,37 @@ const UBSDashboard: React.FC = () => {
     }
   };
 
+  const handleMedSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const requestData = {
+      nome: medData.nome,
+      descricao: medData.descricao,
+      lote: medData.lote,
+      quantidade: Number(medData.quantidade),
+      dataValidade: medData.dataValidade,
+      vencido: medData.vencido,
+    };
+
+    if (editingMed) {
+      updateMedMutation.mutate({ id: editingMed.id, data: requestData });
+    } else {
+      createMedMutation.mutate(requestData);
+    }
+  };
+
+  const handleEditMed = (medicamento: any) => {
+    setEditingMed(medicamento);
+    setMedData({
+      nome: medicamento.nome || '',
+      descricao: medicamento.descricao || '',
+      lote: medicamento.lote || '',
+      quantidade: String(medicamento.quantidade ?? ''),
+      dataValidade: medicamento.dataValidade ? medicamento.dataValidade.split('T')[0] : '',
+      vencido: medicamento.vencido || false,
+    });
+    setShowMedModal(true);
+  };
+
   const handleEditFunc = (func: any) => {
     setEditingItem(func);
     setFuncData({
@@ -766,6 +1050,12 @@ const UBSDashboard: React.FC = () => {
     setShowAgendamentoModal(true);
   };
 
+  const openCancelamentoModal = (consulta: any) => {
+    setSelectedConsulta(consulta);
+    setShowCancelamentoModal(true);
+  };
+  
+
   const openPacienteModal = (paciente: any) => {
     setSelectedPaciente(paciente);
     setPacienteEditData({
@@ -808,7 +1098,9 @@ const UBSDashboard: React.FC = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Building2 className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">UBS Dashboard</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                UBS Dashboard
+              </h1>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-700">Olá, {user?.nome}</span>
@@ -829,10 +1121,11 @@ const UBSDashboard: React.FC = () => {
         <div className="border-b border-gray-200 mb-8">
           <nav className="-mb-px flex space-x-8">
             {[
-              { key: 'funcionarios', label: 'Funcionários', icon: Users },
-              { key: 'pacientes', label: 'Pacientes', icon: Heart },
-              { key: 'campanhas', label: 'Campanhas', icon: Megaphone },
-              { key: 'consultas', label: 'Consultas', icon: Calendar },
+              { key: "funcionarios", label: "Funcionários", icon: Users },
+              { key: "pacientes", label: "Pacientes", icon: Heart },
+              { key: "campanhas", label: "Campanhas", icon: Megaphone },
+              { key: "consultas", label: "Consultas", icon: Calendar },
+              { key: "medicamentos", label: "Medicamentos", icon: Pill },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -841,8 +1134,8 @@ const UBSDashboard: React.FC = () => {
                   onClick={() => setActiveTab(tab.key)}
                   className={`${
                     activeTab === tab.key
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                   } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center transition-colors`}
                 >
                   <Icon className="h-4 w-4 mr-2" />
@@ -854,12 +1147,12 @@ const UBSDashboard: React.FC = () => {
         </div>
 
         {/* Funcionários Tab */}
-        {activeTab === 'funcionarios' && (
+        {activeTab === "funcionarios" && (
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Funcionários</h2>
-              <button 
-                onClick={() => setShowFuncModal(true)} 
+              <button
+                onClick={() => setShowFuncModal(true)}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" /> Novo Funcionário
@@ -871,7 +1164,7 @@ const UBSDashboard: React.FC = () => {
                 <p className="mt-2 text-gray-600">Carregando funcionários...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex flex-col gap-2">
                 {funcionarios?.map((funcionario: any) => (
                   <FuncionarioCard
                     key={funcionario.id}
@@ -886,7 +1179,7 @@ const UBSDashboard: React.FC = () => {
         )}
 
         {/* Pacientes Tab */}
-        {activeTab === 'pacientes' && (
+        {activeTab === "pacientes" && (
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Pacientes</h2>
@@ -911,7 +1204,7 @@ const UBSDashboard: React.FC = () => {
                 <p className="mt-2 text-gray-600">Carregando pacientes...</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="flex flex-col gap-2">
                 {pacientes?.map((paciente: any) => (
                   <PacienteCard
                     key={paciente.id}
@@ -928,12 +1221,12 @@ const UBSDashboard: React.FC = () => {
         )}
 
         {/* Campanhas Tab */}
-        {activeTab === 'campanhas' && (
+        {activeTab === "campanhas" && (
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Campanhas</h2>
-              <button 
-                onClick={() => setShowCampanhaModal(true)} 
+              <button
+                onClick={() => setShowCampanhaModal(true)}
                 className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" /> Nova Campanha
@@ -962,7 +1255,7 @@ const UBSDashboard: React.FC = () => {
         )}
 
         {/* Consultas Tab */}
-        {activeTab === 'consultas' && (
+        {activeTab === "consultas" && (
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Consultas</h2>
@@ -979,6 +1272,7 @@ const UBSDashboard: React.FC = () => {
                     key={consulta.id}
                     consulta={consulta}
                     onAgendar={openAgendamentoModal}
+                    onCancelamento={openCancelamentoModal}
                   />
                 ))}
               </div>
@@ -987,177 +1281,280 @@ const UBSDashboard: React.FC = () => {
         )}
 
         {/* Modal de Funcionário */}
-        <Modal 
-          isOpen={showFuncModal} 
-          onClose={() => setShowFuncModal(false)} 
-          title={editingItem ? 'Editar Funcionário' : 'Novo Funcionário'}
+        <Modal
+          isOpen={showFuncModal}
+          onClose={() => setShowFuncModal(false)}
+          title={editingItem ? "Editar Funcionário" : "Novo Funcionário"}
           size="lg"
         >
-          <form onSubmit={handleFuncSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nome *</label>
-                <input 
-                  type="text" 
+          <form onSubmit={handleFuncSubmit} className="flex flex-col gap-4">
+            {/* Seção: Dados pessoais */}
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+              Dados pessoais
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-600">
+                  Nome completo <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
                   value={funcData.nome}
-                  onChange={(e) => setFuncData({...funcData, nome: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) =>
+                    setFuncData({ ...funcData, nome: e.target.value })
+                  }
+                  placeholder="Ex.: João Silva"
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Função *</label>
-                <input 
-                  type="text" 
-                  value={funcData.funcao}
-                  onChange={(e) => setFuncData({...funcData, funcao: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">CRM (opcional)</label>
-                <input 
-                  type="text" 
-                  value={funcData.crm}
-                  onChange={(e) => setFuncData({...funcData, crm: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">CPF *</label>
-                <input 
-                  type="text" 
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-600">
+                  CPF <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
                   value={funcData.cpf}
-                  onChange={(e) => setFuncData({...funcData, cpf: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) =>
+                    setFuncData({ ...funcData, cpf: e.target.value })
+                  }
+                  placeholder="000.000.000-00"
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Telefone *</label>
-                <input 
-                  type="text" 
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-600">
+                  Telefone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
                   value={funcData.telefone}
-                  onChange={(e) => setFuncData({...funcData, telefone: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) =>
+                    setFuncData({ ...funcData, telefone: e.target.value })
+                  }
+                  placeholder="(00) 00000-0000"
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                <input 
-                  type="email" 
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-600">
+                  E-mail <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
                   value={funcData.email}
-                  onChange={(e) => setFuncData({...funcData, email: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) =>
+                    setFuncData({ ...funcData, email: e.target.value })
+                  }
+                  placeholder="nome@exemplo.com"
+                  className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Senha {editingItem && '(deixe em branco para manter a atual)'}
+
+            <hr className="border-gray-100" />
+
+            {/* Seção: Dados profissionais */}
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+              Dados profissionais
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-gray-600">
+                Função <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="password" 
-                value={funcData.senha}
-                onChange={(e) => setFuncData({...funcData, senha: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required={!editingItem}
+              <div className="flex gap-2">
+                {["Médico", "Enfermeiro", "Farmacêutico"].map((opcao) => (
+                  <button
+                    key={opcao}
+                    type="button"
+                    onClick={() => setFuncData({ ...funcData, funcao: opcao })}
+                    className={`px-4 py-1.5 rounded-full text-xs border transition-colors ${
+                      funcData.funcao === opcao
+                        ? "bg-green-100 border-green-600 text-green-800 font-medium"
+                        : "bg-white border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-700 hover:bg-green-50"
+                    }`}
+                  >
+                    {opcao}
+                  </button>
+                ))}
+              </div>
+              <input type="hidden" value={funcData.funcao} required />
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-1/2">
+              <label className="text-xs font-medium text-gray-600">
+                CRM <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={funcData.crm}
+                onChange={(e) =>
+                  setFuncData({ ...funcData, crm: e.target.value })
+                }
+                placeholder="Ex.: CRM/SP 123456"
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required
               />
             </div>
-            <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowFuncModal(false)} 
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+
+            <hr className="border-gray-100" />
+
+            {/* Seção: Acesso ao sistema */}
+            <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+              Acesso ao sistema
+            </p>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-600">
+                Senha{" "}
+                {editingItem ? (
+                  <span className="text-gray-400 font-normal">
+                    (deixe em branco para manter a atual)
+                  </span>
+                ) : (
+                  <span className="text-red-500">*</span>
+                )}
+              </label>
+              <input
+                type="password"
+                value={funcData.senha}
+                onChange={(e) =>
+                  setFuncData({ ...funcData, senha: e.target.value })
+                }
+                placeholder="Mínimo 8 caracteres"
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                required={!editingItem}
+              />
+              <span className="text-xs text-gray-400">
+                Use letras, números e símbolos para uma senha forte.
+              </span>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setShowFuncModal(false)}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+              <button
+                type="submit"
+                className="px-4 py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800 transition-colors"
               >
-                {editingItem ? 'Atualizar' : 'Cadastrar'}
+                {editingItem ? "Atualizar" : "Cadastrar"}
               </button>
             </div>
           </form>
         </Modal>
 
         {/* Modal de Campanha */}
-        <Modal 
-          isOpen={showCampanhaModal} 
-          onClose={() => setShowCampanhaModal(false)} 
+        <Modal
+          isOpen={showCampanhaModal}
+          onClose={() => setShowCampanhaModal(false)}
           title="Nova Campanha"
           size="lg"
         >
           <form onSubmit={handleCampanhaSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Título *
+              </label>
+              <input
+                type="text"
                 value={campanhaData.titulo}
-                onChange={(e) => setCampanhaData({...campanhaData, titulo: e.target.value})}
+                onChange={(e) =>
+                  setCampanhaData({ ...campanhaData, titulo: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Descrição *</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descrição *
+              </label>
+              <textarea
                 value={campanhaData.descricao}
-                onChange={(e) => setCampanhaData({...campanhaData, descricao: e.target.value})}
+                onChange={(e) =>
+                  setCampanhaData({
+                    ...campanhaData,
+                    descricao: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo *
+              </label>
+              <input
+                type="text"
                 value={campanhaData.tipo}
-                onChange={(e) => setCampanhaData({...campanhaData, tipo: e.target.value})}
+                onChange={(e) =>
+                  setCampanhaData({ ...campanhaData, tipo: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Início *</label>
-                <input 
-                  type="date" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data de Início *
+                </label>
+                <input
+                  type="date"
                   value={campanhaData.dataIni}
-                  onChange={(e) => setCampanhaData({...campanhaData, dataIni: e.target.value})}
+                  onChange={(e) =>
+                    setCampanhaData({
+                      ...campanhaData,
+                      dataIni: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Fim (opcional)</label>
-                <input 
-                  type="date" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data de Fim (opcional)
+                </label>
+                <input
+                  type="date"
                   value={campanhaData.dataFim}
-                  onChange={(e) => setCampanhaData({...campanhaData, dataFim: e.target.value})}
+                  onChange={(e) =>
+                    setCampanhaData({
+                      ...campanhaData,
+                      dataFim: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowCampanhaModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowCampanhaModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
                 Criar
@@ -1167,74 +1564,109 @@ const UBSDashboard: React.FC = () => {
         </Modal>
 
         {/* Modal de Editar Campanha */}
-        <Modal 
-          isOpen={showEditCampanhaModal} 
-          onClose={() => setShowEditCampanhaModal(false)} 
+        <Modal
+          isOpen={showEditCampanhaModal}
+          onClose={() => setShowEditCampanhaModal(false)}
           title="Editar Campanha"
           size="lg"
         >
           <form onSubmit={handleEditCampanhaSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Título *
+              </label>
+              <input
+                type="text"
                 value={editCampanhaData.titulo}
-                onChange={(e) => setEditCampanhaData({...editCampanhaData, titulo: e.target.value})}
+                onChange={(e) =>
+                  setEditCampanhaData({
+                    ...editCampanhaData,
+                    titulo: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Descrição *</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descrição *
+              </label>
+              <textarea
                 value={editCampanhaData.descricao}
-                onChange={(e) => setEditCampanhaData({...editCampanhaData, descricao: e.target.value})}
+                onChange={(e) =>
+                  setEditCampanhaData({
+                    ...editCampanhaData,
+                    descricao: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tipo *
+              </label>
+              <input
+                type="text"
                 value={editCampanhaData.tipo}
-                onChange={(e) => setEditCampanhaData({...editCampanhaData, tipo: e.target.value})}
+                onChange={(e) =>
+                  setEditCampanhaData({
+                    ...editCampanhaData,
+                    tipo: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Início *</label>
-                <input 
-                  type="date" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data de Início *
+                </label>
+                <input
+                  type="date"
                   value={editCampanhaData.dataIni}
-                  onChange={(e) => setEditCampanhaData({...editCampanhaData, dataIni: e.target.value})}
+                  onChange={(e) =>
+                    setEditCampanhaData({
+                      ...editCampanhaData,
+                      dataIni: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Fim (opcional)</label>
-                <input 
-                  type="date" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data de Fim (opcional)
+                </label>
+                <input
+                  type="date"
                   value={editCampanhaData.dataFim}
-                  onChange={(e) => setEditCampanhaData({...editCampanhaData, dataFim: e.target.value})}
+                  onChange={(e) =>
+                    setEditCampanhaData({
+                      ...editCampanhaData,
+                      dataFim: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowEditCampanhaModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowEditCampanhaModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Atualizar
@@ -1243,67 +1675,207 @@ const UBSDashboard: React.FC = () => {
           </form>
         </Modal>
 
+        {/* Modal de Medicamento */}
+        <Modal
+          isOpen={showMedModal}
+          onClose={() => setShowMedModal(false)}
+          title={editingMed ? "Editar Medicamento" : "Novo Medicamento"}
+          size="lg"
+        >
+          <form onSubmit={handleMedSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nome do Medicamento *
+              </label>
+              <input
+                type="text"
+                value={medData.nome}
+                onChange={(e) => setMedData({ ...medData, nome: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Descrição
+              </label>
+              <textarea
+                value={medData.descricao}
+                onChange={(e) => setMedData({ ...medData, descricao: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Lote *
+                </label>
+                <input
+                  type="text"
+                  value={medData.lote}
+                  onChange={(e) => setMedData({ ...medData, lote: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quantidade *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={medData.quantidade}
+                  onChange={(e) => setMedData({ ...medData, quantidade: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data de Validade *
+                </label>
+                <input
+                  type="date"
+                  value={medData.dataValidade}
+                  onChange={(e) => setMedData({ ...medData, dataValidade: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <input
+                id="med-vencido"
+                type="checkbox"
+                checked={medData.vencido}
+                onChange={(e) => setMedData({ ...medData, vencido: e.target.checked })}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="med-vencido" className="text-sm text-gray-700">
+                Marcar como vencido
+              </label>
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowMedModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                {editingMed ? 'Atualizar' : 'Cadastrar'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+
         {/* Modal de Agendamento de Consulta */}
-        <Modal 
-          isOpen={showAgendamentoModal} 
-          onClose={() => setShowAgendamentoModal(false)} 
+        <Modal
+          isOpen={showAgendamentoModal}
+          onClose={() => setShowAgendamentoModal(false)}
           title="Agendar Consulta"
           size="lg"
         >
           {selectedConsulta && (
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">Detalhes da Consulta</h4>
+              <h4 className="font-medium text-gray-900 mb-2">
+                Detalhes da Consulta
+              </h4>
               <div className="space-y-1 text-sm text-gray-600">
-                <p><span className="font-medium">Paciente:</span> {selectedConsulta.paciente.nome}</p>
-                <p><span className="font-medium">Especialidade:</span> {selectedConsulta.especialidade}</p>
-                <p><span className="font-medium">Motivo:</span> {selectedConsulta.motivo}</p>
+                <p>
+                  <span className="font-medium">Paciente:</span>{" "}
+                  {selectedConsulta.paciente.nome}
+                </p>
+                <p>
+                  <span className="font-medium">Especialidade:</span>{" "}
+                  {selectedConsulta.especialidade}
+                </p>
+                <p>
+                  <span className="font-medium">Motivo:</span>{" "}
+                  {selectedConsulta.motivo}
+                </p>
               </div>
             </div>
           )}
           <form onSubmit={handleAgendamentoSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Data e Hora *</label>
-              <input 
-                type="datetime-local" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data e Hora *
+              </label>
+              <input
+                type="datetime-local"
                 value={agendamentoData.dataAgendada}
-                onChange={(e) => setAgendamentoData({...agendamentoData, dataAgendada: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoData({
+                    ...agendamentoData,
+                    dataAgendada: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Funcionário *</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Funcionário *
+              </label>
+              <select
                 value={agendamentoData.funcionarioId}
-                onChange={(e) => setAgendamentoData({...agendamentoData, funcionarioId: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoData({
+                    ...agendamentoData,
+                    funcionarioId: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
                 <option value="">Selecione um funcionário</option>
                 {funcionarios?.map((func: any) => (
-                  <option key={func.id} value={func.id}>{func.nome} - {func.funcao}</option>
+                  <option key={func.id} value={func.id}>
+                    {func.nome} - {func.funcao}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Observações
+              </label>
+              <textarea
                 value={agendamentoData.observacoes}
-                onChange={(e) => setAgendamentoData({...agendamentoData, observacoes: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoData({
+                    ...agendamentoData,
+                    observacoes: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
               />
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowAgendamentoModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowAgendamentoModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Agendar
@@ -1313,51 +1885,73 @@ const UBSDashboard: React.FC = () => {
         </Modal>
 
         {/* Modal de Editar Paciente */}
-        <Modal 
-          isOpen={showPacienteModal} 
-          onClose={() => setShowPacienteModal(false)} 
+        <Modal
+          isOpen={showPacienteModal}
+          onClose={() => setShowPacienteModal(false)}
           title="Editar Paciente"
         >
           {selectedPaciente && (
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">Dados do Paciente</h4>
+              <h4 className="font-medium text-gray-900 mb-2">
+                Dados do Paciente
+              </h4>
               <div className="space-y-1 text-sm text-gray-600">
-                <p><span className="font-medium">Nome:</span> {selectedPaciente.nome}</p>
-                <p><span className="font-medium">CPF:</span> {selectedPaciente.cpf}</p>
+                <p>
+                  <span className="font-medium">Nome:</span>{" "}
+                  {selectedPaciente.nome}
+                </p>
+                <p>
+                  <span className="font-medium">CPF:</span>{" "}
+                  {selectedPaciente.cpf}
+                </p>
               </div>
             </div>
           )}
           <form onSubmit={handlePacienteEditSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Endereço *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Endereço *
+              </label>
+              <input
+                type="text"
                 value={pacienteEditData.endereco}
-                onChange={(e) => setPacienteEditData({...pacienteEditData, endereco: e.target.value})}
+                onChange={(e) =>
+                  setPacienteEditData({
+                    ...pacienteEditData,
+                    endereco: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Telefone *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Telefone *
+              </label>
+              <input
+                type="text"
                 value={pacienteEditData.telefone}
-                onChange={(e) => setPacienteEditData({...pacienteEditData, telefone: e.target.value})}
+                onChange={(e) =>
+                  setPacienteEditData({
+                    ...pacienteEditData,
+                    telefone: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowPacienteModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowPacienteModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Atualizar
@@ -1366,79 +1960,207 @@ const UBSDashboard: React.FC = () => {
           </form>
         </Modal>
 
+        {/* Modal de Cancelamento de Consulta */}
+        <Modal
+          isOpen={showCancelamentoModal}
+          onClose={() => setShowCancelamentoModal(false)}
+          title="Cancelar Consulta"
+          size="lg"
+        >
+          {selectedConsulta && (
+            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+              <h4 className="font-medium text-gray-900 mb-2">
+                Detalhes da Consulta
+              </h4>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p>
+                  <span className="font-medium">Paciente:</span>{" "}
+                  {selectedConsulta.paciente.nome}
+                </p>
+                <p>
+                  <span className="font-medium">Especialidade:</span>{" "}
+                  {selectedConsulta.especialidade}
+                </p>
+                <p>
+                  <span className="font-medium">Motivo:</span>{" "}
+                  {selectedConsulta.motivo}
+                </p>
+              </div>
+            </div>
+          )}
+          <form onSubmit={handleCancelamentoSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Motivo do Cancelamento
+              </label>
+              <textarea
+                value={cancelamentoData.observacoes}
+                onChange={(e) =>
+                  setCancelamentoData({
+                    ...cancelamentoData,
+                    observacoes: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={4}
+                placeholder="Digite o motivo do cancelamento..."
+              />
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowCancelamentoModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                Cancelar Consulta
+              </button>
+            </div>
+          </form>
+        </Modal>
+
         {/* Modal de Histórico do Paciente */}
-        <Modal 
-          isOpen={showHistoricoModal} 
-          onClose={() => setShowHistoricoModal(false)} 
+        <Modal
+          isOpen={showHistoricoModal}
+          onClose={() => setShowHistoricoModal(false)}
           title={`Histórico Médico - ${selectedPaciente?.nome}`}
           size="xl"
         >
           <div className="space-y-6">
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Histórico Médico</h4>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Histórico Médico
+              </h4>
               {historicoPaciente && historicoPaciente.length > 0 ? (
                 <div className="space-y-4">
                   {historicoPaciente.map((item: any) => (
                     <div key={item.id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between items-start mb-3">
-                        <h5 className="font-medium text-gray-900">{item.diagnostico}</h5>
+                        <h5 className="font-medium text-gray-900">
+                          {item.diagnostico}
+                        </h5>
                         <span className="text-sm text-gray-500">
-                          {format(new Date(item.dataConsulta), "dd/MM/yyyy", { locale: ptBR })}
+                          {format(new Date(item.dataConsulta), "dd/MM/yyyy", {
+                            locale: ptBR,
+                          })}
                         </span>
                       </div>
                       <div className="space-y-2 text-sm text-gray-600">
-                        <p><span className="font-medium">Médico:</span> {item.funcionario.nome} ({item.funcionario.funcao})</p>
-                        <p><span className="font-medium">UBS:</span> {item.funcionario.ubs.nome}</p>
-                        <p><span className="font-medium">Laudo:</span> {item.laudo}</p>
-                        {item.doenca && <p><span className="font-medium">Doença:</span> {item.doenca}</p>}
-                        {item.medicacao && <p><span className="font-medium">Medicação:</span> {item.medicacao}</p>}
-                        {item.observacoes && <p><span className="font-medium">Observações:</span> {item.observacoes}</p>}
+                        <p>
+                          <span className="font-medium">Médico:</span>{" "}
+                          {item.funcionario.nome} ({item.funcionario.funcao})
+                        </p>
+                        <p>
+                          <span className="font-medium">UBS:</span>{" "}
+                          {item.funcionario.ubs.nome}
+                        </p>
+                        <p>
+                          <span className="font-medium">Laudo:</span>{" "}
+                          {item.laudo}
+                        </p>
+                        {item.doenca && (
+                          <p>
+                            <span className="font-medium">Doença:</span>{" "}
+                            {item.doenca}
+                          </p>
+                        )}
+                        {item.medicacao && (
+                          <p>
+                            <span className="font-medium">Medicação:</span>{" "}
+                            {item.medicacao}
+                          </p>
+                        )}
+                        {item.observacoes && (
+                          <p>
+                            <span className="font-medium">Observações:</span>{" "}
+                            {item.observacoes}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">Nenhum histórico médico encontrado.</p>
+                <p className="text-gray-500 text-center py-8">
+                  Nenhum histórico médico encontrado.
+                </p>
               )}
             </div>
 
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Consultas</h4>
+              <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                Consultas
+              </h4>
               {consultasPaciente && consultasPaciente.length > 0 ? (
                 <div className="space-y-4">
                   {consultasPaciente.map((consulta: any) => (
-                    <div key={consulta.id} className="bg-gray-50 rounded-lg p-4">
+                    <div
+                      key={consulta.id}
+                      className="bg-gray-50 rounded-lg p-4"
+                    >
                       <div className="flex justify-between items-start mb-3">
-                        <h5 className="font-medium text-gray-900">{consulta.especialidade}</h5>
+                        <h5 className="font-medium text-gray-900">
+                          {consulta.especialidade}
+                        </h5>
                         <span className="text-sm text-gray-500">
-                          {format(new Date(consulta.createdAt), "dd/MM/yyyy", { locale: ptBR })}
+                          {format(new Date(consulta.createdAt), "dd/MM/yyyy", {
+                            locale: ptBR,
+                          })}
                         </span>
                       </div>
                       <div className="space-y-2 text-sm text-gray-600">
-                        <p><span className="font-medium">Motivo:</span> {consulta.motivo}</p>
-                        <p><span className="font-medium">Status:</span> {consulta.status}</p>
+                        <p>
+                          <span className="font-medium">Motivo:</span>{" "}
+                          {consulta.motivo}
+                        </p>
+                        <p>
+                          <span className="font-medium">Status:</span>{" "}
+                          {consulta.status}
+                        </p>
                         {consulta.dataAgendada && (
-                          <p><span className="font-medium">Data Agendada:</span> {format(new Date(consulta.dataAgendada), "dd/MM/yyyy HH:mm", { locale: ptBR })}</p>
+                          <p>
+                            <span className="font-medium">Data Agendada:</span>{" "}
+                            {format(
+                              new Date(consulta.dataAgendada),
+                              "dd/MM/yyyy HH:mm",
+                              { locale: ptBR },
+                            )}
+                          </p>
                         )}
                         {consulta.funcionario && (
-                          <p><span className="font-medium">Médico:</span> {consulta.funcionario.nome}</p>
+                          <p>
+                            <span className="font-medium">Médico:</span>{" "}
+                            {consulta.funcionario.nome}
+                          </p>
                         )}
-                        {consulta.observacoes && <p><span className="font-medium">Observações:</span> {consulta.observacoes}</p>}
+                        {consulta.observacoes && (
+                          <p>
+                            <span className="font-medium">Observações:</span>{" "}
+                            {consulta.observacoes}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">Nenhuma consulta encontrada.</p>
+                <p className="text-gray-500 text-center py-8">
+                  Nenhuma consulta encontrada.
+                </p>
               )}
             </div>
           </div>
         </Modal>
 
         {/* Modal de Agendar Consulta para Paciente - CORRIGIDO */}
-        <Modal 
-          isOpen={showConsultaPacienteModal} 
-          onClose={() => setShowConsultaPacienteModal(false)} 
+        <Modal
+          isOpen={showConsultaPacienteModal}
+          onClose={() => setShowConsultaPacienteModal(false)}
           title="Agendar Consulta"
           size="lg"
         >
@@ -1450,71 +2172,108 @@ const UBSDashboard: React.FC = () => {
           )}
           <form onSubmit={handleConsultaPacienteSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Especialidade *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Especialidade *
+              </label>
+              <input
+                type="text"
                 value={consultaPacienteData.especialidade}
-                onChange={(e) => setConsultaPacienteData({...consultaPacienteData, especialidade: e.target.value})}
+                onChange={(e) =>
+                  setConsultaPacienteData({
+                    ...consultaPacienteData,
+                    especialidade: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Ex: Cardiologia, Clínica Geral, etc."
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Motivo *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Motivo *
+              </label>
+              <input
+                type="text"
                 value={consultaPacienteData.motivo}
-                onChange={(e) => setConsultaPacienteData({...consultaPacienteData, motivo: e.target.value})}
+                onChange={(e) =>
+                  setConsultaPacienteData({
+                    ...consultaPacienteData,
+                    motivo: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Descreva o motivo da consulta"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Data e Hora *</label>
-              <input 
-                type="datetime-local" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data e Hora *
+              </label>
+              <input
+                type="datetime-local"
                 value={consultaPacienteData.dataAgendada}
-                onChange={(e) => setConsultaPacienteData({...consultaPacienteData, dataAgendada: e.target.value})}
+                onChange={(e) =>
+                  setConsultaPacienteData({
+                    ...consultaPacienteData,
+                    dataAgendada: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Funcionário *</label>
-              <select 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Funcionário *
+              </label>
+              <select
                 value={consultaPacienteData.funcionarioId}
-                onChange={(e) => setConsultaPacienteData({...consultaPacienteData, funcionarioId: e.target.value})}
+                onChange={(e) =>
+                  setConsultaPacienteData({
+                    ...consultaPacienteData,
+                    funcionarioId: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               >
                 <option value="">Selecione um funcionário</option>
                 {funcionarios?.map((func: any) => (
-                  <option key={func.id} value={func.id}>{func.nome} - {func.funcao}</option>
+                  <option key={func.id} value={func.id}>
+                    {func.nome} - {func.funcao}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Observações
+              </label>
+              <textarea
                 value={consultaPacienteData.observacoes}
-                onChange={(e) => setConsultaPacienteData({...consultaPacienteData, observacoes: e.target.value})}
+                onChange={(e) =>
+                  setConsultaPacienteData({
+                    ...consultaPacienteData,
+                    observacoes: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
                 placeholder="Observações adicionais sobre a consulta"
               />
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowConsultaPacienteModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowConsultaPacienteModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
               >
                 Agendar Consulta
@@ -1524,9 +2283,9 @@ const UBSDashboard: React.FC = () => {
         </Modal>
 
         {/* Modal de Inscrições da Campanha */}
-        <Modal 
-          isOpen={showInscricoesModal} 
-          onClose={() => setShowInscricoesModal(false)} 
+        <Modal
+          isOpen={showInscricoesModal}
+          onClose={() => setShowInscricoesModal(false)}
           title={`Inscrições - ${selectedCampanha?.titulo}`}
           size="xl"
         >
@@ -1535,28 +2294,74 @@ const UBSDashboard: React.FC = () => {
               {inscricoesCampanha.map((inscricao: any) => (
                 <div key={inscricao.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-medium text-gray-900">{inscricao.nome}</h4>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      inscricao.status === 'agendado' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <h4 className="font-medium text-gray-900">
+                      {inscricao.nome}
+                    </h4>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        inscricao.status === "agendado"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
                       {inscricao.status}
                     </span>
                   </div>
                   <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <p><span className="font-medium">CPF:</span> {inscricao.cpf} | <span className="font-medium">Telefone:</span> {inscricao.telefone}</p>
-                    <p><span className="font-medium">Email:</span> {inscricao.email}</p>
-                    {inscricao.idade && <p><span className="font-medium">Idade:</span> {inscricao.idade}</p>}
-                    {inscricao.condicoesSaude && <p><span className="font-medium">Condições de Saúde:</span> {inscricao.condicoesSaude}</p>}
-                    <p><span className="font-medium">Prioridade:</span> {inscricao.prioridade} | <span className="font-medium">Pontuação:</span> {inscricao.pontuacao}</p>
-                    {inscricao.dataAgendada && (
-                      <p><span className="font-medium">Agendado para:</span> {format(new Date(inscricao.dataAgendada), "dd/MM/yyyy", { locale: ptBR })}
-                      {inscricao.horaAgendada && ` às ${inscricao.horaAgendada}`}</p>
+                    <p>
+                      <span className="font-medium">CPF:</span> {inscricao.cpf}{" "}
+                      | <span className="font-medium">Telefone:</span>{" "}
+                      {inscricao.telefone}
+                    </p>
+                    <p>
+                      <span className="font-medium">Email:</span>{" "}
+                      {inscricao.email}
+                    </p>
+                    {inscricao.idade && (
+                      <p>
+                        <span className="font-medium">Idade:</span>{" "}
+                        {inscricao.idade}
+                      </p>
                     )}
-                    {inscricao.localAtendimento && <p><span className="font-medium">Local:</span> {inscricao.localAtendimento}</p>}
-                    {inscricao.observacoes && <p><span className="font-medium">Observações:</span> {inscricao.observacoes}</p>}
+                    {inscricao.condicoesSaude && (
+                      <p>
+                        <span className="font-medium">Condições de Saúde:</span>{" "}
+                        {inscricao.condicoesSaude}
+                      </p>
+                    )}
+                    <p>
+                      <span className="font-medium">Prioridade:</span>{" "}
+                      {inscricao.prioridade} |{" "}
+                      <span className="font-medium">Pontuação:</span>{" "}
+                      {inscricao.pontuacao}
+                    </p>
+                    {inscricao.dataAgendada && (
+                      <p>
+                        <span className="font-medium">Agendado para:</span>{" "}
+                        {format(
+                          new Date(inscricao.dataAgendada),
+                          "dd/MM/yyyy",
+                          { locale: ptBR },
+                        )}
+                        {inscricao.horaAgendada &&
+                          ` às ${inscricao.horaAgendada}`}
+                      </p>
+                    )}
+                    {inscricao.localAtendimento && (
+                      <p>
+                        <span className="font-medium">Local:</span>{" "}
+                        {inscricao.localAtendimento}
+                      </p>
+                    )}
+                    {inscricao.observacoes && (
+                      <p>
+                        <span className="font-medium">Observações:</span>{" "}
+                        {inscricao.observacoes}
+                      </p>
+                    )}
                   </div>
-                  {inscricao.status === 'inscrito' && (
-                    <button 
+                  {inscricao.status === "inscrito" && (
+                    <button
                       onClick={() => openAgendamentoCampanhaModal(inscricao)}
                       className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
                     >
@@ -1567,14 +2372,16 @@ const UBSDashboard: React.FC = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">Nenhuma inscrição encontrada.</p>
+            <p className="text-gray-500 text-center py-8">
+              Nenhuma inscrição encontrada.
+            </p>
           )}
         </Modal>
 
         {/* Modal de Agendamento de Campanha */}
-        <Modal 
-          isOpen={showAgendamentoCampanhaModal} 
-          onClose={() => setShowAgendamentoCampanhaModal(false)} 
+        <Modal
+          isOpen={showAgendamentoCampanhaModal}
+          onClose={() => setShowAgendamentoCampanhaModal(false)}
           title="Agendar Atendimento"
           size="lg"
         >
@@ -1582,63 +2389,100 @@ const UBSDashboard: React.FC = () => {
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <h4 className="font-medium text-gray-900 mb-2">Detalhes</h4>
               <div className="space-y-1 text-sm text-gray-600">
-                <p><span className="font-medium">Inscrito:</span> {selectedInscricao.nome}</p>
-                <p><span className="font-medium">Campanha:</span> {selectedCampanha?.titulo}</p>
+                <p>
+                  <span className="font-medium">Inscrito:</span>{" "}
+                  {selectedInscricao.nome}
+                </p>
+                <p>
+                  <span className="font-medium">Campanha:</span>{" "}
+                  {selectedCampanha?.titulo}
+                </p>
               </div>
             </div>
           )}
-          <form onSubmit={handleAgendamentoCampanhaSubmit} className="space-y-6">
+          <form
+            onSubmit={handleAgendamentoCampanhaSubmit}
+            className="space-y-6"
+          >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Data *</label>
-              <input 
-                type="date" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data *
+              </label>
+              <input
+                type="date"
                 value={agendamentoCampanhaData.dataAgendada}
-                onChange={(e) => setAgendamentoCampanhaData({...agendamentoCampanhaData, dataAgendada: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoCampanhaData({
+                    ...agendamentoCampanhaData,
+                    dataAgendada: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Hora *</label>
-              <input 
-                type="time" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Hora *
+              </label>
+              <input
+                type="time"
                 value={agendamentoCampanhaData.horaAgendada}
-                onChange={(e) => setAgendamentoCampanhaData({...agendamentoCampanhaData, horaAgendada: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoCampanhaData({
+                    ...agendamentoCampanhaData,
+                    horaAgendada: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Local de Atendimento *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Local de Atendimento *
+              </label>
+              <input
+                type="text"
                 value={agendamentoCampanhaData.localAtendimento}
-                onChange={(e) => setAgendamentoCampanhaData({...agendamentoCampanhaData, localAtendimento: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoCampanhaData({
+                    ...agendamentoCampanhaData,
+                    localAtendimento: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Ex: Sala 1, Auditório, etc."
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Observações
+              </label>
+              <textarea
                 value={agendamentoCampanhaData.observacoes}
-                onChange={(e) => setAgendamentoCampanhaData({...agendamentoCampanhaData, observacoes: e.target.value})}
+                onChange={(e) =>
+                  setAgendamentoCampanhaData({
+                    ...agendamentoCampanhaData,
+                    observacoes: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
                 placeholder="Observações sobre o atendimento"
               />
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowAgendamentoCampanhaModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowAgendamentoCampanhaModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Agendar
@@ -1648,67 +2492,103 @@ const UBSDashboard: React.FC = () => {
         </Modal>
 
         {/* Modal de Solicitação de Internação - CORRIGIDO */}
-        <Modal 
-          isOpen={showInternacaoModal} 
-          onClose={() => setShowInternacaoModal(false)} 
+        <Modal
+          isOpen={showInternacaoModal}
+          onClose={() => setShowInternacaoModal(false)}
           title="Solicitar Internação"
           size="xl"
         >
           {selectedPaciente && (
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">Dados do Paciente</h4>
+              <h4 className="font-medium text-gray-900 mb-2">
+                Dados do Paciente
+              </h4>
               <div className="space-y-1 text-sm text-gray-600">
-                <p><span className="font-medium">Nome:</span> {selectedPaciente.nome}</p>
-                <p><span className="font-medium">CPF:</span> {selectedPaciente.cpf}</p>
-                <p><span className="font-medium">CNS:</span> {selectedPaciente.cns}</p>
+                <p>
+                  <span className="font-medium">Nome:</span>{" "}
+                  {selectedPaciente.nome}
+                </p>
+                <p>
+                  <span className="font-medium">CPF:</span>{" "}
+                  {selectedPaciente.cpf}
+                </p>
+                <p>
+                  <span className="font-medium">CNS:</span>{" "}
+                  {selectedPaciente.cns}
+                </p>
               </div>
             </div>
           )}
           <form onSubmit={handleInternacaoSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <select 
-  value={internacaoData.hospitalId}
-  onChange={(e) => setInternacaoData({...internacaoData, hospitalId: e.target.value})}
-  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-  required
->
-  <option value="">Selecione um hospital</option>
-  {loadingHospitais ? (
-    <option disabled>Carregando hospitais...</option>
-  ) : (
-    hospitaisList?.map((hospital: any) => (
-      <option key={hospital.id} value={hospital.id}>{hospital.nome}</option>
-    ))
-  )}
-</select>
-{loadingHospitais && (
-  <p className="text-xs text-gray-500 mt-1">Carregando lista de hospitais...</p>
-)}
+                <select
+                  value={internacaoData.hospitalId}
+                  onChange={(e) =>
+                    setInternacaoData({
+                      ...internacaoData,
+                      hospitalId: e.target.value,
+                    })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Selecione um hospital</option>
+                  {loadingHospitais ? (
+                    <option disabled>Carregando hospitais...</option>
+                  ) : (
+                    hospitaisList?.map((hospital: any) => (
+                      <option key={hospital.id} value={hospital.id}>
+                        {hospital.nome}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {loadingHospitais && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Carregando lista de hospitais...
+                  </p>
+                )}
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Funcionário Responsável *</label>
-                <select 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Funcionário Responsável *
+                </label>
+                <select
                   value={internacaoData.funcionarioId}
-                  onChange={(e) => setInternacaoData({...internacaoData, funcionarioId: e.target.value})}
+                  onChange={(e) =>
+                    setInternacaoData({
+                      ...internacaoData,
+                      funcionarioId: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
                   <option value="">Selecione um funcionário</option>
                   {funcionarios?.map((func: any) => (
-                    <option key={func.id} value={func.id}>{func.nome} - {func.funcao}</option>
+                    <option key={func.id} value={func.id}>
+                      {func.nome} - {func.funcao}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo *</label>
-                <select 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo *
+                </label>
+                <select
                   value={internacaoData.tipo}
-                  onChange={(e) => setInternacaoData({...internacaoData, tipo: e.target.value})}
+                  onChange={(e) =>
+                    setInternacaoData({
+                      ...internacaoData,
+                      tipo: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -1719,12 +2599,19 @@ const UBSDashboard: React.FC = () => {
                   <option value="emergencia">Emergência</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Prioridade *</label>
-                <select 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prioridade *
+                </label>
+                <select
                   value={internacaoData.prioridade}
-                  onChange={(e) => setInternacaoData({...internacaoData, prioridade: e.target.value})}
+                  onChange={(e) =>
+                    setInternacaoData({
+                      ...internacaoData,
+                      prioridade: e.target.value,
+                    })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -1734,53 +2621,74 @@ const UBSDashboard: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Motivo *</label>
-              <input 
-                type="text" 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Motivo *
+              </label>
+              <input
+                type="text"
                 value={internacaoData.motivo}
-                onChange={(e) => setInternacaoData({...internacaoData, motivo: e.target.value})}
+                onChange={(e) =>
+                  setInternacaoData({
+                    ...internacaoData,
+                    motivo: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Descreva o motivo da internação"
                 required
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Detalhes *</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Detalhes *
+              </label>
+              <textarea
                 value={internacaoData.detalhes}
-                onChange={(e) => setInternacaoData({...internacaoData, detalhes: e.target.value})}
+                onChange={(e) =>
+                  setInternacaoData({
+                    ...internacaoData,
+                    detalhes: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
                 placeholder="Descreva detalhes clínicos relevantes"
                 required
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Laudo Médico *</label>
-              <textarea 
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Laudo Médico *
+              </label>
+              <textarea
                 value={internacaoData.laudoMedico}
-                onChange={(e) => setInternacaoData({...internacaoData, laudoMedico: e.target.value})}
+                onChange={(e) =>
+                  setInternacaoData({
+                    ...internacaoData,
+                    laudoMedico: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={4}
                 placeholder="Laudo médico completo justificando a internação"
                 required
               />
             </div>
-            
+
             <div className="flex justify-end space-x-3 pt-4">
-              <button 
-                type="button" 
-                onClick={() => setShowInternacaoModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowInternacaoModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={solicitarInternacaoMutation.isLoading}
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center disabled:opacity-50"
               >
@@ -1799,6 +2707,53 @@ const UBSDashboard: React.FC = () => {
             </div>
           </form>
         </Modal>
+
+        {/* Medicamentos Tab */}
+        {activeTab === "medicamentos" && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Medicamentos</h2>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    resetMedForm();
+                    setShowMedModal(true);
+                  }}
+                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> Novo Medicamento
+                </button>
+                <div className="relative w-full max-w-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Buscar medicamentos..."
+                  />
+                </div>
+              </div>
+            </div>
+            {loadingMedicamentos ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
+                <p className="mt-2 text-gray-600">Carregando medicamentos...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {medicamentos?.filter((med: any) =>
+                  med.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  med.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+                ).map((med: any) => (
+                  <MedicamentoCard key={med.id} medicamento={med} onEdit={handleEditMed} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
