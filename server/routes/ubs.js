@@ -12,7 +12,7 @@ router.use(authorizeRole(["ubs"]));
 // Listar todos os hospitais cadastrados
 router.get("/hospitais", async (req, res) => {
   try {
-    const hospitais = await prisma.hospitais.findMany({
+    const hospitais = await prisma.hospital.findMany({
       select: {
         id: true,
         nome: true,
@@ -37,7 +37,7 @@ router.get("/hospitais/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const hospital = await prisma.hospitais.findUnique({
+    const hospital = await prisma.hospital.findUnique({
       where: { id },
       select: {
         id: true,

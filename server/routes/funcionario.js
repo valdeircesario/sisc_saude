@@ -245,6 +245,88 @@ router.get("/minhas-solicitacoes-internacao", async (req, res) => {
   }
 });
 
+// Listar todas as minhas solicitações (internações e exames)
+router.get("/minhas-solicitacoes", async (req, res) => {
+  try {
+    const { status, prioridade } = req.query;
+
+    const whereInternacao = { funcionarioId: req.user.id };
+    if (status) whereInternacao.status = status;
+    if (prioridade) whereInternacao.prioridade = prioridade;
+
+    const whereExame = { funcionarioId: req.user.id };
+    if (status) whereExame.status = status;
+
+    const [solicitacoesInternacao, solicitacoesExame] = await Promise.all([
+      prisma.solicitacaoInternacao.findMany({
+        where: whereInternacao,
+        include: {
+          paciente: {
+            select: {
+              nome: true,
+              cpf: true,
+              telefone: true,
+              email: true,
+            },
+          },
+          hospital: {
+            select: {
+              nome: true,
+              telefone: true,
+              endereco: true,
+            },
+          },
+          ubs: {
+            select: {
+              nome: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.solicitacaoExame.findMany({
+        where: whereExame,
+        include: {
+          paciente: {
+            select: {
+              nome: true,
+              cpf: true,
+              telefone: true,
+              email: true,
+            },
+          },
+          laboratorio: {
+            select: {
+              nome: true,
+              telefone: true,
+              endereco: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+    const solicitacoes = [
+      ...solicitacoesInternacao.map((item) => ({
+        ...item,
+        solicitacaoTipo: "internacao",
+      })),
+      ...solicitacoesExame.map((item) => ({
+        ...item,
+        solicitacaoTipo: "exame",
+      })),
+    ].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+
+    res.json(solicitacoes);
+  } catch (error) {
+    console.error("Erro ao listar todas as solicitações:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
 // Atualizar observações da solicitação (apenas o funcionário que criou pode atualizar)
 router.put("/solicitacoes-internacao/:id/observacoes", async (req, res) => {
   try {
