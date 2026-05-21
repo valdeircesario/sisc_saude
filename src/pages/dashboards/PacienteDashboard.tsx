@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   User,
   Heart,
@@ -175,6 +175,49 @@ const PacienteDashboard: React.FC = () => {
     () => api.get("/paciente/solicitacoes-exame").then((r) => r.data),
     { enabled: activeTab === "exames" },
   );
+
+  const mergedExames = useMemo(() => {
+    const examesMap = new Map<string, any>();
+
+    const normalizedExames = (exames || []).map((ex: any) => {
+      const chave = `${(ex.tipo || "").toLowerCase()}-${ex.laboratorioId || ex.laboratorio?.id || ""}`;
+      examesMap.set(chave, true);
+
+      return {
+        id: `exame-${ex.id}`,
+        title: ex.tipo,
+        status: ex.status,
+        labName: ex.laboratorio?.nome || "—",
+        dataAgendada: ex.dataAgendada,
+        dataRealizado: ex.dataRealizado,
+        resultado: ex.resultado,
+        arquivoPdf: ex.arquivoPdf,
+        createdAt: ex.createdAt,
+        observacoes: ex.observacoes,
+        source: "exame",
+      };
+    });
+
+    const normalizedSolicitacoes = (solicitacoesExame || [])
+      .filter((s: any) => {
+        const chave = `${(s.tipoExame || "").toLowerCase()}-${s.laboratorioId || s.laboratorio?.id || ""}`;
+        return !examesMap.has(chave);
+      })
+      .map((s: any) => ({
+        id: `sol-${s.id}`,
+        title: s.tipoExame,
+        status: s.status,
+        labName: s.laboratorio?.nome || "—",
+        createdAt: s.createdAt,
+        observacoes: s.observacoes,
+        source: "solicitacao",
+      }));
+
+    return [...normalizedExames, ...normalizedSolicitacoes].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [exames, solicitacoesExame]);
   const { data: consultas } = useQuery(
     "paciente-consultas",
     () => api.get("/paciente/consultas").then((r) => r.data),
@@ -1309,7 +1352,6 @@ const PacienteDashboard: React.FC = () => {
               </div>
             </div>
           )}
-          {/* quero que melhore , estão mostrando meus exames e minhas solicitações de exames, quero que mostre tanto os exames quanto as solicitações, tudo em meus exames, e para cada exame solicitado agendado ou cancelado que apenas mude seu status, como deixou esta mostrando o mesmo exame duas vezes, em meus exames e minhas solicitações, quero tudo junto que apareca apenas uma vez e que seu status fique visivel , permaneça com a o campo de busca por nome para facilitar a localização */}
 
           {/* ── EXAMES ──────────────────────────────────────── */}
           {activeTab === "exames" && (
@@ -1337,73 +1379,107 @@ const PacienteDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Resultados de exames já realizados/agendados */}
-                {exames && exames.length > 0 ? (
+                {mergedExames && mergedExames.length > 0 ? (
                   <div className="space-y-3">
-                    {exames
-                      .filter((ex: any) =>
-                        (ex.tipo || "")
+                    {mergedExames
+                      .filter((item: any) =>
+                        (item.title || "")
                           .toLowerCase()
                           .includes((exameSearch || "").toLowerCase()),
                       )
-                      .map((exame: any) => (
+                      .map((item: any) => (
                         <div
-                          key={exame.id}
+                          key={item.id}
                           className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-teal-200 hover:shadow-sm transition-all"
                         >
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div>
                               <p className="text-sm font-bold text-gray-900">
-                                {exame.tipo}
+                                {item.title}
                               </p>
                               <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                <MapPin className="h-3 w-3" />{" "}
-                                {exame.laboratorio.nome}
+                                <MapPin className="h-3 w-3" /> {item.labName}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {item.source === "solicitacao"
+                                  ? "Solicitação de exame"
+                                  : "Exame"}
                               </p>
                             </div>
-                            <StatusBadge status={exame.status} />
+                            <StatusBadge status={item.status} />
                           </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                            {exame.dataAgendada && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Agendado
-                                </p>
-                                <p className="text-gray-700">
-                                  {format(
-                                    new Date(exame.dataAgendada),
-                                    "dd/MM/yyyy HH:mm",
-                                    { locale: ptBR },
-                                  )}
-                                </p>
-                              </div>
-                            )}
-                            {exame.dataRealizado && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Realizado
-                                </p>
-                                <p className="text-gray-700">
-                                  {format(
-                                    new Date(exame.dataRealizado),
+
+                          {item.source === "exame" && (
+                            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                              {item.dataAgendada && (
+                                <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                                  <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                    Agendado
+                                  </p>
+                                  <p className="text-gray-700">
+                                    {format(
+                                      new Date(item.dataAgendada),
+                                      "dd/MM/yyyy HH:mm",
+                                      { locale: ptBR },
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+                              {item.dataRealizado && (
+                                <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                                  <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                    Realizado
+                                  </p>
+                                  <p className="text-gray-700">
+                                    {format(
+                                      new Date(item.dataRealizado),
+                                      "dd/MM/yyyy",
+                                      { locale: ptBR },
+                                    )}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {item.source === "solicitacao" && (
+                            <div className="text-xs text-gray-600 mb-3">
+                              Solicitado em:{" "}
+                              {item.createdAt
+                                ? format(
+                                    new Date(item.createdAt),
                                     "dd/MM/yyyy",
-                                    { locale: ptBR },
-                                  )}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          {exame.resultado && (
+                                    {
+                                      locale: ptBR,
+                                    },
+                                  )
+                                : "—"}
+                            </div>
+                          )}
+
+                          {item.observacoes && (
+                            <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
+                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                Observações
+                              </p>
+                              <p className="text-gray-700">
+                                {item.observacoes}
+                              </p>
+                            </div>
+                          )}
+
+                          {item.resultado && (
                             <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
                               <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
                                 Resultado
                               </p>
-                              <p className="text-gray-700">{exame.resultado}</p>
+                              <p className="text-gray-700">{item.resultado}</p>
                             </div>
                           )}
-                          {exame.arquivoPdf && (
+
+                          {item.arquivoPdf && (
                             <a
-                              href={`http://localhost:3001/api/exames/download/${exame.arquivoPdf}`}
+                              href={`http://localhost:3001/api/exames/download/${item.arquivoPdf}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
@@ -1417,12 +1493,12 @@ const PacienteDashboard: React.FC = () => {
                 ) : (
                   <EmptyState
                     icon={FileText}
-                    message="Nenhum exame encontrado"
+                    message="Nenhum exame ou solicitação encontrado"
                   />
                 )}
 
                 {/* Solicitações registradas (exames solicitados que ainda não viraram exame) */}
-                <div className="mt-6">
+                <div className="mt-6 hidden">
                   <SectionHeader
                     icon={FileText}
                     title="Minhas Solicitações de Exame"
