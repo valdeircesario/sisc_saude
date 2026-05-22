@@ -459,7 +459,7 @@ model MedicacaoAdministrada {
   id                    String   @id @default(cuid())
   pacienteId            String
   historicoMedicoId     String?
-  internacaoId          String? // Relacionamento corrigido
+  internacaoId          String? 
   nomeMedicacao         String
   dosagem               String?
   viaAdministracao      String?
@@ -471,7 +471,7 @@ model MedicacaoAdministrada {
 
   paciente        Paciente         @relation(fields: [pacienteId], references: [id])
   historicoMedico HistoricoMedico? @relation(fields: [historicoMedicoId], references: [id])
-  internacao      Internacao?      @relation(fields: [internacaoId], references: [id]) // Corrigido
+  internacao      Internacao?      @relation(fields: [internacaoId], references: [id]) 
 
   @@map("medicacoes_administradas")
 }

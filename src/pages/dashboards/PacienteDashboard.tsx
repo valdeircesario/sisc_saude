@@ -127,8 +127,13 @@ const PacienteDashboard: React.FC = () => {
   const [showConfirmarModal, setShowConfirmarModal] = useState(false);
   const [showCancelarModal, setShowCancelarModal] = useState(false);
   const [showEditarPerfilModal, setShowEditarPerfilModal] = useState(false);
-  const [showSolicitarConsultaModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [internacoesFilter, setInternacoesFilter] = useState<
+    "all" | "solicitacoes" | "internacoes"
+  >("all");
+  const [medicacoesSource, setMedicacoesSource] = useState<
+    "paciente" | "administradas"
+  >("paciente");
   const [confirmacaoObservacoes, setConfirmacaoObservacoes] = useState("");
   const [perfilData, setPerfilData] = useState({
     endereco: "",
@@ -168,6 +173,9 @@ const PacienteDashboard: React.FC = () => {
 
   // filtro de busca para nome do exame
   const [exameSearch, setExameSearch] = useState("");
+  const [examesSource, setExamesSource] = useState<
+    "realizados" | "solicitados"
+  >("realizados");
 
   // Solicitações de exame (tabela solicitacao_exames) para acompanhar status
   const { data: solicitacoesExame } = useQuery(
@@ -218,6 +226,26 @@ const PacienteDashboard: React.FC = () => {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, [exames, solicitacoesExame]);
+
+  const filteredExamesRealizados = useMemo(
+    () =>
+      (exames || []).filter((item: any) =>
+        (item.tipo || "")
+          .toLowerCase()
+          .includes((exameSearch || "").toLowerCase()),
+      ),
+    [exames, exameSearch],
+  );
+
+  const filteredExamesSolicitados = useMemo(
+    () =>
+      (solicitacoesExame || []).filter((item: any) =>
+        (item.tipoExame || "")
+          .toLowerCase()
+          .includes((exameSearch || "").toLowerCase()),
+      ),
+    [solicitacoesExame, exameSearch],
+  );
   const { data: consultas } = useQuery(
     "paciente-consultas",
     () => api.get("/paciente/consultas").then((r) => r.data),
@@ -238,25 +266,58 @@ const PacienteDashboard: React.FC = () => {
     () => api.get("/paciente/internacoes").then((r) => r.data),
     { enabled: activeTab === "internacoes" },
   );
+
+  const filteredSolicitacoesInternacao = useMemo(
+    () =>
+      internacoesFilter === "internacoes" ? [] : solicitacoesInternacao || [],
+    [internacoesFilter, solicitacoesInternacao],
+  );
+
+  const filteredInternacoes = useMemo(
+    () => (internacoesFilter === "solicitacoes" ? [] : internacoes || []),
+    [internacoesFilter, internacoes],
+  );
+
   const { data: procedimentosHospitalares } = useQuery(
     "paciente-procedimentos-hospitalares",
     () => api.get("/paciente/procedimentos-hospitalares").then((r) => r.data),
     { enabled: activeTab === "procedimentos" },
   );
-  const { data: medicacoesHospitalares, isLoading: medicacoesLoading } =
-    useQuery<MedicacaoAdministrada[]>(
-      ["paciente-medicacoes-hospitalares", perfil?.id],
+  const {
+    data: medicacoesAdministradas,
+    isLoading: medicacoesAdministradasLoading,
+  } = useQuery<MedicacaoAdministrada[]>(
+    ["paciente-medicacoes-administradas", perfil?.id],
+    async () => {
+      const res = await api.get("/paciente/medicacoes-administradas");
+      console.debug("medicacoes-administradas response", res.status, res.data);
+      return res.data as MedicacaoAdministrada[];
+    },
+    {
+      enabled: activeTab === "medicacoes" && !!perfil,
+      onError: (err: any) => {
+        toast.error(
+          err?.response?.data?.message ||
+            "Erro ao carregar medicações administradas",
+        );
+      },
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  );
+  const { data: medicacoesPaciente, isLoading: medicacoesPacienteLoading } =
+    useQuery(
+      ["paciente-medicacoes-paciente", perfil?.id],
       async () => {
-        const q = perfil?.id ? `?pacienteId=${perfil.id}` : "";
-        const res = await api.get(`/paciente/medicacoes-hospitalares${q}`);
-        console.debug("medicacoes-hospitalares response", res.status, res.data);
-        return res.data as MedicacaoAdministrada[];
+        const res = await api.get("/paciente/medicacoes-paciente");
+        return res.data;
       },
       {
         enabled: activeTab === "medicacoes" && !!perfil,
         onError: (err: any) => {
           toast.error(
-            err?.response?.data?.message || "Erro ao carregar medicações",
+            err?.response?.data?.message ||
+              "Erro ao carregar medicações do paciente",
           );
         },
         staleTime: 1000 * 60 * 5,
@@ -634,7 +695,7 @@ const PacienteDashboard: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-5 lg:p-7">
           {/* ── HOME ──────────────────────────────────────── */}
           {activeTab === "home" && (
-            <div className="space-y-6 max-w-5xl mx-auto">
+            <div className="space-y-6 max-w-6xl mx-auto">
               {/* Boas-vindas */}
               <div className="rounded-2xl bg-gradient-to-br from-teal-800 via-teal-700 to-blue-700 p-6 text-white relative overflow-hidden">
                 <div
@@ -810,7 +871,7 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── PERFIL ──────────────────────────────────────── */}
           {activeTab === "perfil" && perfil && (
-            <div className="max-w-4xl mx-auto space-y-5">
+            <div className="max-w-7xl mx-auto space-y-5">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <SectionHeader icon={User} title="Meu Perfil" />
@@ -890,8 +951,8 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── CONSULTAS ───────────────────────────────────── */}
           {activeTab === "consultas" && (
-            <div className="max-w-4xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <div className="max-w-7xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <SectionHeader icon={Stethoscope} title="Minhas Consultas" />
                   <button
@@ -1157,7 +1218,7 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── HISTÓRICO MÉDICO ────────────────────────────── */}
           {activeTab === "historico" && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <SectionHeader
@@ -1269,7 +1330,7 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── VACINAS ─────────────────────────────────────── */}
           {activeTab === "vacinas" && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <SectionHeader
@@ -1355,15 +1416,44 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── EXAMES ──────────────────────────────────────── */}
           {activeTab === "exames" && (
-            <div className="max-w-4xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader
-                  icon={FileText}
-                  title="Meus Exames"
-                  color="emerald"
-                />
+            <div className="max-w-6xl xl:max-w-7xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <SectionHeader
+                    icon={FileText}
+                    title="Meus Exames"
+                    color="emerald"
+                  />
+                  <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
+                    {[
+                      { value: "realizados", label: "Exames" },
+                      { value: "solicitados", label: "Solicitações" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          setExamesSource(
+                            option.value as "realizados" | "solicitados",
+                          )
+                        }
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                          examesSource === option.value
+                            ? "bg-emerald-600 text-white"
+                            : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        {option.label}
+                        <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-2 text-[11px] font-bold text-slate-600 shadow-sm">
+                          {option.value === "realizados"
+                            ? filteredExamesRealizados.length
+                            : filteredExamesSolicitados.length}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                {/* Busca por nome do exame (filtra solicitações e exames) */}
                 <div className="mb-4">
                   <div className="relative max-w-md">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1379,83 +1469,60 @@ const PacienteDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {mergedExames && mergedExames.length > 0 ? (
-                  <div className="space-y-3">
-                    {mergedExames
-                      .filter((item: any) =>
-                        (item.title || "")
-                          .toLowerCase()
-                          .includes((exameSearch || "").toLowerCase()),
-                      )
-                      .map((item: any) => (
+                {examesSource === "realizados" ? (
+                  filteredExamesRealizados.length > 0 ? (
+                    <div className="space-y-3">
+                      {filteredExamesRealizados.map((item: any) => (
                         <div
                           key={item.id}
-                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-teal-200 hover:shadow-sm transition-all"
+                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-emerald-200 hover:shadow-sm transition-all"
                         >
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div>
                               <p className="text-sm font-bold text-gray-900">
-                                {item.title}
+                                {item.tipo || "Exame"}
                               </p>
                               <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                <MapPin className="h-3 w-3" /> {item.labName}
+                                <MapPin className="h-3 w-3" />{" "}
+                                {item.laboratorio?.nome || "—"}
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
-                                {item.source === "solicitacao"
-                                  ? "Solicitação de exame"
-                                  : "Exame"}
+                                Exame agendado
                               </p>
                             </div>
                             <StatusBadge status={item.status} />
                           </div>
 
-                          {item.source === "exame" && (
-                            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                              {item.dataAgendada && (
-                                <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                  <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                    Agendado
-                                  </p>
-                                  <p className="text-gray-700">
-                                    {format(
-                                      new Date(item.dataAgendada),
-                                      "dd/MM/yyyy HH:mm",
-                                      { locale: ptBR },
-                                    )}
-                                  </p>
-                                </div>
-                              )}
-                              {item.dataRealizado && (
-                                <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                  <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                    Realizado
-                                  </p>
-                                  <p className="text-gray-700">
-                                    {format(
-                                      new Date(item.dataRealizado),
-                                      "dd/MM/yyyy",
-                                      { locale: ptBR },
-                                    )}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {item.source === "solicitacao" && (
-                            <div className="text-xs text-gray-600 mb-3">
-                              Solicitado em:{" "}
-                              {item.createdAt
-                                ? format(
-                                    new Date(item.createdAt),
+                          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                            {item.dataAgendada && (
+                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                  Agendado
+                                </p>
+                                <p className="text-gray-700">
+                                  {format(
+                                    new Date(item.dataAgendada),
+                                    "dd/MM/yyyy HH:mm",
+                                    { locale: ptBR },
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                            {item.dataRealizado && (
+                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                  Realizado
+                                </p>
+                                <p className="text-gray-700">
+                                  {format(
+                                    new Date(item.dataRealizado),
                                     "dd/MM/yyyy",
-                                    {
-                                      locale: ptBR,
-                                    },
-                                  )
-                                : "—"}
-                            </div>
-                          )}
+                                    { locale: ptBR },
+                                  )}
+                                </p>
+                              </div>
+                            )}
+                          </div>
 
                           {item.observacoes && (
                             <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
@@ -1489,265 +1556,337 @@ const PacienteDashboard: React.FC = () => {
                           )}
                         </div>
                       ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={FileText}
-                    message="Nenhum exame ou solicitação encontrado"
-                  />
-                )}
-
-                {/* Solicitações registradas (exames solicitados que ainda não viraram exame) */}
-                <div className="mt-6 hidden">
-                  <SectionHeader
-                    icon={FileText}
-                    title="Minhas Solicitações de Exame"
-                    color="emerald"
-                  />
-                  {solicitacoesExame && solicitacoesExame.length > 0 ? (
-                    <div className="space-y-3">
-                      {solicitacoesExame
-                        .filter((s: any) =>
-                          (s.tipoExame || "")
-                            .toLowerCase()
-                            .includes((exameSearch || "").toLowerCase()),
-                        )
-                        .map((s: any) => (
-                          <div
-                            key={s.id}
-                            className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-teal-200 hover:shadow-sm transition-all"
-                          >
-                            <div className="flex items-start justify-between gap-3 mb-3">
-                              <div>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {s.tipoExame}
-                                </p>
-                                <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                  <MapPin className="h-3 w-3" />{" "}
-                                  {s.laboratorio?.nome || "—"}
-                                </p>
-                              </div>
-                              <StatusBadge status={s.status} />
-                            </div>
-                            <div className="text-xs text-gray-600 mb-2">
-                              Solicitado em:{" "}
-                              {s.createdAt
-                                ? format(new Date(s.createdAt), "dd/MM/yyyy", {
-                                    locale: ptBR,
-                                  })
-                                : "—"}
-                            </div>
-                            {s.observacoes && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Observações
-                                </p>
-                                <p className="text-gray-700">{s.observacoes}</p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
                     </div>
                   ) : (
                     <EmptyState
                       icon={FileText}
-                      message="Nenhuma solicitação de exame encontrada"
+                      message="Nenhum exame encontrado"
                     />
-                  )}
-                </div>
+                  )
+                ) : filteredExamesSolicitados.length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredExamesSolicitados.map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-emerald-200 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              {item.tipoExame}
+                            </p>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" />{" "}
+                              {item.laboratorio?.nome || "—"}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Solicitação de exame
+                            </p>
+                          </div>
+                          <StatusBadge status={item.status} />
+                        </div>
+
+                        <div className="text-xs text-gray-600 mb-3">
+                          Solicitado em:{" "}
+                          {item.createdAt
+                            ? format(new Date(item.createdAt), "dd/MM/yyyy", {
+                                locale: ptBR,
+                              })
+                            : "—"}
+                        </div>
+
+                        {item.observacoes && (
+                          <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
+                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                              Observações
+                            </p>
+                            <p className="text-gray-700">{item.observacoes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon={FileText}
+                    message="Nenhuma solicitação de exame encontrada"
+                  />
+                )}
               </div>
             </div>
           )}
 
           {/* ── INTERNAÇÕES ─────────────────────────────────── */}
           {activeTab === "internacoes" && (
-            <div className="max-w-4xl mx-auto space-y-5">
-              {/* Solicitações */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader
-                  icon={Building2}
-                  title="Solicitações de Internação"
-                />
-                {solicitacoesInternacao && solicitacoesInternacao.length > 0 ? (
-                  <div className="space-y-3">
-                    {solicitacoesInternacao.map((s: any) => (
-                      <div
-                        key={s.id}
-                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">
-                              {s.hospital.nome}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {format(
-                                new Date(s.createdAt),
-                                "dd/MM/yyyy HH:mm",
-                                { locale: ptBR },
-                              )}
-                            </p>
+            <div className="max-w-7xl mx-auto space-y-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <SectionHeader icon={Building2} title="Internações" />
+                  <p className="text-sm text-gray-500">
+                    Filtre entre solicitações de internação e internações já
+                    registradas para o paciente.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label
+                    htmlFor="internacoesFilter"
+                    className="text-sm font-semibold text-gray-600"
+                  >
+                    Mostrar
+                  </label>
+                  <select
+                    id="internacoesFilter"
+                    value={internacoesFilter}
+                    onChange={(e) =>
+                      setInternacoesFilter(
+                        e.target.value as
+                          | "all"
+                          | "solicitacoes"
+                          | "internacoes",
+                      )
+                    }
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-sky-500 focus:outline-none"
+                  >
+                    <option value="all">Todas</option>
+                    <option value="solicitacoes">Solicitações</option>
+                    <option value="internacoes">Internações</option>
+                  </select>
+                </div>
+              </div>
+
+              {perfil && (
+                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="space-y-1">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Paciente
+                      </p>
+                      <p className="text-lg font-semibold text-slate-900">
+                        {perfil.nome}
+                      </p>
+                      <p className="text-sm text-slate-600">{perfil.email}</p>
+                    </div>
+                    <div className="grid gap-2">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Documento
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        CPF: {perfil.cpf}
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        CNS: {perfil.cns}
+                      </p>
+                    </div>
+                    <div className="grid gap-2">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Contato
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        Telefone: {perfil.telefone}
+                      </p>
+                      <p className="text-sm text-slate-700">
+                        Endereço: {perfil.endereco}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {internacoesFilter !== "internacoes" && (
+                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <SectionHeader
+                    icon={Building2}
+                    title="Solicitações de Internação"
+                  />
+                  {filteredSolicitacoesInternacao &&
+                  filteredSolicitacoesInternacao.length > 0 ? (
+                    <div className="space-y-3">
+                      {filteredSolicitacoesInternacao.map((s: any) => (
+                        <div
+                          key={s.id}
+                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">
+                                {s.hospital?.nome || "—"}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {format(
+                                  new Date(s.createdAt),
+                                  "dd/MM/yyyy HH:mm",
+                                  { locale: ptBR },
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex gap-1.5 flex-wrap justify-end">
+                              <StatusBadge status={s.status} />
+                              <span
+                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getPrioridadeColor(s.prioridade)}`}
+                              >
+                                {s.prioridade}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex gap-1.5 flex-wrap justify-end">
-                            <StatusBadge status={s.status} />
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getPrioridadeColor(s.prioridade)}`}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mb-3">
+                            {[
+                              ["Tipo", s.tipo],
+                              ["Motivo", s.motivo],
+                              ["Médico", s.funcionario?.nome || "—"],
+                              ["UBS", s.ubs?.nome || "—"],
+                            ].map(([l, v]) => (
+                              <div
+                                key={l}
+                                className="rounded-lg bg-white border border-gray-100 p-2.5"
+                              >
+                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                  {l}
+                                </p>
+                                <p className="text-gray-700 font-medium">{v}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {s.dataAgendada && (
+                            <div className="rounded-lg bg-sky-50 border border-sky-100 p-3 text-xs mb-3">
+                              <p className="font-bold text-sky-600 mb-1">
+                                Agendado para
+                              </p>
+                              <p className="text-sky-700">
+                                {format(
+                                  new Date(s.dataAgendada),
+                                  "dd/MM/yyyy",
+                                  {
+                                    locale: ptBR,
+                                  },
+                                )}
+                                {s.horaAgendada && ` às ${s.horaAgendada}`}
+                              </p>
+                              {s.local && (
+                                <p className="text-sky-700 mt-0.5">
+                                  Local: {s.local}
+                                </p>
+                              )}
+                              {s.recomendacoes && (
+                                <p className="text-sky-700 mt-0.5">
+                                  {s.recomendacoes}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => openDetalhesModal(s)}
+                              className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
                             >
-                              {s.prioridade}
+                              <Eye className="h-3.5 w-3.5" /> Ver Detalhes
+                            </button>
+                            {s.status === "agendado" && (
+                              <button
+                                onClick={() =>
+                                  openConfirmarModal(s, "internacao")
+                                }
+                                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
+                              >
+                                <Check className="h-3.5 w-3.5" /> Confirmar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Building2}
+                      message="Nenhuma solicitação encontrada"
+                    />
+                  )}
+                </div>
+              )}
+
+              {internacoesFilter !== "solicitacoes" && (
+                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                  <SectionHeader
+                    icon={Building2}
+                    title="Internações Realizadas"
+                  />
+                  {filteredInternacoes && filteredInternacoes.length > 0 ? (
+                    <div className="space-y-3">
+                      {filteredInternacoes.map((i: any) => (
+                        <div
+                          key={i.id}
+                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
+                        >
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">
+                                {i.hospital?.nome || "—"}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                Entrada:{" "}
+                                {format(new Date(i.dataEntrada), "dd/MM/yyyy", {
+                                  locale: ptBR,
+                                })}
+                                {i.dataSaida &&
+                                  ` · Saída: ${format(new Date(i.dataSaida), "dd/MM/yyyy", { locale: ptBR })}`}
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${i.dataSaida ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-sky-50 text-sky-700 ring-1 ring-sky-200"}`}
+                            >
+                              {i.dataSaida ? "Finalizada" : "Em andamento"}
                             </span>
                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mb-3">
-                          {[
-                            ["Tipo", s.tipo],
-                            ["Motivo", s.motivo],
-                            ["Médico", s.funcionario.nome],
-                            ["UBS", s.ubs.nome],
-                          ].map(([l, v]) => (
-                            <div
-                              key={l}
-                              className="rounded-lg bg-white border border-gray-100 p-2.5"
-                            >
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
                               <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                {l}
+                                Motivo
                               </p>
-                              <p className="text-gray-700 font-medium">{v}</p>
+                              <p className="text-gray-700">{i.motivo}</p>
                             </div>
-                          ))}
-                        </div>
-                        {s.dataAgendada && (
-                          <div className="rounded-lg bg-sky-50 border border-sky-100 p-3 text-xs mb-3">
-                            <p className="font-bold text-sky-600 mb-1">
-                              Agendado para
-                            </p>
-                            <p className="text-sky-700">
-                              {format(new Date(s.dataAgendada), "dd/MM/yyyy", {
-                                locale: ptBR,
-                              })}
-                              {s.horaAgendada && ` às ${s.horaAgendada}`}
-                            </p>
-                            {s.local && (
-                              <p className="text-sky-700 mt-0.5">
-                                Local: {s.local}
-                              </p>
+                            {(i.medicoResponsavel ||
+                              i.medicoResponsavelNome) && (
+                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
+                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                  Médico Responsável
+                                </p>
+                                <p className="text-gray-700">
+                                  {i.medicoResponsavel?.nome ||
+                                    i.medicoResponsavelNome}
+                                </p>
+                              </div>
                             )}
-                            {s.recomendacoes && (
-                              <p className="text-sky-700 mt-0.5">
-                                {s.recomendacoes}
-                              </p>
+                            {i.diagnostico && (
+                              <div className="rounded-lg bg-white border border-gray-100 p-2.5 sm:col-span-2">
+                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                                  Diagnóstico
+                                </p>
+                                <p className="text-gray-700">{i.diagnostico}</p>
+                              </div>
                             )}
                           </div>
-                        )}
-                        <div className="flex gap-2">
                           <button
-                            onClick={() => openDetalhesModal(s)}
+                            onClick={() => openDetalhesModal(i)}
                             className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
                           >
                             <Eye className="h-3.5 w-3.5" /> Ver Detalhes
                           </button>
-                          {s.status === "agendado" && (
-                            <button
-                              onClick={() =>
-                                openConfirmarModal(s, "internacao")
-                              }
-                              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
-                            >
-                              <Check className="h-3.5 w-3.5" /> Confirmar
-                            </button>
-                          )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Building2}
-                    message="Nenhuma solicitação encontrada"
-                  />
-                )}
-              </div>
-
-              {/* Internações realizadas */}
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader
-                  icon={Building2}
-                  title="Internações Realizadas"
-                />
-                {internacoes && internacoes.length > 0 ? (
-                  <div className="space-y-3">
-                    {internacoes.map((i: any) => (
-                      <div
-                        key={i.id}
-                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">
-                              {i.hospital.nome}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Entrada:{" "}
-                              {format(new Date(i.dataEntrada), "dd/MM/yyyy", {
-                                locale: ptBR,
-                              })}
-                              {i.dataSaida &&
-                                ` · Saída: ${format(new Date(i.dataSaida), "dd/MM/yyyy", { locale: ptBR })}`}
-                            </p>
-                          </div>
-                          <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${i.dataSaida ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-sky-50 text-sky-700 ring-1 ring-sky-200"}`}
-                          >
-                            {i.dataSaida ? "Finalizada" : "Em andamento"}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
-                          <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                              Motivo
-                            </p>
-                            <p className="text-gray-700">{i.motivo}</p>
-                          </div>
-                          {i.medicoResponsavel && (
-                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Médico Responsável
-                              </p>
-                              <p className="text-gray-700">
-                                {i.medicoResponsavel.nome}
-                              </p>
-                            </div>
-                          )}
-                          {i.diagnostico && (
-                            <div className="rounded-lg bg-white border border-gray-100 p-2.5 sm:col-span-2">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Diagnóstico
-                              </p>
-                              <p className="text-gray-700">{i.diagnostico}</p>
-                            </div>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => openDetalhesModal(i)}
-                          className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5" /> Ver Detalhes
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Building2}
-                    message="Nenhuma internação encontrada"
-                  />
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon={Building2}
+                      message="Nenhuma internação encontrada"
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
           {/* ── PROCEDIMENTOS ───────────────────────────────── */}
           {activeTab === "procedimentos" && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <SectionHeader
                   icon={Activity}
@@ -1809,77 +1948,189 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── MEDICAÇÕES ──────────────────────────────────── */}
           {activeTab === "medicacoes" && (
-            <div className="max-w-4xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader icon={Pill} title="Medicações Hospitalares" />
-                {medicacoesLoading ? (
-                  <div className="flex flex-col items-center py-16">
-                    <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal-100 border-t-teal-600 mb-3" />
-                    <p className="text-sm text-gray-400">
-                      Carregando medicações...
-                    </p>
+            <div className="max-w-7xl xl:max-w-7xl mx-auto">
+              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <SectionHeader icon={Pill} title="Medicações" />
+                  <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
+                    {[
+                      { value: "paciente", label: "Paciente" },
+                      { value: "administradas", label: "Internação" },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() =>
+                          setMedicacoesSource(
+                            option.value as "paciente" | "administradas",
+                          )
+                        }
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                          medicacoesSource === option.value
+                            ? "bg-teal-600 text-white"
+                            : "text-slate-600 hover:bg-slate-100"
+                        }`}
+                      >
+                        {option.label}
+                        <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-2 text-[11px] font-bold text-slate-600 shadow-sm">
+                          {option.value === "paciente"
+                            ? (medicacoesPaciente?.length ?? 0)
+                            : (medicacoesAdministradas?.length ?? 0)}
+                        </span>
+                      </button>
+                    ))}
                   </div>
-                ) : medicacoesHospitalares &&
-                  medicacoesHospitalares.length > 0 ? (
-                  <div className="overflow-x-auto rounded-xl border border-gray-100">
-                    <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          {[
-                            "Medicação",
-                            "Data/Hora",
-                            "Dosagem",
-                            "Via",
-                            "Administrado por",
-                            "Hospital",
-                          ].map((h) => (
-                            <th
-                              key={h}
-                              className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
-                            >
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {medicacoesHospitalares.map((m) => (
-                          <tr
-                            key={m.id}
-                            className="hover:bg-slate-50 transition-colors"
-                          >
-                            <td className="px-4 py-3 font-semibold text-gray-800">
-                              {m.nomeMedicacao}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {format(
-                                new Date(m.dataHoraAdministracao),
-                                "dd/MM/yyyy HH:mm",
-                                { locale: ptBR },
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {m.dosagem || "—"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {m.viaAdministracao || "—"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {m.administradorNomeOuCrm || "—"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {m.internacao?.hospital?.nome || "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                </div>
+
+                {medicacoesSource === "paciente" ? (
+                  <>
+                    {medicacoesPacienteLoading ? (
+                      <div className="flex flex-col items-center py-16">
+                        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal-100 border-t-teal-600 mb-3" />
+                        <p className="text-sm text-gray-400">
+                          Carregando medicações do paciente...
+                        </p>
+                      </div>
+                    ) : medicacoesPaciente && medicacoesPaciente.length > 0 ? (
+                      <div className="overflow-x-auto rounded-xl border border-gray-100">
+                        <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              {[
+                                "Medicamento",
+                                "Quantidade",
+                                "Retirada",
+                                "Fornecido por",
+                                "UBS",
+                                "Funcionário",
+                                "Observações",
+                              ].map((h) => (
+                                <th
+                                  key={h}
+                                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
+                                >
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {medicacoesPaciente.map((m: any) => (
+                              <tr
+                                key={m.id}
+                                className="hover:bg-slate-50 transition-colors"
+                              >
+                                <td className="px-4 py-3 font-semibold text-gray-800">
+                                  {m.medicamento?.nome || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.quantidade}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {format(
+                                    new Date(m.dataRetirada),
+                                    "dd/MM/yyyy",
+                                    {
+                                      locale: ptBR,
+                                    },
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.fornecidoPor || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.ubs?.nome || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.funcionario?.nome || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.observacoes || "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <EmptyState
+                        icon={Pill}
+                        message="Nenhuma medicação de paciente encontrada"
+                      />
+                    )}
+                  </>
                 ) : (
-                  <EmptyState
-                    icon={Pill}
-                    message="Nenhuma medicação hospitalar encontrada"
-                  />
+                  <>
+                    {medicacoesAdministradasLoading ? (
+                      <div className="flex flex-col items-center py-16">
+                        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal-100 border-t-teal-600 mb-3" />
+                        <p className="text-sm text-gray-400">
+                          Carregando medicações administradas...
+                        </p>
+                      </div>
+                    ) : medicacoesAdministradas &&
+                      medicacoesAdministradas.length > 0 ? (
+                      <div className="overflow-x-auto rounded-xl border border-gray-100">
+                        <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
+                          <thead className="bg-slate-50">
+                            <tr>
+                              {[
+                                "Medicação",
+                                "Data/Hora",
+                                "Dosagem",
+                                "Via",
+                                "Administrado por",
+                                "Hospital",
+                              ].map((h) => (
+                                <th
+                                  key={h}
+                                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
+                                >
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {medicacoesAdministradas.map((m) => (
+                              <tr
+                                key={m.id}
+                                className="hover:bg-slate-50 transition-colors"
+                              >
+                                <td className="px-4 py-3 font-semibold text-gray-800">
+                                  {m.nomeMedicacao}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {format(
+                                    new Date(m.dataHoraAdministracao),
+                                    "dd/MM/yyyy HH:mm",
+                                    { locale: ptBR },
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.dosagem || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.viaAdministracao || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.administradorNomeOuCrm || "—"}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {m.internacao?.hospital?.nome || "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <EmptyState
+                        icon={Pill}
+                        message="Nenhuma medicação administrada encontrada"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -1887,7 +2138,7 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── AGENDAMENTOS ────────────────────────────────── */}
           {activeTab === "agendamentos" && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <SectionHeader
                   icon={Calendar}
@@ -1977,7 +2228,7 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── HISTÓRICO HOSPITALAR ────────────────────────── */}
           {activeTab === "historico-hospitalar" && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                 <SectionHeader icon={History} title="Histórico Hospitalar" />
                 {historicoHospitalar && (
@@ -2437,7 +2688,11 @@ const PacienteDashboard: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-xs">
               {[
                 ["Motivo", selectedItem.motivo],
-                ["Médico Responsável", selectedItem.medicoResponsavel?.nome],
+                [
+                  "Médico Responsável",
+                  selectedItem.medicoResponsavel?.nome ||
+                    selectedItem.medicoResponsavelNome,
+                ],
                 [
                   "Local",
                   selectedItem.local || selectedItem.hospital?.endereco,

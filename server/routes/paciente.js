@@ -637,7 +637,6 @@ router.get("/medicacoes-hospitalares", async (req, res) => {
     const medicacoes = await prisma.medicacaoAdministrada.findMany({
       where,
       include: {
-        // incluir referência à internação (se houver) e também o histórico médico relacionado
         internacao: {
           select: {
             id: true,
@@ -664,6 +663,105 @@ router.get("/medicacoes-hospitalares", async (req, res) => {
   } catch (error) {
     console.error(
       "Erro ao listar medicações hospitalares:",
+      error?.message || error,
+      error?.stack || "no-stack",
+    );
+    res
+      .status(500)
+      .json({
+        message: "Erro interno do servidor",
+        details: error?.message || String(error),
+      });
+  }
+});
+
+router.get("/medicacoes-administradas", async (req, res) => {
+  try {
+    const { internacaoId } = req.query;
+
+    const where = { pacienteId: req.user.id };
+    if (internacaoId) where.internacaoId = internacaoId;
+
+    const medicacoes = await prisma.medicacaoAdministrada.findMany({
+      where,
+      include: {
+        internacao: {
+          select: {
+            id: true,
+            hospital: {
+              select: { nome: true },
+            },
+          },
+        },
+        historicoMedico: {
+          select: {
+            id: true,
+            laudo: true,
+            dataConsulta: true,
+          },
+        },
+        paciente: {
+          select: { id: true, nome: true },
+        },
+      },
+      orderBy: { dataHoraAdministracao: "desc" },
+    });
+
+    res.json(medicacoes);
+  } catch (error) {
+    console.error(
+      "Erro ao listar medicações administradas:",
+      error?.message || error,
+      error?.stack || "no-stack",
+    );
+    res
+      .status(500)
+      .json({
+        message: "Erro interno do servidor",
+        details: error?.message || String(error),
+      });
+  }
+});
+
+router.get("/medicacoes-paciente", async (req, res) => {
+  try {
+    const medicacoes = await prisma.medicacaoPaciente.findMany({
+      where: { pacienteId: req.user.id },
+      include: {
+        medicamento: {
+          select: {
+            id: true,
+            nome: true,
+            descricao: true,
+            lote: true,
+            dataValidade: true,
+            observacoes: true,
+          },
+        },
+        funcionario: {
+          select: {
+            id: true,
+            nome: true,
+            telefone: true,
+            email: true,
+          },
+        },
+        ubs: {
+          select: {
+            id: true,
+            nome: true,
+            endereco: true,
+            telefone: true,
+          },
+        },
+      },
+      orderBy: { dataRetirada: "desc" },
+    });
+
+    res.json(medicacoes);
+  } catch (error) {
+    console.error(
+      "Erro ao listar medicações do paciente:",
       error?.message || error,
       error?.stack || "no-stack",
     );
