@@ -553,6 +553,7 @@ const FuncionarioDashboard: React.FC = () => {
       case "avaliando":
         return "text-blue-600 bg-blue-100";
       case "agendado":
+      case "agendada":
         return "text-purple-600 bg-purple-100";
       case "realizado":
         return "text-green-600 bg-green-100";
@@ -626,37 +627,45 @@ const FuncionarioDashboard: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      {/* Header */}
-      <header className="bg-white/95 backdrop-blur-md shadow-md border-b border-gray-100 sticky top-0 z-50">
+    <div
+      className="min-h-screen bg-[#EEF2F7]"
+      style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
+    >
+      {/* ── HEADER ── */}
+      <header
+        className="sticky top-0 z-50 border-b border-[#1A3F72]/20"
+        style={{
+          background: "#1A3F72",
+          boxShadow: "0 2px 16px rgba(26,63,114,0.3)",
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            {/* Lado esquerdo */}
-            <div className="flex items-center gap-4">
-              {/* Ícone */}
-              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-md">
-                <Stethoscope className="h-7 w-7 text-white" />
+          <div className="flex items-center justify-between py-3.5">
+            {/* Esquerda */}
+            <div className="flex items-center gap-3.5">
+              <div
+                className="flex items-center justify-center h-10 w-10 rounded-xl"
+                style={{
+                  background: "rgba(255,255,255,0.13)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                }}
+              >
+                <Stethoscope className="h-5 w-5 text-white" />
               </div>
-
-              {/* Informações */}
               <div className="flex flex-col">
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                <h1 className="text-[15px] font-bold tracking-tight text-white leading-tight">
                   Painel do Funcionário
                 </h1>
-
-                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 mt-1">
-                  <p className="text-sm text-gray-600">
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-white/60">
                     Bem-vindo,{" "}
-                    <span className="font-semibold text-gray-800">
+                    <span className="font-semibold text-white/90">
                       {user?.nome}
                     </span>
                   </p>
-
-                  <span className="hidden sm:block text-gray-300">•</span>
-
-                  <p className="text-sm text-gray-600">
-                    Função:{" "}
-                    <span className="font-medium text-green-700">
+                  <span className="text-white/30">·</span>
+                  <p className="text-xs text-white/60">
+                    <span className="font-medium text-white/80">
                       {user?.funcao || "Não informada"}
                     </span>
                   </p>
@@ -667,35 +676,63 @@ const FuncionarioDashboard: React.FC = () => {
             {/* Botão sair */}
             <button
               onClick={logout}
-              className="group flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-red-700 hover:shadow-lg active:scale-95"
+              className="group flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold text-white/90 transition-all duration-200"
+              style={{
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.2)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.2)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.1)")
+              }
             >
-              <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              <LogOut className="h-3.5 w-3.5" />
               <span>Sair</span>
             </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="lg:w-64">
-            <nav className="bg-white rounded-2xl shadow-lg p-4">
-              <ul className="space-y-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* ── SIDEBAR ── */}
+          <div className="lg:w-56">
+            <nav
+              className="rounded-xl p-3 sticky top-[68px]"
+              style={{
+                background: "#fff",
+                border: "1px solid #D9E4F0",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+              }}
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4] px-3 mb-2">
+                Menu
+              </p>
+              <ul className="space-y-0.5">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
                     <li key={item.key}>
                       <button
                         onClick={() => setActiveTab(item.key)}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors ${
+                        className={`w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium ${
                           activeTab === item.key
-                            ? "bg-green-600 text-white"
-                            : "text-gray-700 hover:bg-gray-100"
+                            ? "text-[#1A3F72]"
+                            : "text-[#5C7A9B] hover:text-[#1A3F72]"
                         }`}
+                        style={
+                          activeTab === item.key
+                            ? {
+                                background: "#EBF2FB",
+                                borderLeft: "3px solid #1A3F72",
+                              }
+                            : { borderLeft: "3px solid transparent" }
+                        }
                       >
-                        <Icon className="h-5 w-5" />
-                        <span className="font-medium">{item.name}</span>
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span>{item.name}</span>
                       </button>
                     </li>
                   );
@@ -704,32 +741,52 @@ const FuncionarioDashboard: React.FC = () => {
             </nav>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1">
+          {/* ── MAIN CONTENT ── */}
+          <div className="flex-1 min-w-0">
+            {/* ══ PACIENTES ══ */}
             {activeTab === "pacientes" && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex justify-between items-center mb-5">
+                  <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
                     Pacientes
                   </h2>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
+                      <Search className="h-4 w-4 text-[#8FA8C4]" />
                     </div>
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="block w-full pl-9 pr-3 py-2 text-sm text-[#1A2E4A] placeholder-[#8FA8C4] rounded-lg outline-none transition-all"
+                      style={{
+                        border: "1px solid #C8D9ED",
+                        background: "#F4F8FC",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#1A3F72";
+                        e.target.style.background = "#fff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#C8D9ED";
+                        e.target.style.background = "#F4F8FC";
+                      }}
                       placeholder="Buscar por nome, CPF ou CNS..."
                     />
                   </div>
                 </div>
 
                 {loadingPacientes ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Carregando...</p>
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#C8D9ED] border-t-[#1A3F72] mx-auto"></div>
+                    <p className="mt-3 text-sm text-[#8FA8C4]">Carregando...</p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -740,46 +797,60 @@ const FuncionarioDashboard: React.FC = () => {
                         .map((n: string) => n[0])
                         .join("")
                         .toUpperCase();
-
                       return (
                         <div
                           key={paciente.id}
-                          className="flex items-center gap-3 px-4 py-3 border border-gray-200 rounded-xl hover:shadow-md transition-shadow bg-white"
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-150"
+                          style={{
+                            border: "1px solid #E4EDF7",
+                            background: "#FAFCFF",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = "#A8C4E0";
+                            e.currentTarget.style.boxShadow =
+                              "0 2px 8px rgba(26,63,114,0.07)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = "#E4EDF7";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
                         >
                           {/* Avatar */}
-                          <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-semibold text-xs">
+                          <div
+                            className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs"
+                            style={{ background: "#EBF2FB", color: "#1A3F72" }}
+                          >
                             {initials}
                           </div>
 
-                          {/* Corpo: info + botões em duas linhas */}
                           <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                             {/* Linha 1 — dados */}
                             <div className="flex items-center gap-4 flex-wrap">
-                              <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                              <span className="text-sm font-semibold text-[#0F2242] whitespace-nowrap">
                                 {paciente.nome}
                               </span>
-                              <span className="w-px h-3.5 bg-gray-200 hidden sm:block" />
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                              <span className="w-px h-3 bg-[#D9E4F0] hidden sm:block" />
+                              <span className="text-xs text-[#8FA8C4] whitespace-nowrap">
                                 CPF{" "}
-                                <span className="text-gray-800 font-medium">
+                                <span className="text-[#3A5B82] font-medium">
                                   {paciente.cpf}
                                 </span>
                               </span>
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                              <span className="text-xs text-[#8FA8C4] whitespace-nowrap">
                                 CNS{" "}
-                                <span className="text-gray-800 font-medium">
+                                <span className="text-[#3A5B82] font-medium">
                                   {paciente.cns}
                                 </span>
                               </span>
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                              <span className="text-xs text-[#8FA8C4] whitespace-nowrap">
                                 Tel{" "}
-                                <span className="text-gray-800 font-medium">
+                                <span className="text-[#3A5B82] font-medium">
                                   {paciente.telefone}
                                 </span>
                               </span>
-                              <span className="text-xs text-gray-500 whitespace-nowrap">
+                              <span className="text-xs text-[#8FA8C4] whitespace-nowrap">
                                 Nasc.{" "}
-                                <span className="text-gray-800 font-medium">
+                                <span className="text-[#3A5B82] font-medium">
                                   {format(
                                     new Date(paciente.nascimento),
                                     "dd/MM/yyyy",
@@ -791,65 +862,136 @@ const FuncionarioDashboard: React.FC = () => {
 
                             {/* Linha 2 — botões */}
                             <div className="flex flex-wrap items-center gap-2">
-                              {/* MÉDICOS */}
                               {isMedico && (
                                 <>
                                   <button
                                     onClick={() => openHistoricoModal(paciente)}
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors text-xs font-medium whitespace-nowrap"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+                                    style={{
+                                      background: "#EBF2FB",
+                                      color: "#1A3F72",
+                                      border: "1px solid #C0D6EE",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#D5E7F7")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#EBF2FB")
+                                    }
                                   >
                                     <Heart className="h-3 w-3" />
                                     Histórico #
                                   </button>
-
                                   <button
                                     onClick={() => openExameModal(paciente)}
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200 transition-colors text-xs font-medium whitespace-nowrap"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+                                    style={{
+                                      background: "#F0EDFB",
+                                      color: "#4C3799",
+                                      border: "1px solid #C9C0F0",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#E2DBF7")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#F0EDFB")
+                                    }
                                   >
                                     <FileText className="h-3 w-3" />
                                     Exame
                                   </button>
-
                                   <button
                                     onClick={() =>
                                       openInternacaoModal(paciente)
                                     }
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors text-xs font-medium whitespace-nowrap"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+                                    style={{
+                                      background: "#FEF0F0",
+                                      color: "#8B1F1F",
+                                      border: "1px solid #F0C0C0",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#FADDDD")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#FEF0F0")
+                                    }
                                   >
                                     <Building2 className="h-3 w-3" />
                                     Internação
                                   </button>
-
                                   <button
                                     onClick={() => {
                                       setSelectedPaciente(paciente);
                                       setActiveTab("historico");
                                     }}
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-xs font-medium whitespace-nowrap"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+                                    style={{
+                                      background: "#F0F4F8",
+                                      color: "#4A6280",
+                                      border: "1px solid #C8D9ED",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#E0EAF4")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#F0F4F8")
+                                    }
                                   >
                                     <FileText className="h-3 w-3" />
                                     Ver histórico
                                   </button>
                                 </>
                               )}
-
-                              {/* ENFERMEIRO E FARMACÊUTICO */}
                               {isEnfermagemOuFarmacia && (
                                 <>
                                   <button
                                     onClick={() => openVacinaModal(paciente)}
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200 transition-colors text-xs font-medium whitespace-nowrap"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+                                    style={{
+                                      background: "#EAF5EF",
+                                      color: "#145C35",
+                                      border: "1px solid #B0D9C0",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#D5EDE0")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#EAF5EF")
+                                    }
                                   >
                                     <Shield className="h-3 w-3" />
                                     Vacina
                                   </button>
-
                                   <button
                                     type="button"
                                     onClick={() =>
                                       openAdministrarMedicamentoModal(paciente)
                                     }
-                                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors text-xs font-medium whitespace-nowrap"
+                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
+                                    style={{
+                                      background: "#EBF2FB",
+                                      color: "#1A3F72",
+                                      border: "1px solid #C0D6EE",
+                                    }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#D5E7F7")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#EBF2FB")
+                                    }
                                   >
                                     <Heart className="h-3 w-3" />
                                     Ministrar Medicamento
@@ -866,75 +1008,104 @@ const FuncionarioDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Medicamentos Tab */}
+            {/* ══ MEDICAMENTOS ══ */}
             {activeTab === "medicamentos" && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
                       Medicamentos
                     </h2>
-                    <p className="text-gray-600">
+                    <p className="text-sm text-[#8FA8C4] mt-0.5">
                       Use os controles abaixo para editar estoque ou administrar
                       medicação.
                     </p>
                   </div>
                   <div className="relative w-full max-w-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
+                      <Search className="h-4 w-4 text-[#8FA8C4]" />
                     </div>
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="block w-full pl-9 pr-3 py-2 text-sm text-[#1A2E4A] placeholder-[#8FA8C4] rounded-lg outline-none transition-all"
+                      style={{
+                        border: "1px solid #C8D9ED",
+                        background: "#F4F8FC",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#1A3F72";
+                        e.target.style.background = "#fff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#C8D9ED";
+                        e.target.style.background = "#F4F8FC";
+                      }}
                       placeholder="Buscar medicamento ou paciente..."
                     />
                   </div>
                 </div>
 
                 {loadingMedicamentos ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent mx-auto"></div>
-                    <p className="mt-2 text-gray-600">
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#C8D9ED] border-t-[#1A3F72] mx-auto"></div>
+                    <p className="mt-3 text-sm text-[#8FA8C4]">
                       Carregando medicamentos...
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {medicamentosDaUbs && medicamentosDaUbs.length > 0 ? (
                       medicamentosDaUbs.map((med: any) => (
                         <div
                           key={med.id}
-                          className="border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                          className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                          style={{
+                            border: "1px solid #E4EDF7",
+                            background: "#FAFCFF",
+                          }}
                         >
-                          <div className="space-y-3">
+                          <div className="space-y-2">
                             <div className="flex flex-wrap gap-2 items-center">
-                              <p className="text-sm text-gray-500">
+                              <p className="text-xs text-[#8FA8C4]">
                                 {med.nome}
                               </p>
-                              <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
+                              <span
+                                className="px-2 py-0.5 text-xs rounded-full font-medium"
+                                style={{
+                                  background: "#EBF2FB",
+                                  color: "#1A3F72",
+                                }}
+                              >
                                 UBS: {med.ubs?.nome || "Não informada"}
                               </span>
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-900">
+                            <h3 className="text-base font-bold text-[#0F2242]">
                               {med.descricao}
                             </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-[#5C7A9B]">
                               <p>
-                                <span className="font-medium text-gray-700">
+                                <span className="font-semibold text-[#3A5B82]">
                                   Lote:
                                 </span>{" "}
                                 {med.lote}
                               </p>
                               <p>
-                                <span className="font-medium text-gray-700">
+                                <span className="font-semibold text-[#3A5B82]">
                                   Quantidade:
                                 </span>{" "}
                                 {med.quantidade}
                               </p>
                               <p>
-                                <span className="font-medium text-gray-700">
+                                <span className="font-semibold text-[#3A5B82]">
                                   Validade:
                                 </span>{" "}
                                 {med.dataValidade?.split("T")[0] || "-"}
@@ -942,18 +1113,25 @@ const FuncionarioDashboard: React.FC = () => {
                               <p
                                 className={
                                   med.vencido
-                                    ? "text-red-600"
-                                    : "text-green-600"
+                                    ? "text-[#8B1F1F] font-semibold"
+                                    : "text-[#145C35] font-semibold"
                                 }
                               >
-                                <span className="font-medium text-gray-700">
+                                <span className="font-semibold text-[#3A5B82]">
                                   Status:
                                 </span>{" "}
                                 {med.vencido ? "Vencido" : "Válido"}
                               </p>
                             </div>
                             {!Number(med.quantidade) ? (
-                              <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                              <div
+                                className="mt-2 rounded-lg px-3 py-2 text-xs font-medium"
+                                style={{
+                                  background: "#FEF0F0",
+                                  color: "#8B1F1F",
+                                  border: "1px solid #F0C0C0",
+                                }}
+                              >
                                 Sem estoque disponível no momento.
                               </div>
                             ) : null}
@@ -964,20 +1142,45 @@ const FuncionarioDashboard: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleEditMed(med)}
-                                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                  className="px-3 py-2 text-xs font-semibold rounded-lg text-white transition-all"
+                                  style={{ background: "#1A3F72" }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#0F2A52")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#1A3F72")
+                                  }
                                 >
                                   Atualizar medicação
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => openAdministrarMed(med)}
-                                  className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                  className="px-3 py-2 text-xs font-semibold rounded-lg text-white transition-all"
+                                  style={{ background: "#145C35" }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#0E4226")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#145C35")
+                                  }
                                 >
                                   Ministrar ao paciente
                                 </button>
                               </>
                             ) : (
-                              <span className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
+                              <span
+                                className="px-3 py-2 rounded-lg text-xs font-medium"
+                                style={{
+                                  border: "1px solid #F0C0C0",
+                                  background: "#FEF0F0",
+                                  color: "#8B1F1F",
+                                }}
+                              >
                                 Ações desabilitadas por falta de estoque
                               </span>
                             )}
@@ -985,7 +1188,7 @@ const FuncionarioDashboard: React.FC = () => {
                         </div>
                       ))
                     ) : (
-                      <p className="text-gray-600">
+                      <p className="text-sm text-[#8FA8C4]">
                         Nenhum medicamento encontrado para sua UBS.
                       </p>
                     )}
@@ -993,36 +1196,55 @@ const FuncionarioDashboard: React.FC = () => {
                 )}
 
                 {showAdministradorMedicamentoModal && selectedAdminPaciente && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <div className="w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5">
-                      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{
+                      background: "rgba(10,25,47,0.55)",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
+                    <div
+                      className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white"
+                      style={{
+                        border: "1px solid #D9E4F0",
+                        boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                      }}
+                    >
+                      <div
+                        className="flex items-center justify-between px-6 py-4"
+                        style={{ borderBottom: "1px solid #EEF2F7" }}
+                      >
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
                             Selecionar medicamento
                           </p>
-                          <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                          <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
                             Administrar para {selectedAdminPaciente.nome}
                           </h3>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-xs text-[#8FA8C4] mt-0.5">
                             CNS: {selectedAdminPaciente.cns}
                           </p>
                         </div>
                         <button
                           type="button"
                           onClick={resetAdministracaoForm}
-                          className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200"
+                          className="rounded-full p-2 transition-all"
+                          style={{ background: "#F0F4F8", color: "#5C7A9B" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#D9E4F0")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "#F0F4F8")
+                          }
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
-
                       <div className="p-6 space-y-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-slate-700">
-                              Buscar medicamento
-                            </p>
-                          </div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8FA8C4]">
+                            Buscar medicamento
+                          </p>
                           <div className="w-full max-w-md">
                             <label htmlFor="med-search" className="sr-only">
                               Buscar medicamento
@@ -1032,48 +1254,69 @@ const FuncionarioDashboard: React.FC = () => {
                               type="text"
                               value={medSearchTerm}
                               onChange={(e) => setMedSearchTerm(e.target.value)}
-                              className="block w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] placeholder-[#8FA8C4] outline-none transition-all"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#1A3F72";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                               placeholder="Pesquisar por nome de medicamento"
                             />
                           </div>
                         </div>
-
                         {loadingMedicamentos ? (
                           <div className="text-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent mx-auto"></div>
-                            <p className="mt-2 text-gray-600">
+                            <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#C8D9ED] border-t-[#1A3F72] mx-auto"></div>
+                            <p className="mt-3 text-sm text-[#8FA8C4]">
                               Carregando medicamentos...
                             </p>
                           </div>
                         ) : filteredMedicamentos &&
                           filteredMedicamentos.length > 0 ? (
-                          <div className="space-y-4">
+                          <div className="space-y-3">
                             {filteredMedicamentos.map((med: any) => (
                               <div
                                 key={med.id}
-                                className="border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                style={{
+                                  border: "1px solid #E4EDF7",
+                                  background: "#FAFCFF",
+                                }}
                               >
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                   <div className="flex flex-wrap gap-2 items-center">
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-xs text-[#8FA8C4]">
                                       {med.nome}
                                     </p>
-                                    <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
+                                    <span
+                                      className="px-2 py-0.5 text-xs rounded-full font-medium"
+                                      style={{
+                                        background: "#EBF2FB",
+                                        color: "#1A3F72",
+                                      }}
+                                    >
                                       UBS: {med.ubs?.nome || "Não informada"}
                                     </span>
                                   </div>
-                                  <h3 className="text-lg font-semibold text-gray-900">
+                                  <h3 className="text-sm font-bold text-[#0F2242]">
                                     {med.descricao}
                                   </h3>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-[#5C7A9B]">
                                     <p>
-                                      <span className="font-medium text-gray-700">
+                                      <span className="font-semibold text-[#3A5B82]">
                                         Lote:
                                       </span>{" "}
                                       {med.lote}
                                     </p>
                                     <p>
-                                      <span className="font-medium text-gray-700">
+                                      <span className="font-semibold text-[#3A5B82]">
                                         Quantidade:
                                       </span>{" "}
                                       {med.quantidade}
@@ -1085,12 +1328,28 @@ const FuncionarioDashboard: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => openAdministrarMed(med)}
-                                      className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                      className="px-3 py-2 text-xs font-semibold rounded-lg text-white transition-all"
+                                      style={{ background: "#145C35" }}
+                                      onMouseEnter={(e) =>
+                                        (e.currentTarget.style.background =
+                                          "#0E4226")
+                                      }
+                                      onMouseLeave={(e) =>
+                                        (e.currentTarget.style.background =
+                                          "#145C35")
+                                      }
                                     >
                                       Administrar
                                     </button>
                                   ) : (
-                                    <span className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
+                                    <span
+                                      className="px-3 py-2 rounded-lg text-xs font-medium"
+                                      style={{
+                                        border: "1px solid #F0C0C0",
+                                        background: "#FEF0F0",
+                                        color: "#8B1F1F",
+                                      }}
+                                    >
                                       Sem estoque
                                     </span>
                                   )}
@@ -1099,7 +1358,7 @@ const FuncionarioDashboard: React.FC = () => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-gray-600">
+                          <p className="text-sm text-[#8FA8C4]">
                             Nenhum medicamento encontrado para sua UBS.
                           </p>
                         )}
@@ -1109,36 +1368,55 @@ const FuncionarioDashboard: React.FC = () => {
                 )}
 
                 {editingMed && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{
+                      background: "rgba(10,25,47,0.55)",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
                     <div
-                      className="w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5"
+                      className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
+                      style={{
+                        border: "1px solid #D9E4F0",
+                        boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                      }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                      <div
+                        className="flex items-center justify-between px-6 py-4"
+                        style={{ borderBottom: "1px solid #EEF2F7" }}
+                      >
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
                             Editar medicação
                           </p>
-                          <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                          <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
                             {editingMed.descricao}
                           </h3>
                         </div>
                         <button
                           type="button"
                           onClick={resetMedForm}
-                          className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200"
+                          className="rounded-full p-2 transition-all"
+                          style={{ background: "#F0F4F8", color: "#5C7A9B" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#D9E4F0")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "#F0F4F8")
+                          }
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
-
                       <form
                         onSubmit={handleMedSubmit}
-                        className="space-y-6 px-6 py-6"
+                        className="space-y-5 px-6 py-5"
                       >
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <label className="block">
-                            <span className="text-sm font-medium text-slate-700">
+                            <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                               Quantidade
                             </span>
                             <input
@@ -1151,12 +1429,24 @@ const FuncionarioDashboard: React.FC = () => {
                                   quantidade: e.target.value,
                                 })
                               }
-                              className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#1A3F72";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                               placeholder="Ex: 100"
                             />
                           </label>
                           <label className="block">
-                            <span className="text-sm font-medium text-slate-700">
+                            <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                               Data de validade
                             </span>
                             <input
@@ -1168,13 +1458,24 @@ const FuncionarioDashboard: React.FC = () => {
                                   dataValidade: e.target.value,
                                 })
                               }
-                              className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#1A3F72";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                             />
                           </label>
                         </div>
-
                         <label className="block">
-                          <span className="text-sm font-medium text-slate-700">
+                          <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                             Observações
                           </span>
                           <textarea
@@ -1185,24 +1486,54 @@ const FuncionarioDashboard: React.FC = () => {
                                 observacoes: e.target.value,
                               })
                             }
-                            className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
+                            style={{
+                              border: "1px solid #C8D9ED",
+                              background: "#F4F8FC",
+                            }}
+                            onFocus={(e) => {
+                              e.target.style.borderColor = "#1A3F72";
+                              e.target.style.background = "#fff";
+                            }}
+                            onBlur={(e) => {
+                              e.target.style.borderColor = "#C8D9ED";
+                              e.target.style.background = "#F4F8FC";
+                            }}
                             rows={4}
                             placeholder="Observações sobre o medicamento"
                           />
                         </label>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                           <button
                             type="button"
                             onClick={resetMedForm}
-                            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all"
+                            style={{
+                              border: "1px solid #C8D9ED",
+                              color: "#5C7A9B",
+                              background: "transparent",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "#F0F4F8")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
                           >
                             Cancelar
                           </button>
                           <button
                             type="submit"
                             disabled={updateMedicamentoMutation.isLoading}
-                            className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                            className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
+                            style={{ background: "#1A3F72" }}
+                            onMouseEnter={(e) =>
+                              !updateMedicamentoMutation.isLoading &&
+                              (e.currentTarget.style.background = "#0F2A52")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "#1A3F72")
+                            }
                           >
                             {updateMedicamentoMutation.isLoading
                               ? "Salvando..."
@@ -1215,40 +1546,61 @@ const FuncionarioDashboard: React.FC = () => {
                 )}
 
                 {selectedMed && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    style={{
+                      background: "rgba(10,25,47,0.55)",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
                     <div
-                      className="w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5"
+                      className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
+                      style={{
+                        border: "1px solid #D9E4F0",
+                        boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                      }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                      <div
+                        className="flex items-center justify-between px-6 py-4"
+                        style={{ borderBottom: "1px solid #EEF2F7" }}
+                      >
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
                             Ministrar ao paciente
                           </p>
-                          <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                          <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
                             {selectedMed.nome}
                           </h3>
                         </div>
                         <button
                           type="button"
                           onClick={resetAdministracaoForm}
-                          className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200"
+                          className="rounded-full p-2 transition-all"
+                          style={{ background: "#F0F4F8", color: "#5C7A9B" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.background = "#D9E4F0")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "#F0F4F8")
+                          }
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
-
                       <form
                         onSubmit={handleAdministrarSubmit}
-                        className="space-y-6 px-6 py-6"
+                        className="space-y-5 px-6 py-5"
                       >
-                        <p className="text-sm text-slate-600">
-                          Lote: {selectedMed.lote} • Disponível:{" "}
-                          {selectedMed.quantidade} unidades
+                        <p className="text-xs text-[#8FA8C4]">
+                          Lote: {selectedMed.lote} · Disponível:{" "}
+                          <span className="font-semibold text-[#145C35]">
+                            {selectedMed.quantidade} unidades
+                          </span>
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <label className="block md:col-span-2">
-                            <span className="text-sm font-medium text-slate-700">
+                            <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                               CNS do paciente *
                             </span>
                             <input
@@ -1262,11 +1614,23 @@ const FuncionarioDashboard: React.FC = () => {
                               }
                               required
                               placeholder="Informe o CNS do paciente"
-                              className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#145C35";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                             />
                           </label>
                           <label className="block">
-                            <span className="text-sm font-medium text-slate-700">
+                            <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                               Quantidade *
                             </span>
                             <input
@@ -1282,11 +1646,23 @@ const FuncionarioDashboard: React.FC = () => {
                               }
                               required
                               placeholder={`Máx: ${selectedMed.quantidade}`}
-                              className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#145C35";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                             />
                           </label>
                           <label className="block">
-                            <span className="text-sm font-medium text-slate-700">
+                            <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                               Data e Hora *
                             </span>
                             <input
@@ -1299,11 +1675,23 @@ const FuncionarioDashboard: React.FC = () => {
                                 })
                               }
                               required
-                              className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#145C35";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                             />
                           </label>
                           <label className="block md:col-span-2">
-                            <span className="text-sm font-medium text-slate-700">
+                            <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                               Observações
                             </span>
                             <textarea
@@ -1316,22 +1704,53 @@ const FuncionarioDashboard: React.FC = () => {
                               }
                               rows={4}
                               placeholder="Observações sobre a administração (opcional)"
-                              className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                              className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
+                              style={{
+                                border: "1px solid #C8D9ED",
+                                background: "#F4F8FC",
+                              }}
+                              onFocus={(e) => {
+                                e.target.style.borderColor = "#145C35";
+                                e.target.style.background = "#fff";
+                              }}
+                              onBlur={(e) => {
+                                e.target.style.borderColor = "#C8D9ED";
+                                e.target.style.background = "#F4F8FC";
+                              }}
                             />
                           </label>
                         </div>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                           <button
                             type="button"
                             onClick={resetAdministracaoForm}
-                            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all"
+                            style={{
+                              border: "1px solid #C8D9ED",
+                              color: "#5C7A9B",
+                              background: "transparent",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background = "#F0F4F8")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
                           >
                             Cancelar
                           </button>
                           <button
                             type="submit"
                             disabled={administrarMedicamentoMutation.isLoading}
-                            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                            className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
+                            style={{ background: "#145C35" }}
+                            onMouseEnter={(e) =>
+                              !administrarMedicamentoMutation.isLoading &&
+                              (e.currentTarget.style.background = "#0E4226")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "#145C35")
+                            }
                           >
                             {administrarMedicamentoMutation.isLoading
                               ? "Registrando..."
@@ -1346,36 +1765,55 @@ const FuncionarioDashboard: React.FC = () => {
             )}
 
             {showAdministradorMedicamentoModal && selectedAdminPaciente && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <div className="w-full max-w-4xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5">
-                  <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{
+                  background: "rgba(10,25,47,0.55)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <div
+                  className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white"
+                  style={{
+                    border: "1px solid #D9E4F0",
+                    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                  }}
+                >
+                  <div
+                    className="flex items-center justify-between px-6 py-4"
+                    style={{ borderBottom: "1px solid #EEF2F7" }}
+                  >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
                         Selecionar medicamento
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                      <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
                         Administrar para {selectedAdminPaciente.nome}
                       </h3>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="text-xs text-[#8FA8C4] mt-0.5">
                         CNS: {selectedAdminPaciente.cns}
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={resetAdministracaoForm}
-                      className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200"
+                      className="rounded-full p-2 transition-all"
+                      style={{ background: "#F0F4F8", color: "#5C7A9B" }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#D9E4F0")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "#F0F4F8")
+                      }
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-
                   <div className="p-6 space-y-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-slate-700">
-                          Buscar medicamento
-                        </p>
-                      </div>
+                      <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
+                        Buscar medicamento
+                      </p>
                       <div className="w-full max-w-md">
                         <label htmlFor="med-search" className="sr-only">
                           Buscar medicamento
@@ -1385,48 +1823,69 @@ const FuncionarioDashboard: React.FC = () => {
                           type="text"
                           value={medSearchTerm}
                           onChange={(e) => setMedSearchTerm(e.target.value)}
-                          className="block w-full rounded-2xl border border-gray-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] placeholder-[#8FA8C4] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#1A3F72";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                           placeholder="Pesquisar por nome de medicamento"
                         />
                       </div>
                     </div>
-
                     {loadingMedicamentos ? (
                       <div className="text-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent mx-auto"></div>
-                        <p className="mt-2 text-gray-600">
+                        <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#C8D9ED] border-t-[#1A3F72] mx-auto"></div>
+                        <p className="mt-3 text-sm text-[#8FA8C4]">
                           Carregando medicamentos...
                         </p>
                       </div>
                     ) : filteredMedicamentos &&
                       filteredMedicamentos.length > 0 ? (
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         {filteredMedicamentos.map((med: any) => (
                           <div
                             key={med.id}
-                            className="border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                            style={{
+                              border: "1px solid #E4EDF7",
+                              background: "#FAFCFF",
+                            }}
                           >
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                               <div className="flex flex-wrap gap-2 items-center">
-                                <p className="text-sm text-gray-500">
+                                <p className="text-xs text-[#8FA8C4]">
                                   {med.nome}
                                 </p>
-                                <span className="px-2 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
+                                <span
+                                  className="px-2 py-0.5 text-xs rounded-full font-medium"
+                                  style={{
+                                    background: "#EBF2FB",
+                                    color: "#1A3F72",
+                                  }}
+                                >
                                   UBS: {med.ubs?.nome || "Não informada"}
                                 </span>
                               </div>
-                              <h3 className="text-lg font-semibold text-gray-900">
+                              <h3 className="text-sm font-bold text-[#0F2242]">
                                 {med.descricao}
                               </h3>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-[#5C7A9B]">
                                 <p>
-                                  <span className="font-medium text-gray-700">
+                                  <span className="font-semibold text-[#3A5B82]">
                                     Lote:
                                   </span>{" "}
                                   {med.lote}
                                 </p>
                                 <p>
-                                  <span className="font-medium text-gray-700">
+                                  <span className="font-semibold text-[#3A5B82]">
                                     Quantidade:
                                   </span>{" "}
                                   {med.quantidade}
@@ -1438,12 +1897,28 @@ const FuncionarioDashboard: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => openAdministrarMed(med)}
-                                  className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                                  className="px-3 py-2 text-xs font-semibold rounded-lg text-white transition-all"
+                                  style={{ background: "#145C35" }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#0E4226")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#145C35")
+                                  }
                                 >
                                   Administrar
                                 </button>
                               ) : (
-                                <span className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-sm">
+                                <span
+                                  className="px-3 py-2 rounded-lg text-xs font-medium"
+                                  style={{
+                                    border: "1px solid #F0C0C0",
+                                    background: "#FEF0F0",
+                                    color: "#8B1F1F",
+                                  }}
+                                >
                                   Sem estoque
                                 </span>
                               )}
@@ -1452,7 +1927,7 @@ const FuncionarioDashboard: React.FC = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-600">
+                      <p className="text-sm text-[#8FA8C4]">
                         Nenhum medicamento encontrado para sua UBS.
                       </p>
                     )}
@@ -1462,36 +1937,55 @@ const FuncionarioDashboard: React.FC = () => {
             )}
 
             {editingMed && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{
+                  background: "rgba(10,25,47,0.55)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
                 <div
-                  className="w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5"
+                  className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
+                  style={{
+                    border: "1px solid #D9E4F0",
+                    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                  <div
+                    className="flex items-center justify-between px-6 py-4"
+                    style={{ borderBottom: "1px solid #EEF2F7" }}
+                  >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
                         Editar medicação
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                      <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
                         {editingMed.descricao}
                       </h3>
                     </div>
                     <button
                       type="button"
                       onClick={resetMedForm}
-                      className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200"
+                      className="rounded-full p-2 transition-all"
+                      style={{ background: "#F0F4F8", color: "#5C7A9B" }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#D9E4F0")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "#F0F4F8")
+                      }
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-
                   <form
                     onSubmit={handleMedSubmit}
-                    className="space-y-6 px-6 py-6"
+                    className="space-y-5 px-6 py-5"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <label className="block">
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                           Quantidade
                         </span>
                         <input
@@ -1504,12 +1998,24 @@ const FuncionarioDashboard: React.FC = () => {
                               quantidade: e.target.value,
                             })
                           }
-                          className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#1A3F72";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                           placeholder="Ex: 100"
                         />
                       </label>
                       <label className="block">
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                           Data de validade
                         </span>
                         <input
@@ -1521,13 +2027,24 @@ const FuncionarioDashboard: React.FC = () => {
                               dataValidade: e.target.value,
                             })
                           }
-                          className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#1A3F72";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                         />
                       </label>
                     </div>
-
                     <label className="block">
-                      <span className="text-sm font-medium text-slate-700">
+                      <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                         Observações
                       </span>
                       <textarea
@@ -1538,24 +2055,54 @@ const FuncionarioDashboard: React.FC = () => {
                             observacoes: e.target.value,
                           })
                         }
-                        className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          background: "#F4F8FC",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#1A3F72";
+                          e.target.style.background = "#fff";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#C8D9ED";
+                          e.target.style.background = "#F4F8FC";
+                        }}
                         rows={4}
                         placeholder="Observações sobre o medicamento"
                       />
                     </label>
-
-                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                       <button
                         type="button"
                         onClick={resetMedForm}
-                        className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          color: "#5C7A9B",
+                          background: "transparent",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#F0F4F8")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                       >
                         Cancelar
                       </button>
                       <button
                         type="submit"
                         disabled={updateMedicamentoMutation.isLoading}
-                        className="rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                        className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
+                        style={{ background: "#1A3F72" }}
+                        onMouseEnter={(e) =>
+                          !updateMedicamentoMutation.isLoading &&
+                          (e.currentTarget.style.background = "#0F2A52")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#1A3F72")
+                        }
                       >
                         {updateMedicamentoMutation.isLoading
                           ? "Salvando..."
@@ -1568,40 +2115,61 @@ const FuncionarioDashboard: React.FC = () => {
             )}
 
             {selectedMed && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                style={{
+                  background: "rgba(10,25,47,0.55)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
                 <div
-                  className="w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl ring-1 ring-black/5"
+                  className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
+                  style={{
+                    border: "1px solid #D9E4F0",
+                    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                  }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                  <div
+                    className="flex items-center justify-between px-6 py-4"
+                    style={{ borderBottom: "1px solid #EEF2F7" }}
+                  >
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
                         Ministrar ao paciente
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold text-slate-900">
+                      <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
                         {selectedMed.nome}
                       </h3>
                     </div>
                     <button
                       type="button"
                       onClick={resetAdministracaoForm}
-                      className="rounded-full bg-slate-100 p-2 text-slate-600 hover:bg-slate-200"
+                      className="rounded-full p-2 transition-all"
+                      style={{ background: "#F0F4F8", color: "#5C7A9B" }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#D9E4F0")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "#F0F4F8")
+                      }
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-
                   <form
                     onSubmit={handleAdministrarSubmit}
-                    className="space-y-6 px-6 py-6"
+                    className="space-y-5 px-6 py-5"
                   >
-                    <p className="text-sm text-slate-600">
-                      Lote: {selectedMed.lote} • Disponível:{" "}
-                      {selectedMed.quantidade} unidades
+                    <p className="text-xs text-[#8FA8C4]">
+                      Lote: {selectedMed.lote} · Disponível:{" "}
+                      <span className="font-semibold text-[#145C35]">
+                        {selectedMed.quantidade} unidades
+                      </span>
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <label className="block md:col-span-2">
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                           CNS do paciente *
                         </span>
                         <input
@@ -1615,11 +2183,23 @@ const FuncionarioDashboard: React.FC = () => {
                           }
                           required
                           placeholder="Informe o CNS do paciente"
-                          className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#145C35";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                         />
                       </label>
                       <label className="block">
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                           Quantidade *
                         </span>
                         <input
@@ -1635,11 +2215,23 @@ const FuncionarioDashboard: React.FC = () => {
                           }
                           required
                           placeholder={`Máx: ${selectedMed.quantidade}`}
-                          className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#145C35";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                         />
                       </label>
                       <label className="block">
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                           Data e Hora *
                         </span>
                         <input
@@ -1652,11 +2244,23 @@ const FuncionarioDashboard: React.FC = () => {
                             })
                           }
                           required
-                          className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#145C35";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                         />
                       </label>
                       <label className="block md:col-span-2">
-                        <span className="text-sm font-medium text-slate-700">
+                        <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
                           Observações
                         </span>
                         <textarea
@@ -1669,22 +2273,53 @@ const FuncionarioDashboard: React.FC = () => {
                           }
                           rows={4}
                           placeholder="Observações sobre a administração (opcional)"
-                          className="mt-2 block w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                          className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#145C35";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
                         />
                       </label>
                     </div>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                       <button
                         type="button"
                         onClick={resetAdministracaoForm}
-                        className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          color: "#5C7A9B",
+                          background: "transparent",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#F0F4F8")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                       >
                         Cancelar
                       </button>
                       <button
                         type="submit"
                         disabled={administrarMedicamentoMutation.isLoading}
-                        className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+                        className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
+                        style={{ background: "#145C35" }}
+                        onMouseEnter={(e) =>
+                          !administrarMedicamentoMutation.isLoading &&
+                          (e.currentTarget.style.background = "#0E4226")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#145C35")
+                        }
                       >
                         {administrarMedicamentoMutation.isLoading
                           ? "Registrando..."
@@ -1696,39 +2331,61 @@ const FuncionarioDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Histórico Tab */}
+            {/* ══ HISTÓRICO ══ */}
             {activeTab === "historico" && selectedPaciente && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex justify-between items-center mb-6">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex justify-between items-center mb-5">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
                       Histórico Médico
                     </h2>
-                    <p className="text-gray-600">
+                    <p className="text-sm text-[#8FA8C4] mt-0.5">
                       Paciente: {selectedPaciente.nome}
                     </p>
                   </div>
                   <button
                     onClick={() => setActiveTab("pacientes")}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                    className="px-4 py-2 text-sm font-semibold rounded-lg transition-all"
+                    style={{
+                      border: "1px solid #C8D9ED",
+                      color: "#5C7A9B",
+                      background: "transparent",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "#F0F4F8")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                   >
-                    Voltar
+                    ← Voltar
                   </button>
                 </div>
-
                 {historicoPaciente && historicoPaciente.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {historicoPaciente.map((item: any) => (
                       <div
                         key={item.id}
-                        className="border border-gray-200 rounded-xl p-4"
+                        className="rounded-xl p-4"
+                        style={{
+                          border: "1px solid #E4EDF7",
+                          borderLeft: "3px solid #1A3F72",
+                          background: "#FAFCFF",
+                        }}
                       >
-                        <div className="flex justify-between items-start mb-3">
+                        <div className="flex justify-between items-start mb-3 flex-wrap gap-3">
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
+                            <h3 className="text-base font-bold text-[#0F2242]">
                               {item.diagnostico}
                             </h3>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-[#8FA8C4] mt-0.5">
                               {format(
                                 new Date(item.dataConsulta),
                                 "dd/MM/yyyy",
@@ -1737,47 +2394,48 @@ const FuncionarioDashboard: React.FC = () => {
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-semibold text-[#0F2242]">
                               {item.funcionario.nome}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-[#8FA8C4]">
                               {item.funcionario.funcao}
                             </p>
                             {item.funcionario.crm && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-xs text-[#8FA8C4]">
                                 CRM: {item.funcionario.crm}
                               </p>
                             )}
                           </div>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                           <div>
-                            <p className="font-medium text-gray-700">Laudo:</p>
-                            <p className="text-gray-600">{item.laudo}</p>
+                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                              Laudo
+                            </p>
+                            <p className="text-[#3A5B82]">{item.laudo}</p>
                           </div>
                           {item.doenca && (
                             <div>
-                              <p className="font-medium text-gray-700">
-                                Doença:
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                Doença
                               </p>
-                              <p className="text-gray-600">{item.doenca}</p>
+                              <p className="text-[#3A5B82]">{item.doenca}</p>
                             </div>
                           )}
                           {item.medicacao && (
                             <div>
-                              <p className="font-medium text-gray-700">
-                                Medicação:
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                Medicação
                               </p>
-                              <p className="text-gray-600">{item.medicacao}</p>
+                              <p className="text-[#3A5B82]">{item.medicacao}</p>
                             </div>
                           )}
                           {item.observacoes && (
                             <div>
-                              <p className="font-medium text-gray-700">
-                                Observações:
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                Observações
                               </p>
-                              <p className="text-gray-600">
+                              <p className="text-[#3A5B82]">
                                 {item.observacoes}
                               </p>
                             </div>
@@ -1787,9 +2445,9 @@ const FuncionarioDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">
+                  <div className="text-center py-12">
+                    <FileText className="h-10 w-10 mx-auto mb-3 text-[#C8D9ED]" />
+                    <p className="text-sm text-[#8FA8C4]">
                       Nenhum histórico médico encontrado para este paciente.
                     </p>
                   </div>
@@ -1797,23 +2455,29 @@ const FuncionarioDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Minhas Solicitações Tab */}
+            {/* ══ SOLICITAÇÕES ══ */}
             {activeTab === "solicitacoes" && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-5 gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
                       Minhas Solicitações
                     </h2>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[#8FA8C4] mt-0.5">
                       Exames e internações solicitados por você.
                     </p>
                   </div>
                 </div>
-
-                <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+                <div className="flex flex-col md:flex-row md:items-end gap-4 mb-5">
                   <div className="w-full md:w-1/2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1.5">
                       Filtrar por paciente
                     </label>
                     <input
@@ -1823,7 +2487,19 @@ const FuncionarioDashboard: React.FC = () => {
                       }
                       list="pacientes-solicitacoes"
                       placeholder="Digite o nome do paciente"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm text-[#1A2E4A] rounded-lg outline-none transition-all"
+                      style={{
+                        border: "1px solid #C8D9ED",
+                        background: "#F4F8FC",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#1A3F72";
+                        e.target.style.background = "#fff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#C8D9ED";
+                        e.target.style.background = "#F4F8FC";
+                      }}
                     />
                     <datalist id="pacientes-solicitacoes">
                       {pacientesSolicitacoes.map((paciente: any) => (
@@ -1831,9 +2507,8 @@ const FuncionarioDashboard: React.FC = () => {
                       ))}
                     </datalist>
                   </div>
-
                   <div className="w-full md:w-1/2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1.5">
                       Filtrar por tipo
                     </label>
                     <select
@@ -1841,7 +2516,19 @@ const FuncionarioDashboard: React.FC = () => {
                       onChange={(e) =>
                         setSolicitacoesFiltroTipo(e.target.value)
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 text-sm text-[#1A2E4A] rounded-lg outline-none transition-all"
+                      style={{
+                        border: "1px solid #C8D9ED",
+                        background: "#F4F8FC",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#1A3F72";
+                        e.target.style.background = "#fff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#C8D9ED";
+                        e.target.style.background = "#F4F8FC";
+                      }}
                     >
                       <option value="todos">Todos os tipos</option>
                       <option value="internacao">Internação</option>
@@ -1849,37 +2536,50 @@ const FuncionarioDashboard: React.FC = () => {
                     </select>
                   </div>
                 </div>
-
                 {filteredSolicitacoes && filteredSolicitacoes.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {filteredSolicitacoes.map((solicitacao: any) => (
                       <div
                         key={`${solicitacao.solicitacaoTipo}-${solicitacao.id}`}
-                        className="border border-gray-200 rounded-xl p-4"
+                        className="rounded-xl p-4"
+                        style={{
+                          border: "1px solid #E4EDF7",
+                          borderLeft: `3px solid ${solicitacao.solicitacaoTipo === "internacao" ? "#8B1F1F" : "#1A3F72"}`,
+                          background: "#FAFCFF",
+                        }}
                       >
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-3">
                           <div>
                             <span
-                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${solicitacao.solicitacaoTipo === "internacao" ? "" : ""}`}
+                              style={
                                 solicitacao.solicitacaoTipo === "internacao"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
+                                  ? {
+                                      background: "#FEF0F0",
+                                      color: "#8B1F1F",
+                                      border: "1px solid #F0C0C0",
+                                    }
+                                  : {
+                                      background: "#EBF2FB",
+                                      color: "#1A3F72",
+                                      border: "1px solid #C0D6EE",
+                                    }
+                              }
                             >
                               {solicitacao.solicitacaoTipo === "internacao"
                                 ? "Solicitação de Internação"
                                 : "Solicitação de Exame"}
                             </span>
-                            <h3 className="text-lg font-semibold text-gray-900 mt-3">
+                            <h3 className="text-base font-bold text-[#0F2242] mt-2">
                               {solicitacao.paciente?.nome ||
                                 "Paciente não informado"}
                             </h3>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-xs text-[#5C7A9B] mt-0.5">
                               {solicitacao.solicitacaoTipo === "internacao"
                                 ? `Internação solicitada para ${solicitacao.tipo}`
                                 : `Exame solicitado: ${solicitacao.tipoExame}`}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-[#8FA8C4]">
                               Solicitado em:{" "}
                               {format(
                                 new Date(solicitacao.createdAt),
@@ -1890,18 +2590,12 @@ const FuncionarioDashboard: React.FC = () => {
                           </div>
                           <div className="flex flex-wrap gap-2">
                             <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(
-                                solicitacao.status,
-                              )}`}
+                              className={`px-2 py-0.5 rounded text-xs font-semibold ${getStatusColor(solicitacao.status)}`}
                             >
                               {solicitacao.status}
                             </span>
                             <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${
-                                solicitacao.solicitacaoTipo === "internacao"
-                                  ? getPrioridadeColor(solicitacao.prioridade)
-                                  : "text-blue-600 bg-blue-100"
-                              }`}
+                              className={`px-2 py-0.5 rounded text-xs font-semibold ${solicitacao.solicitacaoTipo === "internacao" ? getPrioridadeColor(solicitacao.prioridade) : "text-[#1A3F72] bg-[#EBF2FB]"}`}
                             >
                               {solicitacao.solicitacaoTipo === "internacao"
                                 ? solicitacao.prioridade
@@ -1909,21 +2603,22 @@ const FuncionarioDashboard: React.FC = () => {
                             </span>
                           </div>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                           <div>
-                            <p className="font-medium text-gray-700">
-                              Tipo de solicitação:
+                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                              Tipo
                             </p>
-                            <p className="text-gray-600 capitalize">
+                            <p className="text-[#3A5B82] capitalize">
                               {solicitacao.solicitacaoTipo === "internacao"
                                 ? "Internação"
                                 : "Exame"}
                             </p>
                           </div>
                           <div>
-                            <p className="font-medium text-gray-700">Local:</p>
-                            <p className="text-gray-600">
+                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                              Local
+                            </p>
+                            <p className="text-[#3A5B82]">
                               {solicitacao.solicitacaoTipo === "internacao"
                                 ? solicitacao.hospital?.nome
                                 : solicitacao.laboratorio?.nome}
@@ -1932,43 +2627,41 @@ const FuncionarioDashboard: React.FC = () => {
                           {solicitacao.solicitacaoTipo === "internacao" && (
                             <>
                               <div>
-                                <p className="font-medium text-gray-700">
-                                  Motivo:
+                                <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                  Motivo
                                 </p>
-                                <p className="text-gray-600">
+                                <p className="text-[#3A5B82]">
                                   {solicitacao.motivo}
                                 </p>
                               </div>
                               <div className="md:col-span-2">
-                                <p className="font-medium text-gray-700">
-                                  Detalhes:
+                                <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                  Detalhes
                                 </p>
-                                <p className="text-gray-600">
+                                <p className="text-[#3A5B82]">
                                   {solicitacao.detalhes}
                                 </p>
                               </div>
                             </>
                           )}
                           {solicitacao.solicitacaoTipo === "exame" && (
-                            <>
-                              <div className="md:col-span-2">
-                                <p className="font-medium text-gray-700">
-                                  Observações:
-                                </p>
-                                <p className="text-gray-600">
-                                  {solicitacao.observacoes ||
-                                    "Nenhuma observação"}
-                                </p>
-                              </div>
-                            </>
+                            <div className="md:col-span-2">
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                Observações
+                              </p>
+                              <p className="text-[#3A5B82]">
+                                {solicitacao.observacoes ||
+                                  "Nenhuma observação"}
+                              </p>
+                            </div>
                           )}
                           {solicitacao.solicitacaoTipo === "internacao" &&
                             solicitacao.dataAgendada && (
                               <div>
-                                <p className="font-medium text-gray-700">
-                                  Data Agendada:
+                                <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                  Data Agendada
                                 </p>
-                                <p className="text-gray-600">
+                                <p className="text-[#3A5B82]">
                                   {format(
                                     new Date(solicitacao.dataAgendada),
                                     "dd/MM/yyyy",
@@ -1984,9 +2677,9 @@ const FuncionarioDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">
+                  <div className="text-center py-12">
+                    <Building2 className="h-10 w-10 mx-auto mb-3 text-[#C8D9ED]" />
+                    <p className="text-sm text-[#8FA8C4]">
                       Nenhuma solicitação encontrada.
                     </p>
                   </div>
@@ -1994,32 +2687,49 @@ const FuncionarioDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Consultas Tab */}
+            {/* ══ CONSULTAS ══ */}
             {activeTab === "consultas" && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex justify-between items-center mb-5">
+                  <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
                     Minhas Consultas
                   </h2>
                 </div>
-
                 {consultas && consultas.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {consultas.map((consulta: any) => (
                       <div
                         key={consulta.id}
-                        className="border border-gray-200 rounded-xl p-4 hover:shadow-lg transition-shadow"
+                        className="rounded-xl p-4 transition-all duration-150"
+                        style={{
+                          border: "1px solid #E4EDF7",
+                          background: "#FAFCFF",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.boxShadow =
+                            "0 2px 12px rgba(26,63,114,0.07)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.boxShadow = "none";
+                        }}
                       >
-                        <div className="flex justify-between items-start mb-3">
+                        <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
                           <div>
-                            <h3 className="text-lg font-semibold text-gray-900">
+                            <h3 className="text-base font-bold text-[#0F2242]">
                               {consulta.paciente?.nome || "N/A"}
                             </h3>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-[#8FA8C4]">
                               CPF: {consulta.paciente?.cpf || "N/A"}
                             </p>
                             {consulta.dataAgendada && (
-                              <p className="text-sm text-gray-600">
+                              <p className="text-xs text-[#8FA8C4]">
                                 Agendada para:{" "}
                                 {format(
                                   new Date(consulta.dataAgendada),
@@ -2029,42 +2739,43 @@ const FuncionarioDashboard: React.FC = () => {
                               </p>
                             )}
                           </div>
-                          <div className="flex space-x-2">
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(consulta.status)}`}
-                            >
-                              {consulta.status}
-                            </span>
-                          </div>
+                          <span
+                            className={`px-2.5 py-0.5 rounded text-xs font-semibold ${getStatusColor(consulta.status)}`}
+                          >
+                            {consulta.status}
+                          </span>
                         </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3">
                           <div>
-                            <p className="font-medium text-gray-700">
-                              Especialidade:
+                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                              Especialidade
                             </p>
-                            <p className="text-gray-600">
+                            <p className="text-[#3A5B82]">
                               {consulta.especialidade}
                             </p>
                           </div>
                           <div>
-                            <p className="font-medium text-gray-700">Motivo:</p>
-                            <p className="text-gray-600">{consulta.motivo}</p>
+                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                              Motivo
+                            </p>
+                            <p className="text-[#3A5B82]">{consulta.motivo}</p>
                           </div>
                           {consulta.ubs && (
                             <div>
-                              <p className="font-medium text-gray-700">UBS:</p>
-                              <p className="text-gray-600">
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                UBS
+                              </p>
+                              <p className="text-[#3A5B82]">
                                 {consulta.ubs.nome}
                               </p>
                             </div>
                           )}
                           {consulta.dataCancelamento && (
                             <div>
-                              <p className="font-medium text-gray-700">
-                                Cancelada em:
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                Cancelada em
                               </p>
-                              <p className="text-gray-600">
+                              <p className="text-[#3A5B82]">
                                 {format(
                                   new Date(consulta.dataCancelamento),
                                   "dd/MM/yyyy",
@@ -2075,67 +2786,100 @@ const FuncionarioDashboard: React.FC = () => {
                           )}
                           {consulta.observacoes && (
                             <div className="md:col-span-2">
-                              <p className="font-medium text-gray-700">
-                                Observações:
+                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
+                                Observações
                               </p>
-                              <p className="text-gray-600">
+                              <p className="text-[#3A5B82]">
                                 {consulta.observacoes}
                               </p>
                             </div>
                           )}
                         </div>
 
-                        {/* Histórico vinculado */}
                         {consulta.historicoMedico ? (
-                          <div className="border-t pt-3 mt-3 bg-green-50 rounded-lg p-3">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <p className="text-xs font-semibold text-green-700 mb-1">
-                                  ✓ Histórico registrado
+                          <div
+                            className="rounded-lg p-3 flex justify-between items-start gap-3"
+                            style={{
+                              background: "#EAF5EF",
+                              border: "1px solid #B0D9C0",
+                            }}
+                          >
+                            <div className="flex-1">
+                              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#145C35] mb-1">
+                                ✓ Histórico registrado
+                              </p>
+                              <p className="text-xs text-[#3A5B82]">
+                                <span className="font-semibold">
+                                  Diagnóstico:
+                                </span>{" "}
+                                {consulta.historicoMedico.diagnostico}
+                              </p>
+                              {consulta.historicoMedico.doenca && (
+                                <p className="text-xs text-[#3A5B82]">
+                                  <span className="font-semibold">Doença:</span>{" "}
+                                  {consulta.historicoMedico.doenca}
                                 </p>
-                                <p className="text-xs text-gray-600">
-                                  <span className="font-medium">
-                                    Diagnóstico:
-                                  </span>{" "}
-                                  {consulta.historicoMedico.diagnostico}
-                                </p>
-                                {consulta.historicoMedico.doenca && (
-                                  <p className="text-xs text-gray-600">
-                                    <span className="font-medium">Doença:</span>{" "}
-                                    {consulta.historicoMedico.doenca}
-                                  </p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => {
-                                  setSelectedPaciente(consulta.paciente);
-                                  setActiveTab("historico");
-                                }}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
-                              >
-                                <FileText className="h-3 w-3" />
-                                Ver Histórico
-                              </button>
+                              )}
                             </div>
+                            <button
+                              onClick={() => {
+                                setSelectedPaciente(consulta.paciente);
+                                setActiveTab("historico");
+                              }}
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all flex-shrink-0"
+                              style={{ background: "#145C35" }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#0E4226")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "#145C35")
+                              }
+                            >
+                              <FileText className="h-3 w-3" />
+                              Ver Histórico
+                            </button>
                           </div>
-                        ) : (
-                          <div className="border-t pt-3 mt-3 flex justify-between items-center">
-                            <p className="text-xs text-gray-500">
+                        ) : consulta.status === "agendada" ||
+                          consulta.status === "agendado" ? (
+                          <div
+                            className="flex justify-between items-center pt-3"
+                            style={{ borderTop: "1px solid #EEF2F7" }}
+                          >
+                            <p className="text-xs text-[#8FA8C4]">
                               Sem histórico médico registrado
                             </p>
                             <button
                               onClick={() =>
                                 setModalHistorico({ aberto: true, consulta })
                               }
-                              className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                              style={{ background: "#1A3F72" }}
+                              onMouseEnter={(e) =>
+                                (e.currentTarget.style.background = "#0F2A52")
+                              }
+                              onMouseLeave={(e) =>
+                                (e.currentTarget.style.background = "#1A3F72")
+                              }
                             >
                               + Registrar Histórico
                             </button>
                           </div>
+                        ) : (
+                          <div
+                            className="pt-3 flex items-center"
+                            style={{ borderTop: "1px solid #EEF2F7" }}
+                          >
+                            <p className="text-xs text-[#8FA8C4]">
+                              Sem histórico médico registrado
+                            </p>
+                          </div>
                         )}
 
-                        <div className="border-t pt-3 mt-3">
-                          <p className="text-xs text-gray-500">
+                        <div
+                          className="pt-2.5 mt-2.5"
+                          style={{ borderTop: "1px solid #EEF2F7" }}
+                        >
+                          <p className="text-[10px] text-[#8FA8C4]">
                             Registrada em:{" "}
                             {format(
                               new Date(consulta.createdAt),
@@ -2148,9 +2892,9 @@ const FuncionarioDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">
+                  <div className="text-center py-12">
+                    <Heart className="h-10 w-10 mx-auto mb-3 text-[#C8D9ED]" />
+                    <p className="text-sm text-[#8FA8C4]">
                       Nenhuma consulta encontrada.
                     </p>
                   </div>
@@ -2158,16 +2902,35 @@ const FuncionarioDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Modal Registrar Histórico */}
+            {/* ══ MODAL REGISTRAR HISTÓRICO ══ */}
             {modalHistorico.aberto && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                  <div className="flex justify-between items-center p-6 border-b">
+              <div
+                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                style={{
+                  background: "rgba(10,25,47,0.55)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <div
+                  className="bg-white rounded-2xl w-full max-w-lg overflow-y-auto"
+                  style={{
+                    maxHeight: "90vh",
+                    border: "1px solid #D9E4F0",
+                    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                  }}
+                >
+                  <div
+                    className="flex justify-between items-center p-6"
+                    style={{ borderBottom: "1px solid #EEF2F7" }}
+                  >
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Registrar Histórico Médico
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
+                        Registrar histórico
+                      </p>
+                      <h2 className="text-lg font-bold text-[#0F2242] mt-1">
+                        Histórico Médico
                       </h2>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-xs text-[#8FA8C4] mt-0.5">
                         Paciente: {modalHistorico.consulta?.paciente?.nome}
                       </p>
                     </div>
@@ -2175,140 +2938,203 @@ const FuncionarioDashboard: React.FC = () => {
                       onClick={() =>
                         setModalHistorico({ aberto: false, consulta: null })
                       }
-                      className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                      className="text-[#8FA8C4] hover:text-[#5C7A9B] text-2xl font-bold leading-none transition-colors"
                     >
                       ×
                     </button>
                   </div>
-
                   <form
                     onSubmit={handleRegistrarHistorico}
                     className="p-6 space-y-4"
                   >
+                    {[
+                      {
+                        label: "Laudo",
+                        key: "laudo",
+                        required: true,
+                        type: "textarea",
+                        rows: 3,
+                        placeholder: "Descreva o laudo médico...",
+                      },
+                      {
+                        label: "Diagnóstico",
+                        key: "diagnostico",
+                        required: true,
+                        type: "textarea",
+                        rows: 2,
+                        placeholder: "Diagnóstico do paciente...",
+                      },
+                    ].map(
+                      ({ label, key, required, type, rows, placeholder }) => (
+                        <div key={key}>
+                          <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1.5">
+                            {label}
+                            {required && (
+                              <span className="text-[#8B1F1F]"> *</span>
+                            )}
+                          </label>
+                          <textarea
+                            required={required}
+                            rows={rows}
+                            value={formHistorico[key]}
+                            onChange={(e) =>
+                              setFormHistorico((prev: any) => ({
+                                ...prev,
+                                [key]: e.target.value,
+                              }))
+                            }
+                            className="w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
+                            style={{
+                              border: "1px solid #C8D9ED",
+                              background: "#F4F8FC",
+                            }}
+                            onFocus={(e) => {
+                              e.target.style.borderColor = "#1A3F72";
+                              e.target.style.background = "#fff";
+                            }}
+                            onBlur={(e) => {
+                              e.target.style.borderColor = "#C8D9ED";
+                              e.target.style.background = "#F4F8FC";
+                            }}
+                            placeholder={placeholder}
+                          />
+                        </div>
+                      ),
+                    )}
+                    {[
+                      {
+                        label: "Doença",
+                        key: "doenca",
+                        placeholder: "CID ou nome da doença...",
+                      },
+                      {
+                        label: "Medicação",
+                        key: "medicacao",
+                        placeholder: "Medicações prescritas...",
+                      },
+                    ].map(({ label, key, placeholder }) => (
+                      <div key={key}>
+                        <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1.5">
+                          {label}
+                        </label>
+                        <input
+                          type="text"
+                          value={formHistorico[key]}
+                          onChange={(e) =>
+                            setFormHistorico((prev: any) => ({
+                              ...prev,
+                              [key]: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#1A3F72";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
+                          placeholder={placeholder}
+                        />
+                      </div>
+                    ))}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Laudo *
-                      </label>
-                      <textarea
-                        required
-                        rows={3}
-                        value={formHistorico.laudo}
-                        onChange={(e) =>
-                          setFormHistorico((prev) => ({
-                            ...prev,
-                            laudo: e.target.value,
-                          }))
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Descreva o laudo médico..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Diagnóstico *
-                      </label>
-                      <textarea
-                        required
-                        rows={2}
-                        value={formHistorico.diagnostico}
-                        onChange={(e) =>
-                          setFormHistorico((prev) => ({
-                            ...prev,
-                            diagnostico: e.target.value,
-                          }))
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Diagnóstico do paciente..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Doença
-                      </label>
-                      <input
-                        type="text"
-                        value={formHistorico.doenca}
-                        onChange={(e) =>
-                          setFormHistorico((prev) => ({
-                            ...prev,
-                            doenca: e.target.value,
-                          }))
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="CID ou nome da doença..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Medicação
-                      </label>
-                      <input
-                        type="text"
-                        value={formHistorico.medicacao}
-                        onChange={(e) =>
-                          setFormHistorico((prev) => ({
-                            ...prev,
-                            medicacao: e.target.value,
-                          }))
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Medicações prescritas..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1.5">
                         Observações
                       </label>
                       <textarea
                         rows={2}
                         value={formHistorico.observacoes}
                         onChange={(e) =>
-                          setFormHistorico((prev) => ({
+                          setFormHistorico((prev: any) => ({
                             ...prev,
                             observacoes: e.target.value,
                           }))
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          background: "#F4F8FC",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#1A3F72";
+                          e.target.style.background = "#fff";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#C8D9ED";
+                          e.target.style.background = "#F4F8FC";
+                        }}
                         placeholder="Observações adicionais..."
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Data da Consulta *
+                      <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1.5">
+                        Data da Consulta{" "}
+                        <span className="text-[#8B1F1F]">*</span>
                       </label>
                       <input
                         type="date"
                         required
                         value={formHistorico.dataConsulta}
                         onChange={(e) =>
-                          setFormHistorico((prev) => ({
+                          setFormHistorico((prev: any) => ({
                             ...prev,
                             dataConsulta: e.target.value,
                           }))
                         }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          background: "#F4F8FC",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#1A3F72";
+                          e.target.style.background = "#fff";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#C8D9ED";
+                          e.target.style.background = "#F4F8FC";
+                        }}
                       />
                     </div>
-
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-3 pt-1">
                       <button
                         type="button"
                         onClick={() =>
                           setModalHistorico({ aberto: false, consulta: null })
                         }
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                        className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          color: "#5C7A9B",
+                          background: "transparent",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#F0F4F8")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
                       >
                         Cancelar
                       </button>
                       <button
                         type="submit"
                         disabled={loadingHistorico}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                        style={{ background: "#1A3F72" }}
+                        onMouseEnter={(e) =>
+                          !loadingHistorico &&
+                          (e.currentTarget.style.background = "#0F2A52")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#1A3F72")
+                        }
                       >
                         {loadingHistorico ? "Salvando..." : "Salvar Histórico"}
                       </button>

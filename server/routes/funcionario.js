@@ -36,6 +36,19 @@ router.post("/historico-medico", async (req, res) => {
       },
     });
 
+    // Se a consulta estiver vinculada, atualiza seu status para 'realizado'
+    if (consultaId) {
+      try {
+        await prisma.consulta.update({
+          where: { id: consultaId },
+          data: { status: "realizado" },
+        });
+      } catch (err) {
+        console.error("Erro ao atualizar status da consulta:", err);
+        // Não falha a criação do histórico se a atualização da consulta falhar
+      }
+    }
+
     res.status(201).json(novoHistorico);
   } catch (error) {
     console.error("Erro ao registrar histórico médico:", error);
@@ -317,7 +330,8 @@ router.get("/minhas-solicitacoes", async (req, res) => {
         solicitacaoTipo: "exame",
       })),
     ].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     res.json(solicitacoes);
@@ -358,12 +372,10 @@ router.put("/solicitacoes-internacao/:id/observacoes", async (req, res) => {
   } catch (error) {
     console.error("Erro ao atualizar solicitação:", error);
     if (error.code === "P2025") {
-      return res
-        .status(404)
-        .json({
-          message:
-            "Solicitação não encontrada ou você não tem permissão para editá-la",
-        });
+      return res.status(404).json({
+        message:
+          "Solicitação não encontrada ou você não tem permissão para editá-la",
+      });
     }
     res.status(500).json({ message: "Erro interno do servidor" });
   }
@@ -529,191 +541,248 @@ const funcionarioPodeTratarMedicamentos = async (req, res, next) => {
     });
 
     if (!funcionario) {
-      return res.status(404).json({ message: 'Funcionário não encontrado' });
+      return res.status(404).json({ message: "Funcionário não encontrado" });
     }
 
     const funcao = funcionario.funcao?.toLowerCase();
-    const podeListar = ['enfermeiro', 'farmaceutico', 'farmacêutico'].includes(funcao);
-    const podeAdministrar = ['enfermeiro', 'farmaceutico', 'farmacêutico'].includes(funcao);
+    const podeListar = ["enfermeiro", "farmaceutico", "farmacêutico"].includes(
+      funcao,
+    );
+    const podeAdministrar = [
+      "enfermeiro",
+      "farmaceutico",
+      "farmacêutico",
+    ].includes(funcao);
 
     req.funcionario = funcionario;
 
-    if (req.method === 'GET') {
+    if (req.method === "GET") {
       if (!podeListar) {
-        return res.status(403).json({ message: 'Acesso negado: função não autorizada para listar medicamentos' });
+        return res
+          .status(403)
+          .json({
+            message:
+              "Acesso negado: função não autorizada para listar medicamentos",
+          });
       }
       return next();
     }
 
     if (!podeAdministrar) {
-      return res.status(403).json({ message: 'Acesso negado: função não autorizada para esta ação' });
+      return res
+        .status(403)
+        .json({
+          message: "Acesso negado: função não autorizada para esta ação",
+        });
     }
 
     next();
   } catch (error) {
-    console.error('Erro ao verificar permissão de medicamento:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro ao verificar permissão de medicamento:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 };
 
 // Listar medicamentos da UBS do funcionário (enfermeiro/farmacêutico)
-router.get('/medicamentos', funcionarioPodeTratarMedicamentos, async (req, res) => {
-  try {
-    const { busca } = req.query;
-    const where = {
-      ubsId: req.funcionario.ubsId,
-      ...(busca
-        ? {
-            OR: [
-              { nome: { contains: busca, mode: 'insensitive' } },
-              { lote: { contains: busca, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
-    };
+router.get(
+  "/medicamentos",
+  funcionarioPodeTratarMedicamentos,
+  async (req, res) => {
+    try {
+      const { busca } = req.query;
+      const where = {
+        ubsId: req.funcionario.ubsId,
+        ...(busca
+          ? {
+              OR: [
+                { nome: { contains: busca, mode: "insensitive" } },
+                { lote: { contains: busca, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      };
 
-    const medicamentos = await prisma.medicamento.findMany({
-      where,
-      include: {
-        ubs: {
-          select: { nome: true },
+      const medicamentos = await prisma.medicamento.findMany({
+        where,
+        include: {
+          ubs: {
+            select: { nome: true },
+          },
         },
-      },
-      orderBy: { nome: 'asc' },
-    });
+        orderBy: { nome: "asc" },
+      });
 
-    res.json(medicamentos);
-  } catch (error) {
-    console.error('Erro ao listar medicamentos do funcionário:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+      res.json(medicamentos);
+    } catch (error) {
+      console.error("Erro ao listar medicamentos do funcionário:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
 
 // Atualizar medicamento da UBS do funcionário
-router.put('/medicamentos/:id', funcionarioPodeTratarMedicamentos, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { nome, descricao, observacoes, lote, quantidade, dataValidade, vencido } = req.body;
+router.put(
+  "/medicamentos/:id",
+  funcionarioPodeTratarMedicamentos,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const {
+        nome,
+        descricao,
+        observacoes,
+        lote,
+        quantidade,
+        dataValidade,
+        vencido,
+      } = req.body;
 
-    const medicamentoExistente = await prisma.medicamento.findUnique({ where: { id } });
-    if (!medicamentoExistente) {
-      return res.status(404).json({ message: 'Medicamento não encontrado' });
-    }
-
-    if (medicamentoExistente.ubsId !== req.funcionario.ubsId) {
-      return res.status(403).json({ message: 'Acesso negado a este medicamento' });
-    }
-
-    const updateData = {};
-    if (nome !== undefined) updateData.nome = nome;
-    if (descricao !== undefined) updateData.descricao = descricao;
-    if (observacoes !== undefined) updateData.observacoes = observacoes;
-    if (lote !== undefined) updateData.lote = lote;
-    if (quantidade !== undefined) {
-      const quantidadeInt = Number(quantidade);
-      if (Number.isNaN(quantidadeInt) || quantidadeInt < 0) {
-        return res.status(400).json({ message: 'Quantidade inválida' });
+      const medicamentoExistente = await prisma.medicamento.findUnique({
+        where: { id },
+      });
+      if (!medicamentoExistente) {
+        return res.status(404).json({ message: "Medicamento não encontrado" });
       }
-      updateData.quantidade = quantidadeInt;
-    }
-    if (dataValidade !== undefined) {
-      const validade = new Date(dataValidade);
-      if (Number.isNaN(validade.getTime())) {
-        return res.status(400).json({ message: 'Data de validade inválida' });
-      }
-      updateData.dataValidade = validade;
-      if (vencido === undefined) {
-        updateData.vencido = validade < new Date();
-      }
-    }
-    if (vencido !== undefined) updateData.vencido = Boolean(vencido);
 
-    const medicamentoAtualizado = await prisma.medicamento.update({
-      where: { id },
-      data: updateData,
-    });
+      if (medicamentoExistente.ubsId !== req.funcionario.ubsId) {
+        return res
+          .status(403)
+          .json({ message: "Acesso negado a este medicamento" });
+      }
 
-    res.json(medicamentoAtualizado);
-  } catch (error) {
-    console.error('Erro ao atualizar medicamento do funcionário:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+      const updateData = {};
+      if (nome !== undefined) updateData.nome = nome;
+      if (descricao !== undefined) updateData.descricao = descricao;
+      if (observacoes !== undefined) updateData.observacoes = observacoes;
+      if (lote !== undefined) updateData.lote = lote;
+      if (quantidade !== undefined) {
+        const quantidadeInt = Number(quantidade);
+        if (Number.isNaN(quantidadeInt) || quantidadeInt < 0) {
+          return res.status(400).json({ message: "Quantidade inválida" });
+        }
+        updateData.quantidade = quantidadeInt;
+      }
+      if (dataValidade !== undefined) {
+        const validade = new Date(dataValidade);
+        if (Number.isNaN(validade.getTime())) {
+          return res.status(400).json({ message: "Data de validade inválida" });
+        }
+        updateData.dataValidade = validade;
+        if (vencido === undefined) {
+          updateData.vencido = validade < new Date();
+        }
+      }
+      if (vencido !== undefined) updateData.vencido = Boolean(vencido);
+
+      const medicamentoAtualizado = await prisma.medicamento.update({
+        where: { id },
+        data: updateData,
+      });
+
+      res.json(medicamentoAtualizado);
+    } catch (error) {
+      console.error("Erro ao atualizar medicamento do funcionário:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
 
 // Administrar medicação ao paciente
-router.post('/medicamentos/:id/administrar', funcionarioPodeTratarMedicamentos, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { pacienteId, pacienteCns, quantidade, dataRetirada, observacoes } = req.body;
+router.post(
+  "/medicamentos/:id/administrar",
+  funcionarioPodeTratarMedicamentos,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { pacienteId, pacienteCns, quantidade, dataRetirada, observacoes } =
+        req.body;
 
-    if ((!pacienteId && !pacienteCns) || quantidade === undefined) {
-      return res.status(400).json({ message: 'Paciente (ID ou CNS) e quantidade são obrigatórios' });
-    }
+      if ((!pacienteId && !pacienteCns) || quantidade === undefined) {
+        return res
+          .status(400)
+          .json({
+            message: "Paciente (ID ou CNS) e quantidade são obrigatórios",
+          });
+      }
 
-    const quantidadeInt = Number(quantidade);
-    if (Number.isNaN(quantidadeInt) || quantidadeInt <= 0) {
-      return res.status(400).json({ message: 'Quantidade inválida' });
-    }
+      const quantidadeInt = Number(quantidade);
+      if (Number.isNaN(quantidadeInt) || quantidadeInt <= 0) {
+        return res.status(400).json({ message: "Quantidade inválida" });
+      }
 
-    const medicamentoExistente = await prisma.medicamento.findUnique({ where: { id } });
-    if (!medicamentoExistente) {
-      return res.status(404).json({ message: 'Medicamento não encontrado' });
-    }
-
-    if (medicamentoExistente.ubsId !== req.funcionario.ubsId) {
-      return res.status(403).json({ message: 'Acesso negado a este medicamento' });
-    }
-
-    if (quantidadeInt > medicamentoExistente.quantidade) {
-      return res.status(400).json({ message: 'Quantidade solicitada maior do que o estoque disponível' });
-    }
-
-    const paciente = pacienteId
-      ? await prisma.paciente.findUnique({
-          where: { id: pacienteId },
-          select: { id: true },
-        })
-      : await prisma.paciente.findUnique({
-          where: { cns: pacienteCns },
-          select: { id: true },
-        });
-    if (!paciente) {
-      return res.status(404).json({ message: 'Paciente não encontrado com o CNS informado' });
-    }
-
-    const pacienteIdParaSalvar = paciente.id;
-
-    const retirada = dataRetirada ? new Date(dataRetirada) : new Date();
-    if (Number.isNaN(retirada.getTime())) {
-      return res.status(400).json({ message: 'Data de retirada inválida' });
-    }
-
-    const [medicamentoAtualizado, medicacao] = await prisma.$transaction([
-      prisma.medicamento.update({
+      const medicamentoExistente = await prisma.medicamento.findUnique({
         where: { id },
-        data: {
-          quantidade: medicamentoExistente.quantidade - quantidadeInt,
-        },
-      }),
-      prisma.medicacaoPaciente.create({
-        data: {
-          medicamentoId: id,
-          pacienteId: pacienteIdParaSalvar,
-          funcionarioId: req.user.id,
-          ubsId: req.funcionario.ubsId,
-          quantidade: quantidadeInt,
-          dataRetirada: retirada,
-          fornecidoPor: req.funcionario.nome || 'Funcionário',
-          observacoes: observacoes ?? null,
-        },
-      }),
-    ]);
+      });
+      if (!medicamentoExistente) {
+        return res.status(404).json({ message: "Medicamento não encontrado" });
+      }
 
-    res.json({ medicamento: medicamentoAtualizado, administracao: medicacao });
-  } catch (error) {
-    console.error('Erro ao administrar medicamento:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+      if (medicamentoExistente.ubsId !== req.funcionario.ubsId) {
+        return res
+          .status(403)
+          .json({ message: "Acesso negado a este medicamento" });
+      }
+
+      if (quantidadeInt > medicamentoExistente.quantidade) {
+        return res
+          .status(400)
+          .json({
+            message: "Quantidade solicitada maior do que o estoque disponível",
+          });
+      }
+
+      const paciente = pacienteId
+        ? await prisma.paciente.findUnique({
+            where: { id: pacienteId },
+            select: { id: true },
+          })
+        : await prisma.paciente.findUnique({
+            where: { cns: pacienteCns },
+            select: { id: true },
+          });
+      if (!paciente) {
+        return res
+          .status(404)
+          .json({ message: "Paciente não encontrado com o CNS informado" });
+      }
+
+      const pacienteIdParaSalvar = paciente.id;
+
+      const retirada = dataRetirada ? new Date(dataRetirada) : new Date();
+      if (Number.isNaN(retirada.getTime())) {
+        return res.status(400).json({ message: "Data de retirada inválida" });
+      }
+
+      const [medicamentoAtualizado, medicacao] = await prisma.$transaction([
+        prisma.medicamento.update({
+          where: { id },
+          data: {
+            quantidade: medicamentoExistente.quantidade - quantidadeInt,
+          },
+        }),
+        prisma.medicacaoPaciente.create({
+          data: {
+            medicamentoId: id,
+            pacienteId: pacienteIdParaSalvar,
+            funcionarioId: req.user.id,
+            ubsId: req.funcionario.ubsId,
+            quantidade: quantidadeInt,
+            dataRetirada: retirada,
+            fornecidoPor: req.funcionario.nome || "Funcionário",
+            observacoes: observacoes ?? null,
+          },
+        }),
+      ]);
+
+      res.json({
+        medicamento: medicamentoAtualizado,
+        administracao: medicacao,
+      });
+    } catch (error) {
+      console.error("Erro ao administrar medicamento:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
 
 export default router;
