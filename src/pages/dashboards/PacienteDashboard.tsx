@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import {
   User,
@@ -621,44 +622,113 @@ const PacienteDashboard: React.FC = () => {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: "#F0F4F8", fontFamily: "'DM Sans', sans-serif" }}
+    >
       {/* ── SIDEBAR ─────────────────────────────────────────── */}
-      {/* Overlay mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-20 lg:hidden"
+          style={{ background: "rgba(10, 74, 74, 0.35)" }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-white border-r border-gray-100 shadow-sm transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-30 flex flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{
+          width: "240px",
+          background: "#ffffff",
+          borderRight: "0.5px solid #E2E8F0",
+        }}
       >
         {/* Logo da sidebar */}
-        <div className="flex h-16 items-center gap-2.5 border-b border-gray-100 px-5">
-          <Heart className="h-5 w-5 text-rose-500" />
-          <span className="text-base font-bold text-teal-800 tracking-tight">
+        <div
+          className="flex items-center gap-2.5"
+          style={{
+            height: "64px",
+            padding: "0 20px",
+            borderBottom: "0.5px solid #E2E8F0",
+          }}
+        >
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              background: "linear-gradient(135deg, #0A6B6B, #0E9090)",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Heart className="h-4 w-4 text-white" />
+          </div>
+          <span
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "15px",
+              fontWeight: 500,
+              color: "#0A4A4A",
+              letterSpacing: "0.01em",
+            }}
+          >
             SISC Saúde
           </span>
         </div>
 
         {/* Avatar do paciente */}
-        <div className="px-5 py-5 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50">
-              <User className="h-5 w-5 text-teal-600" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-gray-800">
-                {user?.nome}
-              </p>
-              <p className="text-xs text-gray-400">Paciente</p>
-            </div>
+        <div
+          className="flex items-center gap-3"
+          style={{ padding: "16px 20px", borderBottom: "0.5px solid #E2E8F0" }}
+        >
+          <div
+            style={{
+              width: "38px",
+              height: "38px",
+              background: "#E6F3F3",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <User className="h-4 w-4" style={{ color: "#0A6B6B" }} />
+          </div>
+          <div className="min-w-0">
+            <p
+              className="truncate"
+              style={{ fontSize: "13px", fontWeight: 500, color: "#1A2E2E" }}
+            >
+              {user?.nome}
+            </p>
+            <p
+              style={{
+                fontSize: "11px",
+                color: "#7A9B9B",
+                marginTop: "1px",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+              }}
+            >
+              Paciente
+            </p>
           </div>
         </div>
 
         {/* Itens de navegação */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        <nav
+          className="flex-1 overflow-y-auto"
+          style={{
+            padding: "12px 10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px",
+          }}
+        >
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.key;
@@ -669,14 +739,22 @@ const PacienteDashboard: React.FC = () => {
                   setActiveTab(item.key);
                   setSidebarOpen(false);
                 }}
-                className={`group w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
-                  active
-                    ? "bg-teal-600 text-white shadow-sm"
-                    : "text-gray-600 hover:bg-slate-50 hover:text-gray-900"
-                }`}
+                className="group w-full flex items-center gap-2.5 transition-all duration-150"
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: active ? 500 : 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                  background: active ? "#0A6B6B" : "transparent",
+                  color: active ? "#ffffff" : "#4A6B6B",
+                }}
               >
                 <Icon
-                  className={`h-4 w-4 flex-shrink-0 ${active ? "text-white" : "text-gray-400 group-hover:text-gray-600"}`}
+                  className="h-4 w-4 flex-shrink-0"
+                  style={{ opacity: active ? 1 : 0.65 }}
                 />
                 <span className="truncate">{item.name}</span>
               </button>
@@ -685,10 +763,29 @@ const PacienteDashboard: React.FC = () => {
         </nav>
 
         {/* Botão sair */}
-        <div className="border-t border-gray-100 p-3">
+        <div style={{ borderTop: "0.5px solid #E2E8F0", padding: "10px" }}>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-rose-50 hover:text-rose-600 transition-all duration-150"
+            className="w-full flex items-center gap-2.5 transition-all duration-150"
+            style={{
+              padding: "9px 12px",
+              borderRadius: "10px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 400,
+              fontFamily: "'DM Sans', sans-serif",
+              background: "transparent",
+              color: "#7A9B9B",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#FFF0F0";
+              e.currentTarget.style.color = "#C0392B";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#7A9B9B";
+            }}
           >
             <LogOut className="h-4 w-4" />
             Sair do sistema
