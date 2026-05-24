@@ -584,7 +584,6 @@ const FuncionarioDashboard: React.FC = () => {
   const allNavigation = [
     { name: "Pacientes", key: "pacientes", icon: Users },
     { name: "Minhas Consultas", key: "consultas", icon: Heart },
-    { name: "Histórico Médico", key: "historico", icon: FileText },
     { name: "Minhas Solicitações", key: "solicitacoes", icon: Building2 },
     { name: "Medicamentos", key: "medicamentos", icon: Pill },
   ];

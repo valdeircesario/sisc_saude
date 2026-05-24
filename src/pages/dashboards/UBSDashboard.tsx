@@ -1197,24 +1197,80 @@ const UBSDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{ background: "#F0F4F8", fontFamily: "'DM Sans', sans-serif" }}
+    >
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header style={{ background: "#0A6B6B" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">
+          <div
+            className="flex justify-between items-center"
+            style={{ height: "60px" }}
+          >
+            <div className="flex items-center" style={{ gap: "12px" }}>
+              <div
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  background: "rgba(255,255,255,0.12)",
+                  borderRadius: "9px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <h1
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  color: "#ffffff",
+                  letterSpacing: "0.01em",
+                }}
+              >
                 UBS Dashboard
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">Olá, {user?.nome}</span>
+
+            <div className="flex items-center" style={{ gap: "16px" }}>
+              <span
+                style={{ fontSize: "13px", color: "rgba(255,255,255,0.7)" }}
+              >
+                Olá,{" "}
+                <strong style={{ color: "#ffffff", fontWeight: 500 }}>
+                  {user?.nome}
+                </strong>
+              </span>
               <button
                 onClick={logout}
-                className="flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                className="flex items-center"
+                style={{
+                  gap: "7px",
+                  padding: "7px 14px",
+                  borderRadius: "8px",
+                  border: "0.5px solid rgba(255,255,255,0.25)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.16)";
+                  e.currentTarget.style.color = "#ffffff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.85)";
+                }}
               >
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="h-3.5 w-3.5" />
                 Sair
               </button>
             </div>
@@ -1222,35 +1278,61 @@ const UBSDashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { key: "funcionarios", label: "Funcionários", icon: Users },
-              { key: "pacientes", label: "Pacientes", icon: Heart },
-              { key: "campanhas", label: "Campanhas", icon: Megaphone },
-              { key: "consultas", label: "Consultas", icon: Calendar },
-              { key: "medicamentos", label: "Medicamentos", icon: Pill },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`${
-                    activeTab === tab.key
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center transition-colors`}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: '20px' }}>
+
+        
+          {/* Navigation Tabs */}
+          <div style={{ marginBottom: "24px" }}>
+            <nav
+              className="flex"
+              style={{
+                gap: "4px",
+                background: "#ffffff",
+                borderRadius: "12px",
+                padding: "5px",
+                border: "0.5px solid #E2E8F0",
+                width: "fit-content",
+              }}
+            >
+              {[
+                { key: "funcionarios", label: "Funcionários", icon: Users },
+                { key: "pacientes", label: "Pacientes", icon: Heart },
+                { key: "campanhas", label: "Campanhas", icon: Megaphone },
+                { key: "consultas", label: "Consultas", icon: Calendar },
+                { key: "medicamentos", label: "Medicamentos", icon: Pill },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className="flex items-center transition-all duration-150"
+                    style={{
+                      gap: "7px",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "12.5px",
+                      fontWeight: active ? 500 : 400,
+                      fontFamily: "'DM Sans', sans-serif",
+                      whiteSpace: "nowrap",
+                      background: active ? "#0A6B6B" : "transparent",
+                      color: active ? "#ffffff" : "#5A7A7A",
+                    }}
+                  >
+                    <Icon
+                      className="h-3.5 w-3.5 flex-shrink-0"
+                      style={{ opacity: active ? 1 : 0.65 }}
+                    />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        
 
         {/* Funcionários Tab */}
         {activeTab === "funcionarios" && (
@@ -2835,29 +2917,57 @@ const UBSDashboard: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Medicamentos</h2>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => {
-                    resetMedForm();
-                    setShowMedModal(true);
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Novo Medicamento
-                </button>
-                <div className="relative w-full max-w-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Buscar medicamentos..."
-                  />
-                </div>
-              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+  <button
+    onClick={() => {
+      resetMedForm();
+      setShowMedModal(true);
+    }}
+    className="
+      inline-flex items-center justify-center
+      bg-gradient-to-r from-green-950 to-emerald-700
+      hover:from-green-700 hover:to-emerald-700
+      text-white font-medium
+      px-6 py-2.5
+      rounded-xl
+      shadow-sm hover:shadow-md
+      transition-all duration-200
+      active:scale-[0.98]
+      whitespace-nowrap
+    "
+  >
+    <Plus className="w-4 h-4 mr-2" />
+    Novo Medicamento
+  </button>
+
+  <div className="relative w-full max-w-md">
+    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+      <Search className="w-5 h-5 text-gray-400" />
+    </div>
+
+    <input
+      type="text"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      placeholder="Buscar medicamentos..."
+      className="
+        w-full
+        pl-12 pr-4 py-3
+        rounded-xl
+        border border-gray-200
+        bg-white/90
+        text-gray-700
+        placeholder:text-gray-400
+        shadow-sm
+        transition-all duration-200
+        focus:outline-none
+        focus:ring-2 focus:ring-blue-500/30
+        focus:border-blue-500
+        hover:border-gray-300
+      "
+    />
+  </div>
+</div>
             </div>
             {loadingMedicamentos ? (
               <div className="text-center py-12">
