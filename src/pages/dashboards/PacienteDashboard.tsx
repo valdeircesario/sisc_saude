@@ -568,10 +568,7 @@ const PacienteDashboard: React.FC = () => {
     { name: "Medicações", key: "medicacoes", icon: Pill },
     { name: "Agendamentos", key: "agendamentos", icon: Calendar },
     { name: "Histórico Médico", key: "historico", icon: Heart },
-    {
-      name: "Histórico Hospitalar",
-      key: "historico-hospitalar",
-      icon: History,
+    { name: "Receitas / Atestados", key: "historico-hospitalar",icon: History,
     },
   ];
 
@@ -681,43 +678,84 @@ const PacienteDashboard: React.FC = () => {
 
         {/* Avatar do paciente */}
         <div
-          className="flex items-center gap-3"
-          style={{ padding: "16px 20px", borderBottom: "0.5px solid #E2E8F0" }}
-        >
-          <div
-            style={{
-              width: "38px",
-              height: "38px",
-              background: "#E6F3F3",
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <User className="h-4 w-4" style={{ color: "#0A6B6B" }} />
-          </div>
-          <div className="min-w-0">
-            <p
-              className="truncate"
-              style={{ fontSize: "13px", fontWeight: 500, color: "#1A2E2E" }}
-            >
-              {user?.nome}
-            </p>
-            <p
-              style={{
-                fontSize: "11px",
-                color: "#7A9B9B",
-                marginTop: "1px",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-              }}
-            >
-              Paciente
-            </p>
-          </div>
-        </div>
+  className="flex items-center gap-4"
+  style={{
+    padding: "18px 20px",
+    borderBottom: "1px solid #E2E8F0",
+  }}
+>
+  <div
+    className="relative flex items-center justify-center flex-shrink-0"
+    style={{
+      width: "52px",
+      height: "52px",
+      borderRadius: "16px",
+      background: "linear-gradient(135deg, #0A6B6B 0%, #14B8A6 100%)",
+      boxShadow: "0 8px 20px rgba(10, 107, 107, 0.20)",
+    }}
+  >
+    {user?.nome ? (
+      <span
+        style={{
+          color: "#FFFFFF",
+          fontSize: "16px",
+          fontWeight: 700,
+        }}
+      >
+        {user.nome
+          .split(" ")
+          .slice(0, 2)
+          .map((n) => n[0])
+          .join("")
+          .toUpperCase()}
+      </span>
+    ) : (
+      <User className="h-6 w-6 text-white" />
+    )}
+
+    <div
+      style={{
+        position: "absolute",
+        bottom: "-2px",
+        right: "-2px",
+        width: "14px",
+        height: "14px",
+        borderRadius: "50%",
+        background: "#22C55E",
+        border: "2px solid white",
+      }}
+    />
+  </div>
+
+  <div className="min-w-0 flex-1">
+    <p
+      className="truncate"
+      style={{
+        fontSize: "15px",
+        fontWeight: 600,
+        color: "#0F172A",
+      }}
+    >
+      {user?.nome || "Usuário"}
+    </p>
+
+    <div className="flex items-center gap-2 mt-1">
+      <span
+        style={{
+          fontSize: "11px",
+          fontWeight: 600,
+          color: "#0A6B6B",
+          background: "#E6FFFB",
+          padding: "3px 8px",
+          borderRadius: "999px",
+          border: "1px solid #B2F5EA",
+        }}
+      >
+        PACIENTE
+      </span>
+    </div>
+  </div>
+</div>
 
         {/* Itens de navegação */}
         <nav

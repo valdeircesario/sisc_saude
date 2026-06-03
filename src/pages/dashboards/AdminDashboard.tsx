@@ -41,25 +41,76 @@ const AdminDashboard: React.FC = () => {
     { enabled: activeTab === "ubs" },
   );
 
-  const { data: laboratorios, isLoading: loadingLabs } = useQuery(
-    ["admin-laboratorios"],
-    () => api.get("/admin/laboratorios").then((res) => res.data),
-    { enabled: activeTab === "laboratorios" },
+  // Removida declaração duplicada do useQuery para 'upas'
+  // (a declaração única permanece mais adiante junto às mutações de UPA)
+
+  //FARMACIAS
+
+  const createFARMACIAMutation = useMutation(
+    (data: any) => api.post("/admin/farmacias", data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["admin-farmacias"]);
+        toast.success("Farmácia cadastrada com sucesso!");
+        setShowModal(false);
+        resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(
+          error.response?.data?.message || "Erro ao cadastrar Farmácia",
+        );
+      },
+    },
   );
 
-  const { data: upas, isLoading: loadingUpas } = useQuery(
-    ["admin-upas"],
-    () => api.get("/admin/upas").then((res) => res.data),
-    { enabled: activeTab === "upas" },
+  const updateFARMACIAMutation = useMutation(
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/admin/farmacias/${id}`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["admin-farmacias"]);
+        toast.success("Farmácia atualizada com sucesso!");
+        setShowModal(false);
+        resetForm();
+      },
+      onError: (error: any) => {
+        toast.error(
+          error.response?.data?.message || "Erro ao atualizar Farmácia",
+        );
+      },
+    },
   );
+  const deleteFARMACIAMutation = useMutation(
+    (id: string) => api.delete(`/admin/farmacias/${id}`),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(["admin-farmacias"]);
+        toast.success("Farmácia deletada com sucesso!");
+      },
+      onError: (error: any) => {
+        toast.error(
+          error.response?.data?.message || "Erro ao deletar Farmácia",
+        );
+      },
+    },
+  );
+
+  const { data: farmacias, isLoading: loadingFarmacias } = useQuery(
+    ["admin-farmacias"],
+    () => api.get("/admin/farmacias").then((res) => res.data),
+    { enabled: activeTab === "farmacias" },
+  );
+
+  // Removida declaração duplicada do useQuery para 'farmacias'
+  // (já existe: `const { data: farmacias, isLoading: loadingFarmacias }`)
+
+  // Hospital mutations
 
   const { data: hospitais, isLoading: loadingHospitais } = useQuery(
     ["admin-hospitais"],
     () => api.get("/admin/hospitais").then((res) => res.data),
     { enabled: activeTab === "hospitais" },
   );
-
-  // Hospital mutations
   const createHOSPITALMutation = useMutation(
     (data: any) => api.post("/admin/hospitais", data),
     {
@@ -155,7 +206,13 @@ const AdminDashboard: React.FC = () => {
     },
   );
 
-  // Laboratory mutations
+  // CRIAÇÃO DE LABORATORIO
+  const { data: laboratorios, isLoading: loadingLabs } = useQuery(
+    ["admin-laboratorios"],
+    () => api.get("/admin/laboratorios").then((res) => res.data),
+    { enabled: activeTab === "laboratorios" },
+  );
+
   const createLabMutation = useMutation(
     (data: any) => api.post("/admin/laboratorios", data),
     {
@@ -206,7 +263,13 @@ const AdminDashboard: React.FC = () => {
     },
   );
 
-  // UPA mutations
+  // CRIAÇÃO DA UPA
+  const { data: upas, isLoading: loadingUpas } = useQuery(
+    ["admin-upas"],
+    () => api.get("/admin/upas").then((res) => res.data),
+    { enabled: activeTab === "upas" },
+  );
+
   const createUpaMutation = useMutation(
     (data: any) => api.post("/admin/upas", data),
     {
@@ -290,6 +353,12 @@ const AdminDashboard: React.FC = () => {
       } else {
         createUpaMutation.mutate(formData);
       }
+    } else if (activeTab === "farmacias") {
+      if (editingItem) {
+        updateFARMACIAMutation.mutate({ id: editingItem.id, data: formData });
+      } else {
+        createFARMACIAMutation.mutate(formData);
+      }
     }
   };
 
@@ -316,6 +385,8 @@ const AdminDashboard: React.FC = () => {
         deleteHOSPITALMutation.mutate(id);
       } else if (activeTab === "upas") {
         deleteUpaMutation.mutate(id);
+      } else if (activeTab === "farmacias") {
+        deleteFARMACIAMutation.mutate(id);
       }
     }
   };
@@ -401,6 +472,17 @@ const AdminDashboard: React.FC = () => {
                 <Building2 className="h-5 w-5 inline mr-2" />
                 UPAs
               </button>
+              <button
+                onClick={() => setActiveTab("farmacias")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "farmacias"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <Building2 className="h-5 w-5 inline mr-2" />
+                Farmácias
+              </button>
             </nav>
           </div>
         </div>
@@ -415,7 +497,9 @@ const AdminDashboard: React.FC = () => {
                   ? "Laboratórios"
                   : activeTab === "hospitais"
                     ? "Hospitais"
-                    : "UPAs"}
+                    : activeTab === "farmacias"
+                      ? "Farmácias"
+                      : "UPAs"}
             </h2>
             <button
               onClick={openCreateModal}
@@ -430,7 +514,9 @@ const AdminDashboard: React.FC = () => {
                     ? "Laboratório"
                     : activeTab === "hospitais"
                       ? "Hospital"
-                      : "UPA"}
+                      : activeTab === "farmacias"
+                        ? "Farmácia"
+                        : "UPA"}
               </span>
             </button>
           </div>
@@ -566,6 +652,42 @@ const AdminDashboard: React.FC = () => {
                       </td>
                     </tr>
                   ))}
+                {activeTab === "farmacias" &&
+                  farmacias?.map((f: any) => (
+                    <tr key={f.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {f.nome}
+                        </div>
+                        <div className="text-sm text-gray-500">{f.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {f.endereco}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {f.telefone}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {f.cnpj}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(f)}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(f.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
 
                 {activeTab === "hospitais" && (
                   <>
@@ -625,6 +747,7 @@ const AdminDashboard: React.FC = () => {
 
           {((activeTab === "ubs" && loadingUBS) ||
             (activeTab === "laboratorios" && loadingLabs) ||
+            (activeTab === "farmacias" && loadingFarmacias) ||
             (activeTab === "hospitais" && loadingHospitais) ||
             (activeTab === "upas" && loadingUpas)) && (
             <div className="text-center py-8">
@@ -647,7 +770,9 @@ const AdminDashboard: React.FC = () => {
                   ? "Laboratório"
                   : activeTab === "hospitais"
                     ? "Hospital"
-                    : "UPA"}
+                    : activeTab === "farmacias"
+                      ? "Farmácia"
+                      : "UPA"}
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">

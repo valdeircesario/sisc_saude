@@ -22,6 +22,25 @@ router.post("/historico-medico", async (req, res) => {
       dataConsulta,
     } = req.body;
 
+    if (!pacienteId || !laudo || !diagnostico || !dataConsulta) {
+      return res.status(400).json({
+        message:
+          "Campos obrigatórios: pacienteId, laudo, diagnostico e dataConsulta.",
+      });
+    }
+
+    if (consultaId) {
+      const historicoExistente = await prisma.historicoMedico.findUnique({
+        where: { consultaId },
+      });
+
+      if (historicoExistente) {
+        return res.status(409).json({
+          message: "Esta consulta já possui um histórico médico registrado.",
+        });
+      }
+    }
+
     const novoHistorico = await prisma.historicoMedico.create({
       data: {
         pacienteId,
@@ -80,6 +99,305 @@ router.post("/vacinas", async (req, res) => {
 });
 
 // Solicitar exame
+router.post("/receitas", async (req, res) => {
+  try {
+    const {
+      pacienteId,
+      descricao,
+      cid,
+      medicamento,
+      dosagem,
+      status = "ativo",
+      observacoes,
+      dataEmissao,
+    } = req.body;
+
+    if (!pacienteId || !descricao || !cid || !medicamento || !dosagem) {
+      return res.status(400).json({
+        message:
+          "Campos obrigatórios: pacienteId, descricao, cid, medicamento e dosagem.",
+      });
+    }
+
+    const funcionario = await prisma.funcionario.findUnique({
+      where: { id: req.user.id },
+      select: { ubsId: true },
+    });
+
+    if (!funcionario) {
+      return res.status(404).json({ message: "Funcionário não encontrado." });
+    }
+
+    const receita = await prisma.receitaMedica.create({
+      data: {
+        pacienteId,
+        funcionarioId: req.user.id,
+        ubsId: funcionario.ubsId,
+        descricao,
+        cid,
+        medicamento,
+        dosagem,
+        status,
+        observacoes,
+        dataEmissao: dataEmissao ? new Date(dataEmissao) : undefined,
+      },
+      include: {
+        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
+        funcionario: {
+          select: { id: true, nome: true, funcao: true, crm: true },
+        },
+        ubs: { select: { id: true, nome: true, endereco: true } },
+      },
+    });
+
+    res.status(201).json(receita);
+  } catch (error) {
+    console.error("Erro ao salvar receita médica:", error);
+    res.status(500).json({ message: "Erro ao salvar receita médica." });
+  }
+});
+
+router.post("/atestados", async (req, res) => {
+  try {
+    const {
+      pacienteId,
+      descricao,
+      cid,
+      diasRepouso,
+      observacoes,
+      dataEmissao,
+    } = req.body;
+
+    if (!pacienteId || !descricao || !cid || !diasRepouso) {
+      return res.status(400).json({
+        message:
+          "Campos obrigatórios: pacienteId, descricao, cid e diasRepouso.",
+      });
+    }
+
+    const funcionario = await prisma.funcionario.findUnique({
+      where: { id: req.user.id },
+      select: { ubsId: true },
+    });
+
+    if (!funcionario) {
+      return res.status(404).json({ message: "Funcionário não encontrado." });
+    }
+
+    const atestado = await prisma.atestadoMedico.create({
+      data: {
+        pacienteId,
+        funcionarioId: req.user.id,
+        ubsId: funcionario.ubsId,
+        descricao,
+        cid,
+        diasRepouso: Number(diasRepouso),
+        observacoes,
+        dataEmissao: dataEmissao ? new Date(dataEmissao) : undefined,
+      },
+      include: {
+        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
+        funcionario: {
+          select: { id: true, nome: true, funcao: true, crm: true },
+        },
+        ubs: { select: { id: true, nome: true, endereco: true } },
+      },
+    });
+
+    res.status(201).json(atestado);
+  } catch (error) {
+    console.error("Erro ao salvar atestado médico:", error);
+    res.status(500).json({ message: "Erro ao salvar atestado médico." });
+  }
+});
+
+router.patch("/receitas/:id/assinatura", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      assinaturaTexto,
+      assinaturaPosX,
+      assinaturaPosY,
+      registroAssinatura,
+    } = req.body;
+
+    if (!assinaturaTexto || assinaturaPosX == null || assinaturaPosY == null) {
+      return res.status(400).json({
+        message:
+          "Campos obrigatórios: assinaturaTexto, assinaturaPosX e assinaturaPosY.",
+      });
+    }
+
+    const receita = await prisma.receitaMedica.update({
+      where: { id },
+      data: {
+        assinaturaTexto,
+        assinaturaPosX,
+        assinaturaPosY,
+        assinaturaConcluida: true,
+        registroAssinatura,
+        assinaturaData: new Date(),
+      },
+      include: {
+        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
+        funcionario: {
+          select: { id: true, nome: true, funcao: true, crm: true },
+        },
+        ubs: { select: { id: true, nome: true, endereco: true } },
+      },
+    });
+
+    res.json(receita);
+  } catch (error) {
+    console.error("Erro ao assinar receita médica:", error);
+    res.status(500).json({ message: "Erro ao assinar receita médica." });
+  }
+});
+
+router.patch("/atestados/:id/assinatura", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      assinaturaTexto,
+      assinaturaPosX,
+      assinaturaPosY,
+      registroAssinatura,
+    } = req.body;
+
+    if (!assinaturaTexto || assinaturaPosX == null || assinaturaPosY == null) {
+      return res.status(400).json({
+        message:
+          "Campos obrigatórios: assinaturaTexto, assinaturaPosX e assinaturaPosY.",
+      });
+    }
+
+    const atestado = await prisma.atestadoMedico.update({
+      where: { id },
+      data: {
+        assinaturaTexto,
+        assinaturaPosX,
+        assinaturaPosY,
+        assinaturaConcluida: true,
+        registroAssinatura,
+        assinaturaData: new Date(),
+      },
+      include: {
+        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
+        funcionario: {
+          select: { id: true, nome: true, funcao: true, crm: true },
+        },
+        ubs: { select: { id: true, nome: true, endereco: true } },
+      },
+    });
+
+    res.json(atestado);
+  } catch (error) {
+    console.error("Erro ao assinar atestado médico:", error);
+    res.status(500).json({ message: "Erro ao assinar atestado médico." });
+  }
+});
+
+router.get("/ubs", async (req, res) => {
+  try {
+    const funcionario = await prisma.funcionario.findUnique({
+      where: { id: req.user.id },
+      select: { ubsId: true },
+    });
+
+    if (!funcionario?.ubsId) {
+      return res.status(404).json({ message: "UBS do médico não encontrada." });
+    }
+
+    const ubs = await prisma.uBS.findUnique({
+      where: { id: funcionario.ubsId },
+      select: { id: true, nome: true, endereco: true, telefone: true },
+    });
+
+    if (!ubs) {
+      return res.status(404).json({ message: "UBS não encontrada." });
+    }
+
+    res.json(ubs);
+  } catch (error) {
+    console.error("Erro ao buscar UBS do médico:", error);
+    res.status(500).json({ message: "Erro ao buscar UBS do médico." });
+  }
+});
+
+router.get("/me", async (req, res) => {
+  try {
+    const funcionario = await prisma.funcionario.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        nome: true,
+        funcao: true,
+        crm: true,
+        ubsId: true,
+        ubs: {
+          select: {
+            id: true,
+            nome: true,
+            endereco: true,
+            telefone: true,
+          },
+        },
+      },
+    });
+
+    if (!funcionario) {
+      return res.status(404).json({ message: "Funcionário não encontrado." });
+    }
+
+    res.json(funcionario);
+  } catch (error) {
+    console.error("Erro ao buscar perfil do médico:", error);
+    res.status(500).json({ message: "Erro ao buscar perfil do médico." });
+  }
+});
+
+router.get("/receitas", async (req, res) => {
+  try {
+    const receitas = await prisma.receitaMedica.findMany({
+      where: { funcionarioId: req.user.id },
+      include: {
+        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
+        funcionario: {
+          select: { id: true, nome: true, funcao: true, crm: true },
+        },
+        ubs: { select: { id: true, nome: true, endereco: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(receitas);
+  } catch (error) {
+    console.error("Erro ao listar receitas:", error);
+    res.status(500).json({ message: "Erro ao listar receitas." });
+  }
+});
+
+router.get("/atestados", async (req, res) => {
+  try {
+    const atestados = await prisma.atestadoMedico.findMany({
+      where: { funcionarioId: req.user.id },
+      include: {
+        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
+        funcionario: {
+          select: { id: true, nome: true, funcao: true, crm: true },
+        },
+        ubs: { select: { id: true, nome: true, endereco: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(atestados);
+  } catch (error) {
+    console.error("Erro ao listar atestados:", error);
+    res.status(500).json({ message: "Erro ao listar atestados." });
+  }
+});
+
 router.post("/solicitar-exame", async (req, res) => {
   try {
     const { pacienteId, laboratorioId, tipoExame, observacoes } = req.body;
@@ -443,6 +761,191 @@ router.get("/pacientes/:id/historico", async (req, res) => {
   }
 });
 
+// Buscar histórico completo do paciente por CPF (consultas, exames, encaminhamentos, vacinas e medicações)
+router.get("/historico-paciente/cpf", async (req, res) => {
+  try {
+    const cpf = String(req.query.cpf || "").trim();
+
+    if (!cpf) {
+      return res.status(400).json({ message: "Informe o CPF do paciente." });
+    }
+
+    const funcao = String(req.user?.funcao || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+    if (!["medico", "medico clinico geral", "medico geral"].includes(funcao)) {
+      return res
+        .status(403)
+        .json({ message: "Acesso restrito apenas para médicos." });
+    }
+
+    const paciente = await prisma.paciente.findFirst({
+      where: { cpf: { equals: cpf, mode: "insensitive" } },
+      select: {
+        id: true,
+        nome: true,
+        cpf: true,
+        cns: true,
+        telefone: true,
+        email: true,
+        nascimento: true,
+      },
+    });
+
+    if (!paciente) {
+      return res
+        .status(404)
+        .json({ message: "Paciente não encontrado para o CPF informado." });
+    }
+
+    const [
+      historico,
+      consultas,
+      exames,
+      solicitacoesExame,
+      solicitacoesInternacao,
+      vacinas,
+      medicacoes,
+    ] = await Promise.all([
+      prisma.historicoMedico.findMany({
+        where: { pacienteId: paciente.id },
+        include: {
+          funcionario: { select: { nome: true, funcao: true, crm: true } },
+        },
+        orderBy: { dataConsulta: "desc" },
+      }),
+      prisma.consulta.findMany({
+        where: { pacienteId: paciente.id },
+        include: {
+          funcionario: { select: { nome: true, funcao: true, crm: true } },
+          ubs: { select: { nome: true } },
+        },
+        orderBy: { dataAgendada: "desc" },
+      }),
+      prisma.exame.findMany({
+        where: { pacienteId: paciente.id },
+        include: { laboratorio: { select: { nome: true, telefone: true } } },
+        orderBy: { dataRealizado: "desc" },
+      }),
+      prisma.solicitacaoExame.findMany({
+        where: { pacienteId: paciente.id },
+        include: {
+          funcionario: { select: { nome: true, funcao: true } },
+          laboratorio: { select: { nome: true, telefone: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.solicitacaoInternacao.findMany({
+        where: { pacienteId: paciente.id },
+        include: {
+          funcionario: { select: { nome: true, funcao: true } },
+          hospital: { select: { nome: true, telefone: true, endereco: true } },
+          ubs: { select: { nome: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.vacina.findMany({
+        where: { pacienteId: paciente.id },
+        include: {
+          funcionario: { select: { nome: true, funcao: true, crm: true } },
+        },
+        orderBy: { dataApl: "desc" },
+      }),
+      prisma.medicacaoPaciente.findMany({
+        where: { pacienteId: paciente.id },
+        include: {
+          medicamento: { select: { nome: true, lote: true, descricao: true } },
+          funcionario: { select: { nome: true, funcao: true } },
+        },
+        orderBy: { dataRetirada: "desc" },
+      }),
+    ]);
+
+    const registros = [
+      ...historico.map((item) => ({
+        id: item.id,
+        tipo: "historico",
+        categoria: "Registro médico",
+        dataRegistro: item.dataConsulta || item.createdAt,
+        titulo: item.diagnostico || "Registro médico",
+        resumo:
+          item.laudo || item.observacoes || "Registro do atendimento médico.",
+        detalhes: item,
+      })),
+      ...consultas.map((item) => ({
+        id: item.id,
+        tipo: "consulta",
+        categoria: "Consulta",
+        dataRegistro: item.dataAgendada || item.createdAt,
+        titulo: item.motivo || "Consulta",
+        resumo: `${item.especialidade || "Consulta"} • ${item.status || "status não informado"}`,
+        detalhes: item,
+      })),
+      ...exames.map((item) => ({
+        id: item.id,
+        tipo: "exame",
+        categoria: "Exame",
+        dataRegistro: item.dataRealizado || item.dataAgendada || item.createdAt,
+        titulo: item.tipo || "Exame",
+        resumo: item.resultado || item.status || "Exame registrado no sistema.",
+        detalhes: item,
+      })),
+      ...solicitacoesExame.map((item) => ({
+        id: item.id,
+        tipo: "solicitacao_exame",
+        categoria: "Solicitação de exame",
+        dataRegistro: item.createdAt,
+        titulo: item.tipoExame || "Solicitação de exame",
+        resumo: item.observacoes || "Solicitação enviada para laboratório.",
+        detalhes: item,
+      })),
+      ...solicitacoesInternacao.map((item) => ({
+        id: item.id,
+        tipo: "encaminhamento",
+        categoria: "Encaminhamento / internação",
+        dataRegistro: item.createdAt,
+        titulo: `${item.tipo || "Encaminhamento"} • ${item.motivo || "Motivo não informado"}`,
+        resumo:
+          item.detalhes ||
+          item.laudoMedico ||
+          "Encaminhamento registrado no sistema.",
+        detalhes: item,
+      })),
+      ...vacinas.map((item) => ({
+        id: item.id,
+        tipo: "vacina",
+        categoria: "Vacina",
+        dataRegistro: item.dataApl || item.createdAt,
+        titulo: item.nome || "Vacina",
+        resumo: `Lote ${item.lote || "—"}${item.proximaDose ? ` • Próxima dose: ${new Date(item.proximaDose).toLocaleDateString("pt-BR")}` : ""}`,
+        detalhes: item,
+      })),
+      ...medicacoes.map((item) => ({
+        id: item.id,
+        tipo: "medicacao",
+        categoria: "Medicação",
+        dataRegistro: item.dataRetirada || item.createdAt,
+        titulo: item.medicamento?.nome || "Medicação ministrada",
+        resumo: `${item.quantidade || 0} unidade(s) • ${item.observacoes || "Sem observações adicionais."}`,
+        detalhes: item,
+      })),
+    ].sort(
+      (a, b) =>
+        new Date(b.dataRegistro).getTime() - new Date(a.dataRegistro).getTime(),
+    );
+
+    res.json({ paciente, registros });
+  } catch (error) {
+    console.error(
+      "Erro ao buscar histórico completo do paciente por CPF:",
+      error,
+    );
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
 // Listar laboratórios disponíveis
 router.get("/laboratorios", async (req, res) => {
   try {
@@ -532,6 +1035,42 @@ router.get("/consultas", async (req, res) => {
   }
 });
 
+// Listar exames realizados para médicos
+router.get("/exames", async (req, res) => {
+  try {
+    const exames = await prisma.exame.findMany({
+      where: {
+        OR: [{ status: "realizado" }, { dataRealizado: { not: null } }],
+      },
+      include: {
+        paciente: {
+          select: {
+            id: true,
+            nome: true,
+            cpf: true,
+            telefone: true,
+            email: true,
+          },
+        },
+        laboratorio: {
+          select: {
+            id: true,
+            nome: true,
+            endereco: true,
+            telefone: true,
+          },
+        },
+      },
+      orderBy: [{ dataRealizado: "desc" }, { createdAt: "desc" }],
+    });
+
+    res.json(exames);
+  } catch (error) {
+    console.error("Erro ao listar exames realizados:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
 // Verifica se o funcionário pode trabalhar com medicamentos (enfermeiro ou farmacêutico)
 const funcionarioPodeTratarMedicamentos = async (req, res, next) => {
   try {
@@ -558,22 +1097,18 @@ const funcionarioPodeTratarMedicamentos = async (req, res, next) => {
 
     if (req.method === "GET") {
       if (!podeListar) {
-        return res
-          .status(403)
-          .json({
-            message:
-              "Acesso negado: função não autorizada para listar medicamentos",
-          });
+        return res.status(403).json({
+          message:
+            "Acesso negado: função não autorizada para listar medicamentos",
+        });
       }
       return next();
     }
 
     if (!podeAdministrar) {
-      return res
-        .status(403)
-        .json({
-          message: "Acesso negado: função não autorizada para esta ação",
-        });
+      return res.status(403).json({
+        message: "Acesso negado: função não autorizada para esta ação",
+      });
     }
 
     next();
@@ -698,11 +1233,9 @@ router.post(
         req.body;
 
       if ((!pacienteId && !pacienteCns) || quantidade === undefined) {
-        return res
-          .status(400)
-          .json({
-            message: "Paciente (ID ou CNS) e quantidade são obrigatórios",
-          });
+        return res.status(400).json({
+          message: "Paciente (ID ou CNS) e quantidade são obrigatórios",
+        });
       }
 
       const quantidadeInt = Number(quantidade);
@@ -724,11 +1257,9 @@ router.post(
       }
 
       if (quantidadeInt > medicamentoExistente.quantidade) {
-        return res
-          .status(400)
-          .json({
-            message: "Quantidade solicitada maior do que o estoque disponível",
-          });
+        return res.status(400).json({
+          message: "Quantidade solicitada maior do que o estoque disponível",
+        });
       }
 
       const paciente = pacienteId
@@ -780,6 +1311,299 @@ router.post(
       });
     } catch (error) {
       console.error("Erro ao administrar medicamento:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
+
+// Middleware para verificar se o funcionário pode consultar receitas (enfermeiro ou farmacêutico)
+const funcionarioPodeConsultarReceita = async (req, res, next) => {
+  try {
+    const funcionario = await prisma.funcionario.findUnique({
+      where: { id: req.user.id },
+      select: { funcao: true },
+    });
+
+    if (!funcionario) {
+      return res.status(404).json({ message: "Funcionário não encontrado" });
+    }
+
+    const funcao = funcionario.funcao?.toLowerCase();
+    const pode = ["enfermeiro", "farmaceutico", "farmacêutico"].includes(
+      funcao,
+    );
+
+    if (!pode) {
+      return res.status(403).json({
+        message:
+          "Acesso negado: apenas enfermeiros e farmacêuticos podem consultar receitas",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Erro ao verificar acesso:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+};
+
+// Rota para consultar receita pelo registro de assinatura
+router.get(
+  "/consultar-receita/:registro",
+  funcionarioPodeConsultarReceita,
+  async (req, res) => {
+    try {
+      const { registro } = req.params;
+
+      if (!registro) {
+        return res
+          .status(400)
+          .json({ message: "Registro da assinatura é obrigatório" });
+      }
+
+      const receita = await prisma.receitaMedica.findFirst({
+        where: { registroAssinatura: registro },
+        include: {
+          paciente: true,
+          funcionario: true,
+          ubs: true,
+          dispensacoes: {
+            include: {
+              farmacia: true,
+            },
+            orderBy: {
+              dataDispensacao: "desc",
+            },
+          },
+        },
+      });
+
+      if (!receita) {
+        return res.status(404).json({ message: "Receita não encontrada" });
+      }
+
+      res.json(receita);
+    } catch (error) {
+      console.error("Erro ao buscar receita:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
+
+// Rota para validar se a UBS pode dispensar uma receita
+router.get(
+  "/validar-dispensacao/:receitaId",
+  funcionarioPodeConsultarReceita,
+  async (req, res) => {
+    try {
+      const { receitaId } = req.params;
+      const funcionarioId = req.user.id;
+
+      if (!receitaId) {
+        return res.status(400).json({ message: "ID da receita é obrigatório" });
+      }
+
+      // Buscar receita
+      const receita = await prisma.receitaMedica.findUnique({
+        where: { id: receitaId },
+        include: {
+          ubs: true,
+          dispensacoes: {
+            include: {
+              farmacia: true,
+              ubs: true,
+            },
+          },
+        },
+      });
+
+      if (!receita) {
+        return res.status(404).json({ message: "Receita não encontrada" });
+      }
+
+      // Buscar funcionário
+      const funcionario = await prisma.funcionario.findUnique({
+        where: { id: funcionarioId },
+        select: { ubsId: true },
+      });
+
+      if (!funcionario) {
+        return res.status(404).json({ message: "Funcionário não encontrado" });
+      }
+
+      // Validar se a receita foi emitida pela mesma UBS do funcionário
+      if (receita.ubsId !== funcionario.ubsId) {
+        return res.status(403).json({
+          message: "Você só pode dispensar receitas emitidas pela sua UBS",
+        });
+      }
+
+      // Verificar se há dispensações da receita
+      if (receita.dispensacoes.length > 0) {
+        // Verificar se há dispensação pela farmácia
+        const dispensacaoFarmacia = receita.dispensacoes.find(
+          (d) => d.farmaciaId !== null,
+        );
+        if (dispensacaoFarmacia) {
+          return res.status(409).json({
+            message:
+              "Receita já está em dispensação por uma farmácia. UBS não pode dispensar a mesma receita.",
+            dispensacaoExistente: dispensacaoFarmacia,
+          });
+        }
+
+        // Verificar se há dispensação pela UBS
+        const dispensacaoUbs = receita.dispensacoes.find(
+          (d) => d.ubsId === funcionario.ubsId,
+        );
+        if (dispensacaoUbs) {
+          return res.status(409).json({
+            message: "Receita já foi dispensada por sua UBS",
+            dispensacaoExistente: dispensacaoUbs,
+          });
+        }
+      }
+
+      res.json({
+        podeDispensar: true,
+        message: "Receita pode ser dispensada",
+        receita,
+      });
+    } catch (error) {
+      console.error("Erro ao validar dispensação:", error);
+      res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
+
+// Rota para dispensar receita pela UBS
+router.post(
+  "/dispensar-receita",
+  funcionarioPodeConsultarReceita,
+  async (req, res) => {
+    try {
+      const {
+        receitaId,
+        statusDispensacao,
+        observacoesDispensacao,
+        medicamentoFornecido,
+        quantidadeDispensada,
+      } = req.body;
+      const funcionarioId = req.user.id;
+
+      if (!receitaId) {
+        return res.status(400).json({ message: "ID da receita é obrigatório" });
+      }
+
+      if (
+        !statusDispensacao ||
+        !["completa", "parcial"].includes(statusDispensacao)
+      ) {
+        return res.status(400).json({
+          message: "Status de dispensação deve ser 'completa' ou 'parcial'",
+        });
+      }
+
+      // Buscar receita
+      const receita = await prisma.receitaMedica.findUnique({
+        where: { id: receitaId },
+        include: {
+          ubs: true,
+          dispensacoes: {
+            include: {
+              farmacia: true,
+              ubs: true,
+            },
+          },
+        },
+      });
+
+      if (!receita) {
+        return res.status(404).json({ message: "Receita não encontrada" });
+      }
+
+      // Buscar funcionário com UBS
+      const funcionario = await prisma.funcionario.findUnique({
+        where: { id: funcionarioId },
+        include: { ubs: true },
+      });
+
+      if (!funcionario) {
+        return res.status(404).json({ message: "Funcionário não encontrado" });
+      }
+
+      // Validar se a receita foi emitida pela mesma UBS do funcionário
+      if (receita.ubsId !== funcionario.ubsId) {
+        return res.status(403).json({
+          message: "Você só pode dispensar receitas emitidas pela sua UBS",
+        });
+      }
+
+      // Verificar se há dispensações da receita
+      if (receita.dispensacoes.length > 0) {
+        // Verificar se há dispensação pela farmácia
+        const dispensacaoFarmacia = receita.dispensacoes.find(
+          (d) => d.farmaciaId !== null,
+        );
+        if (dispensacaoFarmacia) {
+          return res.status(409).json({
+            message:
+              "Receita já está em dispensação por uma farmácia. UBS não pode dispensar a mesma receita.",
+            dispensacaoExistente: dispensacaoFarmacia,
+          });
+        }
+
+        // Verificar se há dispensação anterior pela UBS
+        const dispensacaoUbsAnterior = receita.dispensacoes.find(
+          (d) => d.ubsId === funcionario.ubsId,
+        );
+        if (dispensacaoUbsAnterior) {
+          return res.status(409).json({
+            message: "Receita já foi dispensada por sua UBS",
+            dispensacaoExistente: dispensacaoUbsAnterior,
+          });
+        }
+      }
+
+      // Criar dispensação
+      const novaDispensacao = await prisma.dispensacaoReceita.create({
+        data: {
+          receitaId,
+          ubsId: funcionario.nome || "UBS",
+          funcionarioId,
+          statusDispensacao,
+          observacoesDispensacao,
+          medicamentoFornecido: medicamentoFornecido || receita.medicamento,
+          quantidadeDispensada:
+            quantidadeDispensada || parseInt(receita.quantidade),
+          ubsResponsavel: funcionario.nome,
+        },
+        include: {
+          receita: true,
+          ubs: true,
+          funcionario: true,
+        },
+      });
+
+      // Atualizar status da receita se for completa
+      if (statusDispensacao === "completa") {
+        await prisma.receitaMedica.update({
+          where: { id: receitaId },
+          data: { status: "dispensada" },
+        });
+      } else if (statusDispensacao === "parcial") {
+        await prisma.receitaMedica.update({
+          where: { id: receitaId },
+          data: { status: "parcialmente_dispensada" },
+        });
+      }
+
+      res.status(201).json({
+        message: "Dispensação criada com sucesso",
+        dispensacao: novaDispensacao,
+      });
+    } catch (error) {
+      console.error("Erro ao dispensar receita:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
     }
   },

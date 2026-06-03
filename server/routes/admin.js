@@ -518,5 +518,127 @@ router.delete('/upas/:id', async (req, res) => {
   }
 });
 
+// --------------------------------------
+// CRUD para UPAs (Unidades de Pronto Atendimento)
+// Segue o mesmo padrão de criação/edição/deleção dos outros recursos do admin
+// --------------------------------------
+
+// Listar UPAs
+router.get('/farmacias', async (req, res) => {
+  try {
+    const farmacias = await prisma.farmacia.findMany({
+      select: {
+        id: true,
+        nome: true,
+        endereco: true,
+        telefone: true,
+        cnpj: true,
+        email: true,
+        createdAt: true
+      }
+    });
+    res.json(farmacias);
+  } catch (error) {
+    console.error('Erro ao listar farmacias:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Cadastrar Farmácia
+router.post('/farmacias', async (req, res) => {
+  try {
+    const { nome, endereco, telefone, cnpj, email, senha } = req.body;
+
+    const farmaciaExistente = await prisma.farmacia.findFirst({
+      where: {
+        OR: [
+          { email: email ? email.toLowerCase() : undefined },
+          { cnpj }
+        ]
+      }
+    });
+
+    if (farmaciaExistente) {
+      return res.status(400).json({ message: 'Farmácia já cadastrada com estes dados' });
+    }
+
+    const senhaHash = await bcrypt.hash(senha, 12);
+
+    const novaFarmacia = await prisma.farmacia.create({
+      data: {
+        nome,
+        endereco,
+        telefone,
+        cnpj,
+        email: email ? email.toLowerCase() : null,
+        senha: senhaHash
+      }
+    });
+
+    res.status(201).json({
+      id: novaFarmacia.id,
+      nome: novaFarmacia.nome,
+      endereco: novaFarmacia.endereco,
+      telefone: novaFarmacia.telefone,
+      cnpj: novaFarmacia.cnpj,
+      email: novaFarmacia.email
+    });
+  } catch (error) {
+    console.error('Erro ao cadastrar Farmácia:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Editar Farmácia
+router.put('/farmacias/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, endereco, telefone, cnpj, email, senha } = req.body;
+
+    const dados = {
+      nome,
+      endereco,
+      telefone,
+      cnpj,
+      email: email ? email.toLowerCase() : null
+    };
+
+    if (senha) {
+      dados.senha = await bcrypt.hash(senha, 12);
+    }
+
+    const farmaciaAtualizada = await prisma.farmacia.update({
+      where: { id },
+      data: dados
+    });
+
+    res.json({
+      id: farmaciaAtualizada.id,
+      nome: farmaciaAtualizada.nome,
+      endereco: farmaciaAtualizada.endereco,
+      telefone: farmaciaAtualizada.telefone,
+      cnpj: farmaciaAtualizada.cnpj,
+      email: farmaciaAtualizada.email
+    });
+  } catch (error) {
+    console.error('Erro ao editar Farmácia:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
+// Deletar Farmácia
+router.delete('/farmacias/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.farmacia.delete({ where: { id } });
+
+    res.json({ message: 'Farmácia deletada com sucesso' });
+  } catch (error) {
+    console.error('Erro ao deletar Farmácia:', error);
+    res.status(500).json({ message: 'Erro interno do servidor' });
+  }
+});
+
 
 export default router;

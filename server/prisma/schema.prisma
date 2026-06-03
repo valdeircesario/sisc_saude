@@ -38,6 +38,9 @@ model UBS {
   solicitacoesInternacao SolicitacaoInternacao[]
   medicamentos           Medicamento[]
   medicacoesPaciente     MedicacaoPaciente[]
+  receitasMedicas        ReceitaMedica[]
+  atestadosMedicos       AtestadoMedico[]
+  dispensacoes           DispensacaoReceita[]
 
   @@map("ubs")
 }
@@ -232,8 +235,27 @@ model Funcionario {
   vacinas                  Vacina[]
   cirurgiasRealizadas      Cirurgia[]
   medicacoesPaciente       MedicacaoPaciente[]
+  receitasMedicas          ReceitaMedica[]
+  atestadosMedicos         AtestadoMedico[]
+  dispensacoes             DispensacaoReceita[]
 
   @@map("funcionarios")
+}
+
+model Farmacia {
+  id        String   @id @default(cuid())
+  nome      String
+  endereco  String
+  telefone  String
+  cnpj      String   @unique
+  email     String   @unique
+  senha     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dispensacoes DispensacaoReceita[]
+
+  @@map("farmacias")
 }
 
 model Laboratorio {
@@ -290,8 +312,92 @@ model Paciente {
   upaVacinas               UpaVacina[]
   encaminhamentos          Encaminhamento[]
   medicacoesPaciente       MedicacaoPaciente[]
+  receitasMedicas          ReceitaMedica[]
+  atestadosMedicos         AtestadoMedico[]
 
   @@map("pacientes")
+}
+
+model DispensacaoReceita {
+  id                      String   @id @default(cuid())
+  receitaId               String
+  farmaciaId              String?
+  ubsId                   String?
+  funcionarioId           String?
+  statusDispensacao       String   @default("completa") // "completa" | "parcial"
+  observacoesDispensacao  String?  // ex: "Amoxicilina indisponível, apenas Dipirona fornecida"
+  medicamentoFornecido    String?  // pode diferir do prescrito (genérico, etc.)
+  farmaciaResponsavel     String?  // nome do atendente/farmacêutico
+  ubsResponsavel          String?  // nome do funcionário da UBS
+  quantidadeDispensada    Int      @default(1)
+  dataDispensacao         DateTime @default(now())
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  receita     ReceitaMedica @relation(fields: [receitaId], references: [id])
+  farmacia    Farmacia?     @relation(fields: [farmaciaId], references: [id])
+  ubs         UBS?          @relation(fields: [ubsId], references: [id])
+  funcionario Funcionario?  @relation(fields: [funcionarioId], references: [id])
+
+  @@map("dispensacoes_receitas")
+}
+
+model ReceitaMedica {
+  id              String   @id @default(cuid())
+  pacienteId      String
+  funcionarioId   String
+  ubsId           String
+  tipo            String   @default("receita")
+  descricao       String
+  cid             String
+  medicamento     String
+  dosagem         String
+  quantidade      String   @default("1")
+  dataEmissao     DateTime @default(now())
+  status          String   @default("ativo")
+  observacoes     String?
+  assinaturaTexto String?
+  assinaturaPosX  Int?
+  assinaturaPosY  Int?
+  assinaturaConcluida Boolean @default(false)
+  registroAssinatura String?
+  assinaturaData  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+  funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
+  ubs         UBS         @relation(fields: [ubsId], references: [id])
+  dispensacoes DispensacaoReceita[]
+
+  @@map("receitas_medicas")
+}
+
+model AtestadoMedico {
+  id              String   @id @default(cuid())
+  pacienteId      String
+  funcionarioId   String
+  ubsId           String
+  tipo            String   @default("atestado")
+  descricao       String
+  cid             String
+  diasRepouso     Int
+  dataEmissao     DateTime @default(now())
+  observacoes     String?
+  assinaturaTexto String?
+  assinaturaPosX  Int?
+  assinaturaPosY  Int?
+  assinaturaConcluida Boolean @default(false)
+  registroAssinatura String?
+  assinaturaData  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  paciente    Paciente    @relation(fields: [pacienteId], references: [id])
+  funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
+  ubs         UBS         @relation(fields: [ubsId], references: [id])
+
+  @@map("atestados_medicos")
 }
 
 model SolicitacaoInternacao {

@@ -61,6 +61,49 @@ router.get("/hospitais/:id", async (req, res) => {
   }
 });
 
+// Listar medicamentos da UBS autenticada
+router.get("/medicamentos", async (req, res) => {
+  try {
+    const { busca } = req.query;
+
+    const where = {
+      ubsId: req.user.id,
+      ...(busca
+        ? {
+            OR: [
+              { nome: { contains: String(busca), mode: "insensitive" } },
+              { descricao: { contains: String(busca), mode: "insensitive" } },
+              { lote: { contains: String(busca), mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    };
+
+    const medicamentos = await prisma.medicamento.findMany({
+      where,
+      select: {
+        id: true,
+        nome: true,
+        descricao: true,
+        lote: true,
+        quantidade: true,
+        observacoes: true,
+        dataValidade: true,
+        vencido: true,
+        ubsId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [{ nome: "asc" }],
+    });
+
+    res.json(medicamentos);
+  } catch (error) {
+    console.error("Erro ao listar medicamentos da UBS:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
+  }
+});
+
 // Listar todos os pacientes
 router.get("/pacientes", async (req, res) => {
   try {
@@ -600,11 +643,9 @@ router.put("/consultas/:id/agendar", async (req, res) => {
     });
 
     if (!funcionario) {
-      return res
-        .status(400)
-        .json({
-          message: "Funcionário não encontrado ou não pertence a esta UBS",
-        });
+      return res.status(400).json({
+        message: "Funcionário não encontrado ou não pertence a esta UBS",
+      });
     }
 
     const consultaAtualizada = await prisma.consulta.update({

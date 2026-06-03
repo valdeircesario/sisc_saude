@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
-import { Settings, Mail, Lock, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
-import { toast } from 'react-toastify';
-import { api } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
+import { Settings, Mail, Lock, Eye, EyeOff, LogIn, Shield } from "lucide-react";
+import { toast } from "react-toastify";
+import { api } from "../services/api";
+import { useAuth } from "../contexts/AuthContext";
 
 interface LoginForm {
   email: string;
@@ -15,54 +15,86 @@ interface LoginForm {
 const LoginSistemaPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>();
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = async (data: LoginForm) => {
     setLoading(true);
     try {
-      const response = await api.post('/auth/login-sistema', data);
+      const response = await api.post("/auth/login-sistema", data);
       const { token, user } = response.data;
       // permitir UPA também
-      if (!['admin', 'ubs', 'funcionario', 'laboratorio', 'hospital', 'upa'].includes(user.tipo)) {
-        toast.error('Acesso negado. Este portal é exclusivo para profissionais de saúde.');
+      if (
+        ![
+          "admin",
+          "ubs",
+          "funcionario",
+          "laboratorio",
+          "hospital",
+          "upa",
+          "farmacia",
+        ].includes(user.tipo)
+      ) {
+        toast.error(
+          "Acesso negado. Este portal é exclusivo para profissionais de saúde.",
+        );
         setLoading(false);
         return;
-      
       }
-      
 
       login(token, user);
       toast.success(`Bem-vindo, ${user.nome}!`);
 
       console.log(user);
 
+      // Helper: tenta navegar via react-router e faz fallback para window.location
+      const redirectTo = (path: string) => {
+        try {
+          navigate(path, { replace: true });
+        } catch (e) {
+          // ignore
+        }
+        setTimeout(() => {
+          if (window.location.pathname !== path) {
+            window.location.href = path;
+          }
+        }, 250);
+      };
+
       // Redirecionar baseado no tipo de usuário
       switch (user.tipo) {
-        case 'admin':
-          navigate('/admin');
+        case "admin":
+          redirectTo("/admin");
           break;
-        case 'ubs':
-          navigate('/ubs');
+        case "ubs":
+          redirectTo("/ubs");
           break;
-        case 'upa':
-          navigate('/upa');
+        case "upa":
+          redirectTo("/upa");
           break;
-        case 'funcionario':
-          navigate('/funcionario');
+        case "funcionario":
+          redirectTo("/funcionario");
           break;
-        case 'laboratorio':
-          navigate('/laboratorio');
+        case "laboratorio":
+          redirectTo("/laboratorio");
           break;
-        case 'hospital':
-          navigate('/hospital');
+        case "hospital":
+          redirectTo("/hospital");
+          break;
+        case "farmacia":
+          console.log("Redirecionando para /farmacia");
+          redirectTo("/farmacia");
           break;
         default:
-          navigate('/');
+          redirectTo("/");
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Erro ao fazer login');
+      toast.error(error.response?.data?.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
     }

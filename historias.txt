@@ -1,3 +1,0 @@
-
-
-📌cria função de historico medico, fazer com que em historico liste historico dos pacientes, nome do paciente, especialidade, data, ubs, hospital ou upa. e um botão que ao clicar possa visualizar as informações completa daquele historico medico , a indeia e mostrar um modal com as informações

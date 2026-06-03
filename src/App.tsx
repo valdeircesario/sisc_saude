@@ -26,6 +26,7 @@ import LaboratorioDashboard from './pages/dashboards/LaboratorioDashboard';
 import PacienteDashboard from './pages/dashboards/PacienteDashboard';
 import HOSPDashboard from './pages/dashboards/HOSPDashoard';
 import UpaDashboard from './pages/dashboards/UpaDashboard';
+import FarmaciaDashboard from './pages/dashboards/FarmaciaDashboards';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,6 +90,12 @@ function App() {
               <Route path="/upa/*" element={
                 <ProtectedRoute allowedRoles={['upa']}>
                   <UpaDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/farmacia/*" element={
+                <ProtectedRoute allowedRoles={['farmacia']}>
+                  <FarmaciaDashboard />
                 </ProtectedRoute>
               } />
 

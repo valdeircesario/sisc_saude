@@ -18,6 +18,8 @@ import {
   CheckCircle,
   AlertCircle,
   X,
+  Download,
+  Package,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "react-query";
@@ -25,6 +27,7 @@ import { api } from "../../services/api";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import ReceitasAtestado from "../../components/receitasAtestado";
 
 const FuncionarioDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -34,10 +37,12 @@ const FuncionarioDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("pacientes");
   const [selectedPaciente, setSelectedPaciente] = useState<any>(null);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
+  const [showBuscaHistoricoModal, setShowBuscaHistoricoModal] = useState(false);
   const [showVacinaModal, setShowVacinaModal] = useState(false);
   const [showExameModal, setShowExameModal] = useState(false);
   const [showInternacaoModal, setShowInternacaoModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [exameSearchTerm, setExameSearchTerm] = useState("");
   const [medSearchTerm, setMedSearchTerm] = useState("");
   const [solicitacoesFiltroPaciente, setSolicitacoesFiltroPaciente] =
     useState("");
@@ -69,6 +74,29 @@ const FuncionarioDashboard: React.FC = () => {
     observacoes: "",
     dataConsulta: new Date().toISOString().split("T")[0],
   });
+  const [cpfHistoricoBusca, setCpfHistoricoBusca] = useState("");
+  const [historicoBuscaResultado, setHistoricoBuscaResultado] =
+    useState<any>(null);
+  const [registroHistoricoDetalhe, setRegistroHistoricoDetalhe] =
+    useState<any>(null);
+
+  // Estados para consulta de receita (UBS - Enfermeiro/Farmacêutico)
+  const [registroReceitaBusca, setRegistroReceitaBusca] = useState("");
+  const [receitaEncontrada, setReceitaEncontrada] = useState<any>(null);
+  const [carregandoReceita, setCarregandoReceita] = useState(false);
+
+  // Estados para dispensação de receita
+  const [showDispensacaoModal, setShowDispensacaoModal] = useState(false);
+  const [dispensacaoData, setDispensacaoData] = useState({
+    statusDispensacao: "completa",
+    medicamentoFornecido: "",
+    quantidadeDispensada: "",
+    observacoesDispensacao: "",
+    
+  });
+  const [carregandoValidacaoDispensacao, setCarregandoValidacaoDispensacao] =
+    useState(false);
+  const [erroDispensacao, setErroDispensacao] = useState<any>(null);
 
   const [vacinaData, setVacinaData] = useState({
     nome: "",
@@ -168,10 +196,19 @@ const FuncionarioDashboard: React.FC = () => {
     [minhasSolicitacoes, solicitacoesFiltroPaciente, solicitacoesFiltroTipo],
   );
 
-  const { data: consultas } = useQuery(
+  const {
+    data: consultas,
+    refetch: refetchConsultas,
+    isFetching: loadingConsultas,
+  } = useQuery(
     "funcionario-consultas",
     () => api.get("/funcionario/consultas").then((res) => res.data),
-    { enabled: activeTab === "consultas" },
+    {
+      enabled: activeTab === "consultas",
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      staleTime: 0,
+    },
   );
 
   // Mutations
@@ -191,6 +228,101 @@ const FuncionarioDashboard: React.FC = () => {
         toast.error(
           error.response?.data?.message || "Erro ao registrar histórico médico",
         );
+      },
+    },
+  );
+
+  const buscarHistoricoPorCpfMutation = useMutation(
+    (cpf: string) =>
+      api
+        .get("/funcionario/historico-paciente/cpf", { params: { cpf } })
+        .then((res) => res.data),
+    {
+      onSuccess: (data) => {
+        setHistoricoBuscaResultado(data);
+        setSelectedPaciente(data.paciente);
+        setRegistroHistoricoDetalhe(null);
+        setCpfHistoricoBusca("");
+        setShowBuscaHistoricoModal(false);
+        toast.success("Histórico encontrado com sucesso!");
+      },
+      onError: (error: any) => {
+        setHistoricoBuscaResultado(null);
+        toast.error(
+          error.response?.data?.message ||
+            "Não foi possível buscar o histórico.",
+        );
+      },
+    },
+  );
+
+  // Mutation para buscar receita pelo registro de assinatura
+  const buscarReceitaMutation = useMutation(
+    (registro: string) =>
+      api
+        .get(`/funcionario/consultar-receita/${encodeURIComponent(registro)}`)
+        .then((res) => res.data),
+    {
+      onSuccess: (data) => {
+        setReceitaEncontrada(data);
+        setRegistroReceitaBusca("");
+        toast.success("Receita encontrada com sucesso!");
+      },
+      onError: (error: any) => {
+        setReceitaEncontrada(null);
+        toast.error(error.response?.data?.message || "Receita não encontrada");
+      },
+    },
+  );
+
+  // Mutation para validar se a receita pode ser dispensada
+  const validarDispensacaoMutation = useMutation(
+    (receitaId: string) =>
+      api
+        .get(`/funcionario/validar-dispensacao/${receitaId}`)
+        .then((res) => res.data),
+    {
+      onSuccess: (data) => {
+        setErroDispensacao(null);
+        setDispensacaoData({
+          statusDispensacao: "completa",
+          medicamentoFornecido: data.receita?.medicamento || "",
+          quantidadeDispensada: String(data.receita?.quantidade || "1"),
+          observacoesDispensacao: "",
+        });
+        setShowDispensacaoModal(true);
+      },
+      onError: (error: any) => {
+        setErroDispensacao(error.response?.data);
+        toast.error(
+          error.response?.data?.message ||
+            "Erro ao validar dispensação da receita",
+        );
+      },
+    },
+  );
+
+  // Mutation para dispensar receita
+  const dispensarReceitaMutation = useMutation(
+    (data: any) => api.post("/funcionario/dispensar-receita", data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("funcionario-receitas");
+        toast.success("Receita dispensada com sucesso!");
+        setShowDispensacaoModal(false);
+        resetDispensacaoForm();
+        // Recarregar a receita após dispensação
+        if (receitaEncontrada) {
+          buscarReceitaMutation.mutate(
+            receitaEncontrada.registroAssinatura || registroReceitaBusca,
+          );
+        }
+      },
+      onError: (error: any) => {
+        toast.error(
+          error.response?.data?.message || "Erro ao dispensar receita",
+        );
+        setErroDispensacao(error.response?.data);
       },
     },
   );
@@ -325,6 +457,16 @@ const FuncionarioDashboard: React.FC = () => {
     });
   };
 
+  const resetDispensacaoForm = () => {
+    setDispensacaoData({
+      statusDispensacao: "completa",
+      medicamentoFornecido: "",
+      quantidadeDispensada: "",
+      observacoesDispensacao: "",
+    });
+    setErroDispensacao(null);
+  };
+
   const resetExameForm = () => {
     setExameData({
       laboratorioId: "",
@@ -364,6 +506,50 @@ const FuncionarioDashboard: React.FC = () => {
     setSelectedMed(null);
     setSelectedAdminPaciente(null);
     setShowAdministradorMedicamentoModal(false);
+  };
+
+  // Handlers para consulta de receita
+  const handleBuscarReceita = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registroReceitaBusca.trim()) {
+      toast.error("Informe o registro da assinatura da receita");
+      return;
+    }
+    setCarregandoReceita(true);
+    buscarReceitaMutation.mutate(registroReceitaBusca.trim());
+    setCarregandoReceita(false);
+  };
+
+  const handleLimparReceita = () => {
+    setReceitaEncontrada(null);
+    setRegistroReceitaBusca("");
+  };
+
+  const handleValidarDispensacao = () => {
+    if (!receitaEncontrada?.id) {
+      toast.error("Receita não encontrada");
+      return;
+    }
+    validarDispensacaoMutation.mutate(receitaEncontrada.id);
+  };
+
+  const handleDispensarSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receitaEncontrada?.id) {
+      toast.error("Receita não encontrada");
+      return;
+    }
+
+    dispensarReceitaMutation.mutate({
+      receitaId: receitaEncontrada.id,
+      statusDispensacao: dispensacaoData.statusDispensacao,
+      medicamentoFornecido:
+        dispensacaoData.medicamentoFornecido || receitaEncontrada.medicamento,
+      quantidadeDispensada:
+        parseInt(dispensacaoData.quantidadeDispensada) ||
+        parseInt(receitaEncontrada.quantidade),
+      observacoesDispensacao: dispensacaoData.observacoesDispensacao,
+    });
   };
 
   const handleMedSubmit = (e: React.FormEvent) => {
@@ -441,6 +627,20 @@ const FuncionarioDashboard: React.FC = () => {
     }
   };
 
+  const handleBuscarHistoricoPorCpf = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cpfHistoricoBusca.trim()) {
+      toast.error("Informe o CPF do paciente para buscar o histórico.");
+      return;
+    }
+
+    buscarHistoricoPorCpfMutation.mutate(cpfHistoricoBusca.trim());
+  };
+
+  const abrirDetalheHistorico = (registro: any) => {
+    setRegistroHistoricoDetalhe(registro);
+  };
+
   const handleVacinaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedPaciente) {
@@ -502,6 +702,9 @@ const FuncionarioDashboard: React.FC = () => {
     aberto: false,
     consulta: null,
   });
+  const [selectedConsulta, setSelectedConsulta] = useState<any>(null);
+  const [showConsultaDetailsModal, setShowConsultaDetailsModal] =
+    useState(false);
 
   const [formHistorico, setFormHistorico] = useState({
     laudo: "",
@@ -514,6 +717,17 @@ const FuncionarioDashboard: React.FC = () => {
 
   const [loadingHistorico, setLoadingHistorico] = useState(false);
 
+  const formatConsultaDate = (value?: string | Date | null) => {
+    if (!value) {
+      return "Não informado";
+    }
+
+    return format(new Date(value), "dd/MM/yyyy HH:mm", { locale: ptBR });
+  };
+
+  const getConsultaDisease = (consulta: any) =>
+    consulta?.historicoMedico?.doenca?.trim() || "Sem doença registrada";
+
   // Função de submit
   const handleRegistrarHistorico = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -521,13 +735,16 @@ const FuncionarioDashboard: React.FC = () => {
     try {
       await api.post("/funcionario/historico-medico", {
         pacienteId: modalHistorico.consulta?.paciente?.id,
-        consultaId: modalHistorico.consulta?.id, // <- vincula à consulta
+        consultaId: modalHistorico.consulta?.id,
         ...formHistorico,
       });
 
+      await queryClient.invalidateQueries("funcionario-consultas");
+      await queryClient.invalidateQueries(["paciente-historico"]);
+      await refetchConsultas();
+
       toast.success("Histórico médico registrado com sucesso!");
 
-      // Fecha modal, limpa form e atualiza lista
       setModalHistorico({ aberto: false, consulta: null });
       setFormHistorico({
         laudo: "",
@@ -537,10 +754,11 @@ const FuncionarioDashboard: React.FC = () => {
         observacoes: "",
         dataConsulta: format(new Date(), "yyyy-MM-dd"),
       });
-      queryClient.invalidateQueries(["funcionario-consultas"]); // atualiza a lista
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao registrar histórico:", error);
-      toast.error("Erro ao registrar histórico médico");
+      toast.error(
+        error.response?.data?.message || "Erro ao registrar histórico médico",
+      );
     } finally {
       setLoadingHistorico(false);
     }
@@ -586,12 +804,15 @@ const FuncionarioDashboard: React.FC = () => {
     { name: "Minhas Consultas", key: "consultas", icon: Heart },
     { name: "Minhas Solicitações", key: "solicitacoes", icon: Building2 },
     { name: "Medicamentos", key: "medicamentos", icon: Pill },
+    { name: "Exames", key: "exames", icon: FileText },
+    { name: "Histórico Médico", key: "historico", icon: Shield },
+    { name: "Receita/Atestado", key: "receitas", icon: FileText },
+    { name: "Consultar Receita", key: "consultar_receita", icon: FileText },
   ];
 
   const navigation = allNavigation.filter((item) => {
     const funcao = user?.funcao?.toLowerCase().trim() || "";
 
-    // Apenas médicos podem visualizar "Consultas"
     if (item.key === "consultas") {
       return ["medico", "médico"].includes(funcao);
     }
@@ -601,16 +822,23 @@ const FuncionarioDashboard: React.FC = () => {
     if (item.key === "solicitacoes") {
       return ["medico", "médico"].includes(funcao);
     }
+    if (item.key === "exames") {
+      return ["medico", "médico"].includes(funcao);
+    }
+    if (item.key === "receitas") {
+      return ["medico", "médico"].includes(funcao);
+    }
 
-    // Apenas enfermeiro/farmacêutico podem visualizar "Medicamentos"
     if (item.key === "medicamentos") {
+      return ["enfermeiro", "farmaceutico", "farmacêutico"].includes(funcao);
+    }
+    if (item.key === "consultar_receita") {
       return ["enfermeiro", "farmaceutico", "farmacêutico"].includes(funcao);
     }
 
     return true;
   });
 
-  // Normalizar função do usuário
   const funcao =
     user?.funcao
       ?.normalize("NFD")
@@ -618,12 +846,44 @@ const FuncionarioDashboard: React.FC = () => {
       .toLowerCase()
       .trim() || "";
 
-  // Permissões
+  const atualizarConsultas = async () => {
+    await queryClient.invalidateQueries(["funcionario-consultas"]);
+    await refetchConsultas();
+  };
+
   const isMedico = ["medico"].includes(funcao);
 
   const isEnfermagemOuFarmacia = ["enfermeiro", "farmaceutico"].includes(
     funcao,
   );
+
+  const { data: examesRealizados, isLoading: loadingExames } = useQuery(
+    "funcionario-exames",
+    () => api.get("/funcionario/exames").then((res) => res.data),
+    { enabled: isMedico && activeTab === "exames" },
+  );
+
+  React.useEffect(() => {
+    if (!isMedico && activeTab === "exames") {
+      setActiveTab("pacientes");
+    }
+  }, [activeTab, isMedico]);
+
+  const filteredExames = useMemo(() => {
+    const query = exameSearchTerm.trim().toLowerCase();
+
+    return (examesRealizados || []).filter((item: any) => {
+      const pacienteNome = item.paciente?.nome || "";
+      const laboratorioNome = item.laboratorio?.nome || "";
+      const tipoExame = item.tipo || "";
+
+      return (
+        pacienteNome.toLowerCase().includes(query) ||
+        laboratorioNome.toLowerCase().includes(query) ||
+        tipoExame.toLowerCase().includes(query)
+      );
+    });
+  }, [examesRealizados, exameSearchTerm]);
 
   return (
     <div
@@ -715,7 +975,23 @@ const FuncionarioDashboard: React.FC = () => {
                   return (
                     <li key={item.key}>
                       <button
-                        onClick={() => setActiveTab(item.key)}
+                        onClick={() => {
+                          if (item.key === "historico") {
+                            setActiveTab("historico");
+                            setShowBuscaHistoricoModal(true);
+                            setHistoricoBuscaResultado(null);
+                            setRegistroHistoricoDetalhe(null);
+                            return;
+                          }
+
+                          if (item.key === "consultas") {
+                            setActiveTab("consultas");
+                            atualizarConsultas();
+                            return;
+                          }
+
+                          setActiveTab(item.key);
+                        }}
                         className={`w-full flex items-center space-x-2.5 px-3 py-2.5 rounded-lg transition-all duration-150 text-sm font-medium ${
                           activeTab === item.key
                             ? "text-[#1A3F72]"
@@ -864,26 +1140,6 @@ const FuncionarioDashboard: React.FC = () => {
                               {isMedico && (
                                 <>
                                   <button
-                                    onClick={() => openHistoricoModal(paciente)}
-                                    className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
-                                    style={{
-                                      background: "#EBF2FB",
-                                      color: "#1A3F72",
-                                      border: "1px solid #C0D6EE",
-                                    }}
-                                    onMouseEnter={(e) =>
-                                      (e.currentTarget.style.background =
-                                        "#D5E7F7")
-                                    }
-                                    onMouseLeave={(e) =>
-                                      (e.currentTarget.style.background =
-                                        "#EBF2FB")
-                                    }
-                                  >
-                                    <Heart className="h-3 w-3" />
-                                    Histórico #
-                                  </button>
-                                  <button
                                     onClick={() => openExameModal(paciente)}
                                     className="flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
                                     style={{
@@ -901,7 +1157,7 @@ const FuncionarioDashboard: React.FC = () => {
                                     }
                                   >
                                     <FileText className="h-3 w-3" />
-                                    Exame
+                                    Solicitar Exame
                                   </button>
                                   <button
                                     onClick={() =>
@@ -923,7 +1179,7 @@ const FuncionarioDashboard: React.FC = () => {
                                     }
                                   >
                                     <Building2 className="h-3 w-3" />
-                                    Internação
+                                    Solicitar Internação
                                   </button>
                                   <button
                                     onClick={() => {
@@ -1052,6 +1308,297 @@ const FuncionarioDashboard: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                {activeTab === "consultar_receita" && (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6">
+                    {/* Header */}
+                    <div className="mb-8">
+                      <div className="flex items-center gap-2.5 mb-1">
+                        <div className="p-1.5 bg-blue-50 rounded-lg">
+                          <FileText size={16} className="text-blue-600" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-slate-900">
+                          Consultar receita
+                        </h2>
+                      </div>
+                      <p className="text-sm text-slate-400 ml-9">
+                        Busque pelo número de registro de assinatura para ver
+                        dados e histórico.
+                      </p>
+                    </div>
+
+                    {/* Estado: Busca */}
+                    {!receitaEncontrada ? (
+                      <form onSubmit={handleBuscarReceita} className="max-w-sm">
+                        <label className="block text-xs font-semibold text-slate-500 uppercase tracking-widest mb-2">
+                          Registro de assinatura
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={registroReceitaBusca}
+                            onChange={(e) =>
+                              setRegistroReceitaBusca(e.target.value)
+                            }
+                            placeholder="Ex: REG-SISC1A2B3C-D4E5F6"
+                            className="flex-1 rounded-xl px-4 py-2.5 text-sm text-slate-800 bg-slate-50 border border-slate-200 outline-none transition-all focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-slate-300"
+                            required
+                          />
+                          <button
+                            type="submit"
+                            disabled={
+                              buscarReceitaMutation.isLoading ||
+                              carregandoReceita
+                            }
+                            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl transition-colors flex items-center gap-1.5 text-sm font-medium"
+                          >
+                            <Search size={15} />
+                            Buscar
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* Topo com botão nova busca */}
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle
+                              size={16}
+                              className="text-emerald-500"
+                            />
+                            <span className="text-sm font-medium text-slate-700">
+                              Receita encontrada
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleLimparReceita}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 border border-slate-200 hover:bg-slate-50 transition-colors"
+                          >
+                            <RotateCcw size={12} />
+                            Nova busca
+                          </button>
+                        </div>
+
+                        {/* Grid de seções */}
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* Paciente */}
+                          <Section icon={<User size={14} />} title="Paciente">
+                            <InfoGrid>
+                              <InfoItem
+                                label="Nome"
+                                value={receitaEncontrada.paciente?.nome}
+                              />
+                              <InfoItem
+                                label="CPF"
+                                value={receitaEncontrada.paciente?.cpf}
+                              />
+                              <InfoItem
+                                label="CNS"
+                                value={receitaEncontrada.paciente?.cns}
+                              />
+                              <InfoItem
+                                label="Data de nascimento"
+                                value={
+                                  receitaEncontrada.paciente?.nascimento
+                                    ? format(
+                                        new Date(
+                                          receitaEncontrada.paciente.nascimento,
+                                        ),
+                                        "dd/MM/yyyy",
+                                        { locale: ptBR },
+                                      )
+                                    : undefined
+                                }
+                              />
+                            </InfoGrid>
+                          </Section>
+
+                          {/* Medicamento */}
+                          <Section
+                            icon={<Pill size={14} />}
+                            title="Medicamento"
+                          >
+                            <InfoGrid>
+                              <InfoItem
+                                label="Nome"
+                                value={receitaEncontrada.medicamento}
+                              />
+                              <InfoItem
+                                label="Dosagem"
+                                value={receitaEncontrada.dosagem}
+                              />
+                              <InfoItem
+                                label="Quantidade"
+                                value={receitaEncontrada.quantidade}
+                              />
+                              <InfoItem
+                                label="Status"
+                                value={
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                      receitaEncontrada.status === "ativa"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-red-50 text-red-700"
+                                    }`}
+                                  >
+                                    <span
+                                      className={`w-1.5 h-1.5 rounded-full ${
+                                        receitaEncontrada.status === "ativa"
+                                          ? "bg-emerald-500"
+                                          : "bg-red-500"
+                                      }`}
+                                    />
+                                    {receitaEncontrada.status || "N/A"}
+                                  </span>
+                                }
+                              />
+                            </InfoGrid>
+                          </Section>
+
+                          {/* Médico e UBS */}
+                          <Section
+                            icon={<Stethoscope size={14} />}
+                            title="Prescrição"
+                          >
+                            <InfoGrid>
+                              <InfoItem
+                                label="Médico responsável"
+                                value={receitaEncontrada.funcionario?.nome}
+                              />
+                              <InfoItem
+                                label="CRM"
+                                value={receitaEncontrada.funcionario?.crm}
+                              />
+                              <div className="col-span-2">
+                                <InfoItem
+                                  label="UBS solicitante"
+                                  value={receitaEncontrada.ubs?.nome}
+                                />
+                              </div>
+                            </InfoGrid>
+                          </Section>
+
+                          {/* Observações */}
+                          {receitaEncontrada.observacoes && (
+                            <Section
+                              icon={<MessageSquare size={14} />}
+                              title="Observações"
+                            >
+                              <p className="text-sm text-slate-600 leading-relaxed">
+                                {receitaEncontrada.observacoes}
+                              </p>
+                            </Section>
+                          )}
+                        </div>
+
+                        {/* Histórico de Dispensações */}
+                        <div>
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="p-1 bg-slate-100 rounded-md">
+                              <Package size={13} className="text-slate-500" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-800">
+                              Histórico de dispensações
+                            </h3>
+                            {receitaEncontrada.dispensacoes?.length > 0 && (
+                              <span className="ml-auto text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-medium">
+                                {receitaEncontrada.dispensacoes.length}
+                              </span>
+                            )}
+                          </div>
+
+                          {receitaEncontrada.dispensacoes?.length > 0 ? (
+                            <div className="rounded-xl border border-slate-200 overflow-hidden">
+                              {/* Header da tabela */}
+                              <div className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr] gap-3 px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+                                {[
+                                  "Farmácia",
+                                  "Medicamento",
+                                  "Qtd.",
+                                  "Status",
+                                  "Data",
+                                ].map((h) => (
+                                  <span
+                                    key={h}
+                                    className="text-[10px] font-bold uppercase tracking-widest text-slate-400"
+                                  >
+                                    {h}
+                                  </span>
+                                ))}
+                              </div>
+                              {/* Linhas */}
+                              <div className="divide-y divide-slate-100">
+                                {receitaEncontrada.dispensacoes.map(
+                                  (d: any, idx: number) => (
+                                    <div
+                                      key={idx}
+                                      className="grid grid-cols-[1.5fr_1fr_0.8fr_0.8fr_0.8fr] gap-3 items-center px-4 py-3 hover:bg-slate-50 transition-colors"
+                                    >
+                                      <p className="text-sm font-medium text-slate-800 truncate">
+                                        {d.farmaciaResponsavel ||
+                                          d.farmacia?.nome ||
+                                          "—"}
+                                      </p>
+                                      <p className="text-sm text-slate-500 truncate">
+                                        {d.medicamentoFornecido ||
+                                          receitaEncontrada.medicamento ||
+                                          "—"}
+                                      </p>
+                                      <p className="text-sm text-slate-500">
+                                        {d.quantidadeDispensada || "—"}
+                                      </p>
+                                      <span
+                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold w-fit ${
+                                          d.statusDispensacao === "completa"
+                                            ? "bg-emerald-50 text-emerald-700"
+                                            : "bg-amber-50 text-amber-700"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`w-1.5 h-1.5 rounded-full ${
+                                            d.statusDispensacao === "completa"
+                                              ? "bg-emerald-500"
+                                              : "bg-amber-400"
+                                          }`}
+                                        />
+                                        {d.statusDispensacao || "—"}
+                                      </span>
+                                      <p className="text-xs text-slate-400">
+                                        {d.dataDispensacao || d.createdAt
+                                          ? format(
+                                              new Date(
+                                                d.dataDispensacao ||
+                                                  d.createdAt,
+                                              ),
+                                              "dd/MM/yyyy",
+                                              { locale: ptBR },
+                                            )
+                                          : "—"}
+                                      </p>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-10 rounded-xl border border-dashed border-slate-200 bg-slate-50">
+                              <Package
+                                size={28}
+                                className="text-slate-300 mb-2"
+                              />
+                              <p className="text-sm text-slate-400 font-medium">
+                                Nenhuma dispensação registrada
+                              </p>
+                              <p className="text-xs text-slate-300 mt-0.5">
+                                Esta receita ainda não foi dispensada.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {loadingMedicamentos ? (
                   <div className="text-center py-12">
@@ -2331,6 +2878,103 @@ const FuncionarioDashboard: React.FC = () => {
             )}
 
             {/* ══ HISTÓRICO ══ */}
+            {activeTab === "historico" && (
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-5">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
+                      Histórico Médico
+                    </h2>
+                    <p className="text-sm text-[#8FA8C4] mt-0.5">
+                      Busque o paciente por CPF para visualizar todo o histórico
+                      médico em ordem cronológica.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBuscaHistoricoModal(true)}
+                    className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all"
+                    style={{ background: "#1A3F72" }}
+                  >
+                    Buscar por CPF
+                  </button>
+                </div>
+
+                {historicoBuscaResultado?.paciente && (
+                  <div className="mb-5 rounded-xl border border-[#D9E4F0] bg-[#F7FAFE] p-4">
+                    <p className="text-xs uppercase tracking-[0.08em] text-[#8FA8C4]">
+                      Paciente localizado
+                    </p>
+                    <h3 className="text-lg font-semibold text-[#0F2242] mt-1">
+                      {historicoBuscaResultado.paciente.nome}
+                    </h3>
+                    <p className="text-sm text-[#5C7A9B]">
+                      CPF: {historicoBuscaResultado.paciente.cpf} • CNS:{" "}
+                      {historicoBuscaResultado.paciente.cns || "—"}
+                    </p>
+                  </div>
+                )}
+
+                {historicoBuscaResultado?.registros?.length ? (
+                  <div className="space-y-3">
+                    {historicoBuscaResultado.registros.map((registro: any) => (
+                      <article
+                        key={`${registro.tipo}-${registro.id}`}
+                        className="rounded-xl border border-[#E4EDF7] bg-[#FAFCFF] p-4"
+                        style={{ borderLeft: "4px solid #1A3F72" }}
+                      >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="rounded-full bg-[#EBF2FB] px-2.5 py-0.5 text-[11px] font-semibold text-[#1A3F72]">
+                                {registro.categoria}
+                              </span>
+                              <span className="text-xs text-[#8FA8C4]">
+                                {format(
+                                  new Date(registro.dataRegistro),
+                                  "dd/MM/yyyy HH:mm",
+                                  { locale: ptBR },
+                                )}
+                              </span>
+                            </div>
+                            <h3 className="text-base font-bold text-[#0F2242]">
+                              {registro.titulo}
+                            </h3>
+                            <p className="text-sm text-[#3A5B82] mt-1">
+                              {registro.resumo}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => abrirDetalheHistorico(registro)}
+                            className="rounded-lg px-3 py-2 text-sm font-semibold text-white transition-all"
+                            style={{ background: "#145C35" }}
+                          >
+                            Visualizar
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-[#C8D9ED] bg-[#F7FAFE] p-8 text-center">
+                    <FileText className="h-10 w-10 mx-auto mb-3 text-[#C8D9ED]" />
+                    <p className="text-sm text-[#5C7A9B]">
+                      Clique em “Buscar por CPF” para carregar todo o histórico
+                      do paciente em uma linha do tempo.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "historico" && selectedPaciente && (
               <div
                 className="rounded-2xl p-6"
@@ -2685,6 +3329,384 @@ const FuncionarioDashboard: React.FC = () => {
                 )}
               </div>
             )}
+            {/* ══ CONSULTAR RECEITA ══ */}
+            {activeTab === "consultar_receita" && (
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-[#0F2242] tracking-tight mb-2">
+                    Consultar Receita
+                  </h2>
+                  <p className="text-sm text-[#8FA8C4]">
+                    Busque uma receita pelo número de registro de assinatura
+                    para visualizar os dados e histórico de dispensações.
+                  </p>
+                </div>
+
+                {!receitaEncontrada ? (
+                  <form
+                    onSubmit={handleBuscarReceita}
+                    className="space-y-4 max-w-md"
+                  >
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-2">
+                        Registro de Assinatura *
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={registroReceitaBusca}
+                          onChange={(e) =>
+                            setRegistroReceitaBusca(e.target.value)
+                          }
+                          placeholder="Ex: REG-SISC1A2B3C-D4E5F6"
+                          className="flex-1 rounded-lg px-3 py-2.5 text-sm text-[#1A2E4A] outline-none transition-all"
+                          style={{
+                            border: "1px solid #C8D9ED",
+                            background: "#F4F8FC",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#1A3F72";
+                            e.target.style.background = "#fff";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#C8D9ED";
+                            e.target.style.background = "#F4F8FC";
+                          }}
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={
+                            buscarReceitaMutation.isLoading || carregandoReceita
+                          }
+                          className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                          style={{ background: "#1A3F72" }}
+                          onMouseEnter={(e) =>
+                            !buscarReceitaMutation.isLoading &&
+                            (e.currentTarget.style.background = "#0F2A52")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.background = "#1A3F72")
+                          }
+                        >
+                          <Search className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-[#0F2242]">
+                        Dados da Receita
+                      </h3>
+                      <button
+                        onClick={handleLimparReceita}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                        style={{
+                          border: "1px solid #C8D9ED",
+                          color: "#5C7A9B",
+                          background: "transparent",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#F0F4F8")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "transparent")
+                        }
+                      >
+                        Nova busca
+                      </button>
+                    </div>
+
+                    {/* Informações do Paciente */}
+                    <div
+                      className="rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4"
+                      style={{
+                        background: "#F8FAFD",
+                        border: "1px solid #E4EDF7",
+                      }}
+                    >
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Paciente
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.paciente?.nome || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          CPF
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.paciente?.cpf || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          CNS
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.paciente?.cns || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Data de Nascimento
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.paciente?.nascimento
+                            ? format(
+                                new Date(receitaEncontrada.paciente.nascimento),
+                                "dd/MM/yyyy",
+                                { locale: ptBR },
+                              )
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Informações do Medicamento */}
+                    <div
+                      className="rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4"
+                      style={{
+                        background: "#F8FAFD",
+                        border: "1px solid #E4EDF7",
+                      }}
+                    >
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Medicamento
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.medicamento || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Dosagem
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.dosagem || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Quantidade
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.quantidade || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Status
+                        </p>
+                        <span
+                          className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          style={{
+                            background:
+                              receitaEncontrada.status === "ativa"
+                                ? "#D1F3E9"
+                                : "#FEE4E2",
+                            color:
+                              receitaEncontrada.status === "ativa"
+                                ? "#145C35"
+                                : "#912F29",
+                          }}
+                        >
+                          {receitaEncontrada.status || "N/A"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Informações do Médico e UBS */}
+                    <div
+                      className="rounded-xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4"
+                      style={{
+                        background: "#F8FAFD",
+                        border: "1px solid #E4EDF7",
+                      }}
+                    >
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Médico responsável
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.funcionario?.nome || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          CRM
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.funcionario?.crm || "N/A"}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          UBS Solicitante
+                        </p>
+                        <p className="text-sm font-semibold text-[#0F2242]">
+                          {receitaEncontrada.ubs?.nome || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Observações */}
+                    {receitaEncontrada.observacoes && (
+                      <div
+                        className="rounded-xl p-4"
+                        style={{
+                          background: "#F8FAFD",
+                          border: "1px solid #E4EDF7",
+                        }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-2">
+                          Observações
+                        </p>
+                        <p className="text-sm text-[#1A2E4A]">
+                          {receitaEncontrada.observacoes}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Histórico de Dispensações */}
+                    <div>
+                      <h3 className="text-lg font-bold text-[#0F2242] mb-3">
+                        Histórico de Dispensações
+                      </h3>
+
+                      {receitaEncontrada.dispensacoes &&
+                      receitaEncontrada.dispensacoes.length > 0 ? (
+                        <div
+                          className="overflow-hidden rounded-xl border"
+                          style={{ borderColor: "#E4EDF7" }}
+                        >
+                          <div className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_auto] gap-3 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] bg-[#F8FAFD]">
+                            <span>Farmácia responsável</span>
+                            <span>Medicamento</span>
+                            <span>Quantidade</span>
+                            <span>Status</span>
+                            <span>Data</span>
+                          </div>
+                          <div
+                            className="divide-y"
+                            style={{ borderColor: "#E4EDF7" }}
+                          >
+                            {receitaEncontrada.dispensacoes.map(
+                              (dispensacao: any, idx: number) => (
+                                <div
+                                  key={idx}
+                                  className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_auto] gap-3 items-center px-4 py-3 bg-white"
+                                >
+                                  <div>
+                                    <p className="text-sm font-semibold text-[#0F2242]">
+                                      {dispensacao.farmaciaResponsavel ||
+                                        dispensacao.farmacia?.nome ||
+                                        "N/A"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-[#3A5B82]">
+                                      {dispensacao.medicamentoFornecido ||
+                                        receitaEncontrada.medicamento ||
+                                        "N/A"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-[#3A5B82]">
+                                      {dispensacao.quantidadeDispensada || "—"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span
+                                      className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                                      style={{
+                                        background:
+                                          dispensacao.statusDispensacao ===
+                                          "completa"
+                                            ? "#D1F3E9"
+                                            : "#FFF3CD",
+                                        color:
+                                          dispensacao.statusDispensacao ===
+                                          "completa"
+                                            ? "#145C35"
+                                            : "#856404",
+                                      }}
+                                    >
+                                      {dispensacao.statusDispensacao || "N/A"}
+                                    </span>
+                                  </div>
+                                  <div className="text-xs text-[#8FA8C4]">
+                                    {dispensacao.dataDispensacao
+                                      ? format(
+                                          new Date(dispensacao.dataDispensacao),
+                                          "dd/MM/yyyy",
+                                          { locale: ptBR },
+                                        )
+                                      : dispensacao.createdAt
+                                        ? format(
+                                            new Date(dispensacao.createdAt),
+                                            "dd/MM/yyyy",
+                                            { locale: ptBR },
+                                          )
+                                        : "N/A"}
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Package className="h-10 w-10 mx-auto mb-3 text-[#C8D9ED]" />
+                          <p className="text-sm text-[#8FA8C4]">
+                            Nenhuma dispensação registrada para esta receita.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Botão de Dispensação */}
+                    <div className="mt-6 flex justify-end">
+                      <button
+                        onClick={handleValidarDispensacao}
+                        disabled={
+                          dispensarReceitaMutation.isLoading ||
+                          carregandoValidacaoDispensacao
+                        }
+                        className="px-6 py-2.5 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                        style={{ background: "#00A651" }}
+                        onMouseEnter={(e) =>
+                          !dispensarReceitaMutation.isLoading &&
+                          (e.currentTarget.style.background = "#007A3F")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#00A651")
+                        }
+                      >
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          Dispensar Receita
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "receitas" && <ReceitasAtestado />}
 
             {/* ══ CONSULTAS ══ */}
             {activeTab === "consultas" && (
@@ -2700,195 +3722,133 @@ const FuncionarioDashboard: React.FC = () => {
                   <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
                     Minhas Consultas
                   </h2>
+                  <p className="text-xs text-[#8FA8C4]">
+                    {loadingConsultas
+                      ? "Atualizando..."
+                      : `${consultas?.length || 0} consulta(s) encontrada(s)`}
+                  </p>
                 </div>
-                {consultas && consultas.length > 0 ? (
-                  <div className="space-y-3">
-                    {consultas.map((consulta: any) => (
-                      <div
-                        key={consulta.id}
-                        className="rounded-xl p-4 transition-all duration-150"
-                        style={{
-                          border: "1px solid #E4EDF7",
-                          background: "#FAFCFF",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.boxShadow =
-                            "0 2px 12px rgba(26,63,114,0.07)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.boxShadow = "none";
-                        }}
-                      >
-                        <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
-                          <div>
-                            <h3 className="text-base font-bold text-[#0F2242]">
-                              {consulta.paciente?.nome || "N/A"}
-                            </h3>
-                            <p className="text-xs text-[#8FA8C4]">
-                              CPF: {consulta.paciente?.cpf || "N/A"}
-                            </p>
-                            {consulta.dataAgendada && (
-                              <p className="text-xs text-[#8FA8C4]">
-                                Agendada para:{" "}
-                                {format(
-                                  new Date(consulta.dataAgendada),
-                                  "dd/MM/yyyy HH:mm",
-                                  { locale: ptBR },
-                                )}
-                              </p>
-                            )}
-                          </div>
-                          <span
-                            className={`px-2.5 py-0.5 rounded text-xs font-semibold ${getStatusColor(consulta.status)}`}
-                          >
-                            {consulta.status}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs mb-3">
-                          <div>
-                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
-                              Especialidade
-                            </p>
-                            <p className="text-[#3A5B82]">
-                              {consulta.especialidade}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
-                              Motivo
-                            </p>
-                            <p className="text-[#3A5B82]">{consulta.motivo}</p>
-                          </div>
-                          {consulta.ubs && (
-                            <div>
-                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
-                                UBS
-                              </p>
-                              <p className="text-[#3A5B82]">
-                                {consulta.ubs.nome}
-                              </p>
-                            </div>
-                          )}
-                          {consulta.dataCancelamento && (
-                            <div>
-                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
-                                Cancelada em
-                              </p>
-                              <p className="text-[#3A5B82]">
-                                {format(
-                                  new Date(consulta.dataCancelamento),
-                                  "dd/MM/yyyy",
-                                  { locale: ptBR },
-                                )}
-                              </p>
-                            </div>
-                          )}
-                          {consulta.observacoes && (
-                            <div className="md:col-span-2">
-                              <p className="font-bold uppercase tracking-[0.06em] text-[#8FA8C4] mb-0.5">
-                                Observações
-                              </p>
-                              <p className="text-[#3A5B82]">
-                                {consulta.observacoes}
-                              </p>
-                            </div>
-                          )}
-                        </div>
 
-                        {consulta.historicoMedico ? (
+                {consultas && consultas.length > 0 ? (
+                  <div
+                    className="overflow-hidden rounded-xl border"
+                    style={{ borderColor: "#E4EDF7" }}
+                  >
+                    <div className="grid grid-cols-[1.8fr_1.2fr_1fr_auto] gap-3 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] bg-[#F8FAFD]">
+                      <span>Paciente</span>
+                      <span>Data da realização</span>
+                      <span>Doença</span>
+                      <span className="text-right">Ações</span>
+                    </div>
+                    <div
+                      className="divide-y"
+                      style={{ borderColor: "#E4EDF7" }}
+                    >
+                      {consultas.map((consulta: any) => {
+                        const temHistorico = Boolean(
+                          consulta.historicoMedico?.id,
+                        );
+
+                        return (
                           <div
-                            className="rounded-lg p-3 flex justify-between items-start gap-3"
-                            style={{
-                              background: "#EAF5EF",
-                              border: "1px solid #B0D9C0",
-                            }}
+                            key={consulta.id}
+                            className="grid grid-cols-[1.8fr_1.2fr_1fr_auto] gap-3 items-center px-4 py-3 bg-white"
                           >
-                            <div className="flex-1">
-                              <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#145C35] mb-1">
-                                ✓ Histórico registrado
+                            <div>
+                              <p className="text-sm font-semibold text-[#0F2242]">
+                                {consulta.paciente?.nome ||
+                                  "Paciente não informado"}
                               </p>
-                              <p className="text-xs text-[#3A5B82]">
-                                <span className="font-semibold">
-                                  Diagnóstico:
-                                </span>{" "}
-                                {consulta.historicoMedico.diagnostico}
+                              <p className="text-xs text-[#8FA8C4]">
+                                CPF: {consulta.paciente?.cpf || "N/A"}
                               </p>
-                              {consulta.historicoMedico.doenca && (
-                                <p className="text-xs text-[#3A5B82]">
-                                  <span className="font-semibold">Doença:</span>{" "}
-                                  {consulta.historicoMedico.doenca}
-                                </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-[#3A5B82]">
+                                {formatConsultaDate(consulta.dataAgendada)}
+                              </p>
+                              <p className="text-xs text-[#8FA8C4]">
+                                {consulta.ubs?.nome || "Local não informado"}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-[#3A5B82]">
+                                {getConsultaDisease(consulta)}
+                              </p>
+                              <p className="text-xs text-[#8FA8C4]">
+                                {consulta.especialidade ||
+                                  "Especialidade não informada"}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-2 items-end">
+                              {temHistorico ? (
+                                <button
+                                  onClick={() => {
+                                    setSelectedConsulta(consulta);
+                                    setShowConsultaDetailsModal(true);
+                                  }}
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                                  style={{ background: "#1A3F72" }}
+                                  onMouseEnter={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#0F2A52")
+                                  }
+                                  onMouseLeave={(e) =>
+                                    (e.currentTarget.style.background =
+                                      "#1A3F72")
+                                  }
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  Ver detalhes da consulta
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedConsulta(consulta);
+                                      setShowConsultaDetailsModal(true);
+                                    }}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                                    style={{ background: "#1A3F72" }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#0F2A52")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#1A3F72")
+                                    }
+                                  >
+                                    <FileText className="h-3 w-3" />
+                                    Visualizar consulta
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      setModalHistorico({
+                                        aberto: true,
+                                        consulta,
+                                      })
+                                    }
+                                    className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                                    style={{ background: "#145C35" }}
+                                    onMouseEnter={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#0E4226")
+                                    }
+                                    onMouseLeave={(e) =>
+                                      (e.currentTarget.style.background =
+                                        "#145C35")
+                                    }
+                                  >
+                                    + Registrar histórico
+                                  </button>
+                                </>
                               )}
                             </div>
-                            <button
-                              onClick={() => {
-                                setSelectedPaciente(consulta.paciente);
-                                setActiveTab("historico");
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all flex-shrink-0"
-                              style={{ background: "#145C35" }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background = "#0E4226")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background = "#145C35")
-                              }
-                            >
-                              <FileText className="h-3 w-3" />
-                              Ver Histórico
-                            </button>
                           </div>
-                        ) : consulta.status === "agendada" ||
-                          consulta.status === "agendado" ? (
-                          <div
-                            className="flex justify-between items-center pt-3"
-                            style={{ borderTop: "1px solid #EEF2F7" }}
-                          >
-                            <p className="text-xs text-[#8FA8C4]">
-                              Sem histórico médico registrado
-                            </p>
-                            <button
-                              onClick={() =>
-                                setModalHistorico({ aberto: true, consulta })
-                              }
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
-                              style={{ background: "#1A3F72" }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background = "#0F2A52")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background = "#1A3F72")
-                              }
-                            >
-                              + Registrar Histórico
-                            </button>
-                          </div>
-                        ) : (
-                          <div
-                            className="pt-3 flex items-center"
-                            style={{ borderTop: "1px solid #EEF2F7" }}
-                          >
-                            <p className="text-xs text-[#8FA8C4]">
-                              Sem histórico médico registrado
-                            </p>
-                          </div>
-                        )}
-
-                        <div
-                          className="pt-2.5 mt-2.5"
-                          style={{ borderTop: "1px solid #EEF2F7" }}
-                        >
-                          <p className="text-[10px] text-[#8FA8C4]">
-                            Registrada em:{" "}
-                            {format(
-                              new Date(consulta.createdAt),
-                              "dd/MM/yyyy HH:mm",
-                              { locale: ptBR },
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                        );
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="text-center py-12">
@@ -2898,6 +3858,397 @@ const FuncionarioDashboard: React.FC = () => {
                     </p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === "exames" && (
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: "#fff",
+                  border: "1px solid #D9E4F0",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                }}
+              >
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
+                      Exames realizados
+                    </h2>
+                    <p className="text-sm text-[#8FA8C4] mt-0.5">
+                      Liste os exames concluídos e realize o download do laudo.
+                    </p>
+                  </div>
+                  <div className="relative md:w-96">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-4 w-4 text-[#8FA8C4]" />
+                    </div>
+                    <input
+                      type="text"
+                      value={exameSearchTerm}
+                      onChange={(e) => setExameSearchTerm(e.target.value)}
+                      placeholder="Buscar por nome do paciente, laboratório ou tipo"
+                      className="block w-full pl-9 pr-3 py-2 text-sm text-[#1A2E4A] placeholder-[#8FA8C4] rounded-lg outline-none transition-all"
+                      style={{
+                        border: "1px solid #C8D9ED",
+                        background: "#F4F8FC",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#1A3F72";
+                        e.target.style.background = "#fff";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "#C8D9ED";
+                        e.target.style.background = "#F4F8FC";
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {loadingExames ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#C8D9ED] border-t-[#1A3F72] mx-auto"></div>
+                    <p className="mt-3 text-sm text-[#8FA8C4]">Carregando...</p>
+                  </div>
+                ) : filteredExames.length > 0 ? (
+                  <div
+                    className="overflow-hidden rounded-xl border"
+                    style={{ borderColor: "#E4EDF7" }}
+                  >
+                    <div className="grid grid-cols-[1.8fr_1.4fr_1fr_1.2fr_auto] gap-3 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] bg-[#F8FAFD]">
+                      <span>Paciente</span>
+                      <span>Laboratório</span>
+                      <span>Tipo de exame</span>
+                      <span>Data da realização</span>
+                      <span className="text-right">Ações</span>
+                    </div>
+                    <div
+                      className="divide-y"
+                      style={{ borderColor: "#E4EDF7" }}
+                    >
+                      {filteredExames.map((item: any) => (
+                        <div
+                          key={item.id}
+                          className="grid grid-cols-[1.8fr_1.4fr_1fr_1.2fr_auto] gap-3 items-center px-4 py-3 bg-white"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-[#0F2242]">
+                              {item.paciente?.nome || "Paciente não informado"}
+                            </p>
+                            <p className="text-xs text-[#8FA8C4]">
+                              CPF: {item.paciente?.cpf || "N/A"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-[#3A5B82]">
+                              {item.laboratorio?.nome || "Não informado"}
+                            </p>
+                            <p className="text-xs text-[#8FA8C4]">
+                              {item.laboratorio?.telefone || "Sem contato"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-[#3A5B82]">
+                              {item.tipo || "Exame"}
+                            </p>
+                            <p className="text-xs text-[#8FA8C4]">
+                              Status: {item.status || "realizado"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-[#3A5B82]">
+                              {item.dataRealizado
+                                ? format(
+                                    new Date(item.dataRealizado),
+                                    "dd/MM/yyyy HH:mm",
+                                    {
+                                      locale: ptBR,
+                                    },
+                                  )
+                                : item.dataAgendada
+                                  ? format(
+                                      new Date(item.dataAgendada),
+                                      "dd/MM/yyyy HH:mm",
+                                      {
+                                        locale: ptBR,
+                                      },
+                                    )
+                                  : "Data não informada"}
+                            </p>
+                          </div>
+                          <div className="flex justify-end">
+                            {item.arquivoPdf ? (
+                              <a
+                                href={`http://localhost:3001/api/exames/download/${item.arquivoPdf}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all"
+                                style={{ background: "#1A3F72" }}
+                                onMouseEnter={(e) =>
+                                  (e.currentTarget.style.background = "#0F2A52")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.currentTarget.style.background = "#1A3F72")
+                                }
+                              >
+                                <Download className="h-3.5 w-3.5" />
+                                Baixar laudo
+                              </a>
+                            ) : (
+                              <span
+                                className="inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold"
+                                style={{
+                                  background: "#F4F8FC",
+                                  color: "#8FA8C4",
+                                }}
+                              >
+                                Laudo indisponível
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="h-10 w-10 mx-auto mb-3 text-[#C8D9ED]" />
+                    <p className="text-sm text-[#8FA8C4]">
+                      Nenhum exame realizado encontrado.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showConsultaDetailsModal && selectedConsulta && (
+              <div
+                className="fixed inset-0 flex items-center justify-center z-50 p-4"
+                style={{
+                  background: "rgba(10,25,47,0.55)",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                <div
+                  className="bg-white rounded-2xl w-full max-w-2xl overflow-y-auto"
+                  style={{
+                    maxHeight: "90vh",
+                    border: "1px solid #D9E4F0",
+                    boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+                  }}
+                >
+                  <div
+                    className="flex justify-between items-start p-6"
+                    style={{ borderBottom: "1px solid #EEF2F7" }}
+                  >
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
+                        Detalhes da consulta
+                      </p>
+                      <h2 className="text-lg font-bold text-[#0F2242] mt-1">
+                        {selectedConsulta.paciente?.nome ||
+                          "Paciente não informado"}
+                      </h2>
+                      <p className="text-sm text-[#8FA8C4] mt-1">
+                        {selectedConsulta.especialidade ||
+                          "Especialidade não informada"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowConsultaDetailsModal(false);
+                        setSelectedConsulta(null);
+                      }}
+                      className="text-[#8FA8C4] hover:text-[#5C7A9B] text-2xl font-bold leading-none transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <div className="p-6 space-y-4 text-sm text-[#1A2E4A]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        className="rounded-xl p-4"
+                        style={{ background: "#F8FAFD" }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Status
+                        </p>
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-xs font-semibold ${getStatusColor(selectedConsulta.status)}`}
+                        >
+                          {selectedConsulta.status}
+                        </span>
+                      </div>
+                      <div
+                        className="rounded-xl p-4"
+                        style={{ background: "#F8FAFD" }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Data do agendamento
+                        </p>
+                        <p className="font-semibold">
+                          {formatConsultaDate(selectedConsulta.dataAgendada)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        className="rounded-xl p-4"
+                        style={{ background: "#F8FAFD" }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Local
+                        </p>
+                        <p className="font-semibold">
+                          {selectedConsulta.ubs?.nome || "Não informado"}
+                        </p>
+                        <p className="text-[#5C7A9B] text-xs mt-1">
+                          {selectedConsulta.ubs?.endereco ||
+                            "Endereço não informado"}
+                        </p>
+                      </div>
+                      <div
+                        className="rounded-xl p-4"
+                        style={{ background: "#F8FAFD" }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Contato do paciente
+                        </p>
+                        <p className="font-semibold">
+                          {selectedConsulta.paciente?.telefone ||
+                            "Não informado"}
+                        </p>
+                        <p className="text-[#5C7A9B] text-xs mt-1">
+                          {selectedConsulta.paciente?.email || "Não informado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className="rounded-xl p-4"
+                      style={{ background: "#F8FAFD" }}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                        Motivo da consulta
+                      </p>
+                      <p>
+                        {selectedConsulta.motivo || "Nenhum motivo informado"}
+                      </p>
+                    </div>
+
+                    <div
+                      className="rounded-xl p-4"
+                      style={{ background: "#F8FAFD" }}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                        Observações
+                      </p>
+                      <p>
+                        {selectedConsulta.observacoes ||
+                          "Nenhuma observação registrada"}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div
+                        className="rounded-xl p-4"
+                        style={{ background: "#F8FAFD" }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Doença
+                        </p>
+                        <p className="font-semibold">
+                          {getConsultaDisease(selectedConsulta)}
+                        </p>
+                      </div>
+                      <div
+                        className="rounded-xl p-4"
+                        style={{ background: "#F8FAFD" }}
+                      >
+                        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                          Diagnóstico
+                        </p>
+                        <p className="font-semibold">
+                          {selectedConsulta.historicoMedico?.diagnostico ||
+                            "Não registrado"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div
+                      className="rounded-xl p-4"
+                      style={{ background: "#F8FAFD" }}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                        Laudo
+                      </p>
+                      <p>
+                        {selectedConsulta.historicoMedico?.laudo ||
+                          "Laudo ainda não registrado"}
+                      </p>
+                    </div>
+
+                    <div
+                      className="rounded-xl p-4"
+                      style={{ background: "#F8FAFD" }}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
+                        Medicação
+                      </p>
+                      <p>
+                        {selectedConsulta.historicoMedico?.medicacao ||
+                          "Nenhuma medicação registrada"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-6 pt-0 flex justify-end gap-3">
+                    {(selectedConsulta.status === "agendada" ||
+                      selectedConsulta.status === "agendado") && (
+                      <button
+                        onClick={() => {
+                          setShowConsultaDetailsModal(false);
+                          setModalHistorico({
+                            aberto: true,
+                            consulta: selectedConsulta,
+                          });
+                        }}
+                        className="px-4 py-2.5 rounded-lg text-sm font-semibold text-white transition-all"
+                        style={{ background: "#145C35" }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#0E4226")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#145C35")
+                        }
+                      >
+                        Registrar histórico
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setShowConsultaDetailsModal(false);
+                        setSelectedConsulta(null);
+                      }}
+                      className="px-4 py-2.5 rounded-lg text-sm font-semibold transition-all"
+                      style={{
+                        border: "1px solid #C8D9ED",
+                        color: "#5C7A9B",
+                        background: "transparent",
+                      }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.background = "#F0F4F8")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -3147,6 +4498,379 @@ const FuncionarioDashboard: React.FC = () => {
       </div>
 
       {/* Modal de Histórico Médico */}
+      {showBuscaHistoricoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl"
+            style={{ border: "1px solid #D9E4F0" }}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-[#0F2242]">
+                  Buscar histórico por CPF
+                </h3>
+                <p className="text-sm text-[#5C7A9B] mt-1">
+                  Informe o CPF do paciente e o sistema reunirá consultas,
+                  exames, encaminhamentos, vacinas e medicações em uma lista por
+                  data.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBuscaHistoricoModal(false)}
+                className="rounded-lg p-2 text-[#5C7A9B] hover:bg-[#F0F4F8]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <form onSubmit={handleBuscarHistoricoPorCpf} className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">
+                CPF do paciente
+                <input
+                  type="text"
+                  value={cpfHistoricoBusca}
+                  onChange={(e) => setCpfHistoricoBusca(e.target.value)}
+                  placeholder="000.000.000-00"
+                  className="mt-1 w-full rounded-lg border border-[#C8D9ED] bg-[#F4F8FC] px-3 py-2 text-sm text-[#1A2E4A] outline-none"
+                />
+              </label>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowBuscaHistoricoModal(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-[#5C7A9B] border border-[#C8D9ED] bg-transparent"
+                >
+                  Fechar
+                </button>
+                <button
+                  type="submit"
+                  disabled={buscarHistoricoPorCpfMutation.isLoading}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-[#1A3F72] disabled:opacity-50"
+                >
+                  {buscarHistoricoPorCpfMutation.isLoading
+                    ? "Buscando..."
+                    : "Buscar histórico"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {registroHistoricoDetalhe && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+          <div
+            className="w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl"
+            style={{ border: "1px solid #D9E4F0" }}
+          >
+            <div className="border-b border-[#EEF2F7] bg-gradient-to-r from-[#0F2242] via-[#173A67] to-[#24508D] p-6 text-white">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#DDE8F7]">
+                    Visualização detalhada
+                  </p>
+                  <h3 className="text-2xl font-bold leading-tight text-white">
+                    {registroHistoricoDetalhe.titulo}
+                  </h3>
+                  <p className="text-sm text-[#E6EEF8]">
+                    {registroHistoricoDetalhe.categoria} •{" "}
+                    {format(
+                      new Date(registroHistoricoDetalhe.dataRegistro),
+                      "dd/MM/yyyy HH:mm",
+                      { locale: ptBR },
+                    )}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRegistroHistoricoDetalhe(null)}
+                  className="rounded-xl border border-white/15 bg-white/10 p-2 text-white transition hover:bg-white/20"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-[#EAF2FB]">
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
+                  {registroHistoricoDetalhe.categoria}
+                </span>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5">
+                  {historicoBuscaResultado?.paciente?.nome || "Paciente"}
+                </span>
+              </div>
+            </div>
+
+            <div className="max-h-[75vh] overflow-y-auto p-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                {registroHistoricoDetalhe.tipo === "historico" && (
+                  <>
+                    {[
+                      [
+                        "Diagnóstico",
+                        registroHistoricoDetalhe.detalhes?.diagnostico,
+                      ],
+                      ["Laudo", registroHistoricoDetalhe.detalhes?.laudo],
+                      ["Doença", registroHistoricoDetalhe.detalhes?.doenca],
+                      [
+                        "Medicação",
+                        registroHistoricoDetalhe.detalhes?.medicacao,
+                      ],
+                      [
+                        "Observações",
+                        registroHistoricoDetalhe.detalhes?.observacoes,
+                      ],
+                      [
+                        "Médico responsável",
+                        registroHistoricoDetalhe.detalhes?.funcionario?.nome,
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+
+                {registroHistoricoDetalhe.tipo === "consulta" && (
+                  <>
+                    {[
+                      ["Motivo", registroHistoricoDetalhe.detalhes?.motivo],
+                      [
+                        "Especialidade",
+                        registroHistoricoDetalhe.detalhes?.especialidade,
+                      ],
+                      ["Status", registroHistoricoDetalhe.detalhes?.status],
+                      [
+                        "Observações",
+                        registroHistoricoDetalhe.detalhes?.observacoes,
+                      ],
+                      [
+                        "Data agendada",
+                        format(
+                          new Date(
+                            registroHistoricoDetalhe.detalhes?.dataAgendada ||
+                              registroHistoricoDetalhe.dataRegistro,
+                          ),
+                          "dd/MM/yyyy HH:mm",
+                          { locale: ptBR },
+                        ),
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+
+                {registroHistoricoDetalhe.tipo === "exame" && (
+                  <>
+                    {[
+                      [
+                        "Tipo do exame",
+                        registroHistoricoDetalhe.detalhes?.tipo,
+                      ],
+                      ["Status", registroHistoricoDetalhe.detalhes?.status],
+                      [
+                        "Resultado",
+                        registroHistoricoDetalhe.detalhes?.resultado,
+                      ],
+                      [
+                        "Laboratório",
+                        registroHistoricoDetalhe.detalhes?.laboratorio?.nome,
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+
+                {registroHistoricoDetalhe.tipo === "solicitacao_exame" && (
+                  <>
+                    {[
+                      ["Tipo", registroHistoricoDetalhe.detalhes?.tipoExame],
+                      [
+                        "Observações",
+                        registroHistoricoDetalhe.detalhes?.observacoes,
+                      ],
+                      [
+                        "Laboratório",
+                        registroHistoricoDetalhe.detalhes?.laboratorio?.nome,
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+
+                {registroHistoricoDetalhe.tipo === "encaminhamento" && (
+                  <>
+                    {[
+                      ["Tipo", registroHistoricoDetalhe.detalhes?.tipo],
+                      ["Motivo", registroHistoricoDetalhe.detalhes?.motivo],
+                      ["Detalhes", registroHistoricoDetalhe.detalhes?.detalhes],
+                      [
+                        "Laudo médico",
+                        registroHistoricoDetalhe.detalhes?.laudoMedico,
+                      ],
+                      [
+                        "Hospital",
+                        registroHistoricoDetalhe.detalhes?.hospital?.nome,
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+
+                {registroHistoricoDetalhe.tipo === "vacina" && (
+                  <>
+                    {[
+                      ["Nome", registroHistoricoDetalhe.detalhes?.nome],
+                      ["Lote", registroHistoricoDetalhe.detalhes?.lote],
+                      [
+                        "Data da aplicação",
+                        format(
+                          new Date(
+                            registroHistoricoDetalhe.detalhes?.dataApl ||
+                              registroHistoricoDetalhe.dataRegistro,
+                          ),
+                          "dd/MM/yyyy",
+                          { locale: ptBR },
+                        ),
+                      ],
+                      [
+                        "Próxima dose",
+                        registroHistoricoDetalhe.detalhes?.proximaDose
+                          ? format(
+                              new Date(
+                                registroHistoricoDetalhe.detalhes.proximaDose,
+                              ),
+                              "dd/MM/yyyy",
+                              { locale: ptBR },
+                            )
+                          : "—",
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+
+                {registroHistoricoDetalhe.tipo === "medicacao" && (
+                  <>
+                    {[
+                      [
+                        "Medicamento",
+                        registroHistoricoDetalhe.detalhes?.medicamento?.nome,
+                      ],
+                      [
+                        "Quantidade",
+                        registroHistoricoDetalhe.detalhes?.quantidade,
+                      ],
+                      [
+                        "Data da retirada",
+                        format(
+                          new Date(
+                            registroHistoricoDetalhe.detalhes?.dataRetirada ||
+                              registroHistoricoDetalhe.dataRegistro,
+                          ),
+                          "dd/MM/yyyy HH:mm",
+                          { locale: ptBR },
+                        ),
+                      ],
+                      [
+                        "Observações",
+                        registroHistoricoDetalhe.detalhes?.observacoes,
+                      ],
+                    ].map(([label, value]) => (
+                      <article
+                        key={label}
+                        className="rounded-2xl border border-[#E4EDF7] bg-[#F8FAFD] p-4 shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-[#8FA8C4]">
+                          {label}
+                        </p>
+                        <p className="mt-2 text-sm text-[#1A2E4A]">
+                          {value || "—"}
+                        </p>
+                      </article>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="border-t border-[#EEF2F7] bg-[#F8FAFD] p-6">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setRegistroHistoricoDetalhe(null)}
+                  className="rounded-xl border border-[#C8D9ED] bg-white px-4 py-2 text-sm font-semibold text-[#5C7A9B] transition hover:bg-[#F0F4F8]"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showHistoricoModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -3732,6 +5456,324 @@ const FuncionarioDashboard: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Dispensação de Receita */}
+      {showDispensacaoModal && receitaEncontrada && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{
+            background: "rgba(10,25,47,0.55)",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          <div
+            className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white"
+            style={{
+              border: "1px solid #D9E4F0",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="border-b px-6 py-4"
+              style={{ borderColor: "#E4EDF7", background: "#F8FAFD" }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-[#0F2242]">
+                    Dispensar Receita
+                  </h3>
+                  <p className="text-xs text-[#8FA8C4] mt-1">
+                    {receitaEncontrada.paciente?.nome || "Paciente"} •{" "}
+                    {receitaEncontrada.medicamento || "Medicamento"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowDispensacaoModal(false)}
+                  className="rounded-lg p-2 text-[#8FA8C4] hover:bg-[#E4EDF7]"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="p-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+              {erroDispensacao && (
+                <div
+                  className="mb-4 rounded-lg border-l-4 p-4"
+                  style={{
+                    borderColor: "#DC2626",
+                    background: "#FEE2E2",
+                  }}
+                >
+                  <p className="text-sm font-semibold text-[#991B1B]">
+                    {erroDispensacao.message ||
+                      "Erro ao dispensar esta receita"}
+                  </p>
+                  {erroDispensacao.dispensacaoExistente && (
+                    <p className="text-xs text-[#7F1D1D] mt-2">
+                      Receita já dispensada em:{" "}
+                      {format(
+                        new Date(
+                          erroDispensacao.dispensacaoExistente.dataDispensacao,
+                        ),
+                        "dd/MM/yyyy HH:mm",
+                        { locale: ptBR },
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <form onSubmit={handleDispensarSubmit} className="space-y-4">
+                {/* Informações da Receita */}
+                <div
+                  className="rounded-lg p-3"
+                  style={{
+                    background: "#F8FAFD",
+                    border: "1px solid #E4EDF7",
+                  }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-2">
+                    Informações da Receita
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs text-[#8FA8C4]">Medicamento</p>
+                      <p className="text-sm font-semibold text-[#0F2242]">
+                        {receitaEncontrada.medicamento}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#8FA8C4]">Dosagem</p>
+                      <p className="text-sm font-semibold text-[#0F2242]">
+                        {receitaEncontrada.dosagem}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#8FA8C4]">Quantidade</p>
+                      <p className="text-sm font-semibold text-[#0F2242]">
+                        {receitaEncontrada.quantidade}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#8FA8C4]">Paciente</p>
+                      <p className="text-sm font-semibold text-[#0F2242]">
+                        {receitaEncontrada.paciente?.nome}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status de Dispensação */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#0F2242] mb-2">
+                    Status da Dispensação *
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDispensacaoData({
+                          ...dispensacaoData,
+                          statusDispensacao: "completa",
+                        })
+                      }
+                      className="px-4 py-2.5 rounded-lg border-2 transition-all text-sm font-semibold"
+                      style={{
+                        borderColor:
+                          dispensacaoData.statusDispensacao === "completa"
+                            ? "#00A651"
+                            : "#C8D9ED",
+                        background:
+                          dispensacaoData.statusDispensacao === "completa"
+                            ? "#D1F3E9"
+                            : "transparent",
+                        color:
+                          dispensacaoData.statusDispensacao === "completa"
+                            ? "#145C35"
+                            : "#5C7A9B",
+                      }}
+                    >
+                      ✓ Completa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDispensacaoData({
+                          ...dispensacaoData,
+                          statusDispensacao: "parcial",
+                        })
+                      }
+                      className="px-4 py-2.5 rounded-lg border-2 transition-all text-sm font-semibold"
+                      style={{
+                        borderColor:
+                          dispensacaoData.statusDispensacao === "parcial"
+                            ? "#F59E0B"
+                            : "#C8D9ED",
+                        background:
+                          dispensacaoData.statusDispensacao === "parcial"
+                            ? "#FEF3C7"
+                            : "transparent",
+                        color:
+                          dispensacaoData.statusDispensacao === "parcial"
+                            ? "#92400E"
+                            : "#5C7A9B",
+                      }}
+                    >
+                      ⚠ Parcial
+                    </button>
+                  </div>
+                </div>
+                {/* Nome do funcionario  ccorrigir nome do funcionario que dispensa*/} 
+                <div>
+                  <label className="block text-sm font-semibold text-[#0F2242] mb-2">
+                    Nome do funcionario
+                  </label>
+                  <input
+                    type="text"
+                    value={dispensacaoData.nomeFuncionario}
+                    onChange={(e) =>
+                      setDispensacaoData({
+                        ...dispensacaoData,
+                        nomeFuncionario: e.target.value,
+                      })
+                    }
+                    placeholder={receitaEncontrada.funcionario?.nome || "Funcionário responsável"}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                    style={{
+                      border: "1px solid #C8D9ED",
+                      background: "#F4F8FC",
+                    }}
+                  />
+                  <p className="text-xs text-[#8FA8C4] mt-1">
+                    Deixe em branco para usar o medicamento prescrito
+                  </p>
+                </div>
+
+                {/* Medicamento Fornecido */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#0F2242] mb-2">
+                    Medicamento Fornecido
+                  </label>
+                  <input
+                    type="text"
+                    value={dispensacaoData.medicamentoFornecido}
+                    onChange={(e) =>
+                      setDispensacaoData({
+                        ...dispensacaoData,
+                        medicamentoFornecido: e.target.value,
+                      })
+                    }
+                    placeholder={receitaEncontrada.medicamento}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                    style={{
+                      border: "1px solid #C8D9ED",
+                      background: "#F4F8FC",
+                    }}
+                  />
+                  <p className="text-xs text-[#8FA8C4] mt-1">
+                    Deixe em branco para usar o medicamento prescrito
+                  </p>
+                </div>
+
+                {/* Quantidade Dispensada */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#0F2242] mb-2">
+                    Quantidade Dispensada *
+                  </label>
+                  <input
+                    type="number"
+                    value={dispensacaoData.quantidadeDispensada}
+                    onChange={(e) =>
+                      setDispensacaoData({
+                        ...dispensacaoData,
+                        quantidadeDispensada: e.target.value,
+                      })
+                    }
+                    placeholder={receitaEncontrada.quantidade}
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                    style={{
+                      border: "1px solid #C8D9ED",
+                      background: "#F4F8FC",
+                    }}
+                    min="1"
+                    required
+                  />
+                </div>
+
+                {/* Observações */}
+                <div>
+                  <label className="block text-sm font-semibold text-[#0F2242] mb-2">
+                    Observações
+                  </label>
+                  <textarea
+                    value={dispensacaoData.observacoesDispensacao}
+                    onChange={(e) =>
+                      setDispensacaoData({
+                        ...dispensacaoData,
+                        observacoesDispensacao: e.target.value,
+                      })
+                    }
+                    placeholder="Ex: Medicamento indisponível, falta de estoque, etc."
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                    style={{
+                      border: "1px solid #C8D9ED",
+                      background: "#F4F8FC",
+                    }}
+                    rows={3}
+                  />
+                </div>
+              </form>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="border-t flex justify-end gap-3 px-6 py-4"
+              style={{ borderColor: "#E4EDF7", background: "#F8FAFD" }}
+            >
+              <button
+                onClick={() => setShowDispensacaoModal(false)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                style={{
+                  border: "1px solid #C8D9ED",
+                  color: "#5C7A9B",
+                  background: "transparent",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "#F0F4F8")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDispensarSubmit}
+                disabled={dispensarReceitaMutation.isLoading}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: "#00A651" }}
+                onMouseEnter={(e) =>
+                  !dispensarReceitaMutation.isLoading &&
+                  (e.currentTarget.style.background = "#007A3F")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "#00A651")
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  {dispensarReceitaMutation.isLoading
+                    ? "Dispensando..."
+                    : "Confirmar Dispensação"}
+                </div>
+              </button>
+            </div>
           </div>
         </div>
       )}

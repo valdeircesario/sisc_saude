@@ -1,0 +1,10 @@
+
+
+📌cria função de historico medico, fazer com que em historico liste historico dos pacientes, nome do paciente, especialidade, data, ubs, hospital ou upa. e um botão que ao clicar possa visualizar as informações completa daquele historico medico , a indeia e mostrar um modal com as informações
+
+
+vamos a outra função. troque o botão de dispensação do menu para um botão de medicamentos, que , sera para consultar os medicamentos dispovivel, com iso crie uma função que permita o farmaeutico a consultar todos os medicamentos disponivel para o fornecimento popular, com isso ao clicar em medicamentos deve gerar uma lista de todos os medicamentos , quantidades e caixa nemes marca , quero que essa função seja a de ler um arquivo txt com a lista de varios medicamentos com as informações. crie a função e o arquivo, e que permita ler o arquivo txt e listar -lo ao farmaceutico
+
+
+
+quero que relacione a dispensaçãoreceita com oa ubs, quero que o funcionario tenha os mesmo privilegio e o mesmo relação com a dispensação receita do schema.prisma, quero que o funcionario da ubs ao consultar uma receita, possa tambem fazer a dispensação da mesma, e se a receita ja estiver registro de dispensão que atualize seus status como parcial ou completa, e somente quem estiver relacionado a receita como , ubs ja estiver em dispensação da mesma somente ela poderar fazer as dispensação, a ubs e a farmacia não podem dispensar a mesma receita, que tenha uma restrição nesse caso, a função ja esta permitido o funcionario consultar a receita, agora complete a a funcionalidade de se a receita existe, e não tem nenhum vinculo ele pode fazer a dispensa, caso tenha vinculo informar receita ja em atendimento pela sua relação, crie tambem o modal de dispensação para o funcionario da ubs no diretorio funcionario e funcionariodashboards, e relacione a tabela dispençãoreceita com a ubs e seu funcionaro
