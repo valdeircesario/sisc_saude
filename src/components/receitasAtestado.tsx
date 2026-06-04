@@ -287,8 +287,6 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
         await carregarDocumentos();
         toast.success("Atestado salvo com sucesso!");
       }
-
-      resetarFormulario();
     } catch (error: any) {
       toast.error(
         error.response?.data?.message || "Não foi possível salvar o documento.",
