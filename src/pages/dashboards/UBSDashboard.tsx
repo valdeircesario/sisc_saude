@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { 
-  Building2, 
-  Users, 
-  Megaphone, 
-  Calendar, 
+import React, { useState } from "react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Building2,
+  Users,
+  Megaphone,
+  Calendar,
   LogOut,
   Plus,
   Edit,
@@ -19,47 +19,47 @@ import {
   X,
   Save,
   Send,
-  Pill
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
-import { api } from '../../services/api';
-import { toast } from 'react-toastify';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+  Pill,
+} from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useQuery, useMutation, useQueryClient } from "react-query";
+import { api } from "../../services/api";
+import { toast } from "react-toastify";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Componente Modal Base
-const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; size?: 'sm' | 'md' | 'lg' | 'xl' }> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children,
-  size = 'md'
-}) => {
+const Modal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
+}> = ({ isOpen, onClose, title, children, size = "md" }) => {
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-2xl',
-    lg: 'max-w-4xl',
-    xl: 'max-w-6xl'
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl",
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}>
+      <div
+        className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
+      >
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
@@ -227,8 +227,12 @@ const MedicamentoCard: React.FC<{
   <div className="flex flex-col gap-3 px-4 py-4 border border-gray-200 rounded-xl hover:shadow-md transition-shadow bg-white">
     <div className="flex items-start justify-between gap-4">
       <div className="space-y-1">
-        <h3 className="text-base font-semibold text-gray-900">{medicamento.nome}</h3>
-        <p className="text-sm text-gray-500">{medicamento.descricao || 'Sem descrição'}</p>
+        <h3 className="text-base font-semibold text-gray-900">
+          {medicamento.nome}
+        </h3>
+        <p className="text-sm text-gray-500">
+          {medicamento.descricao || "Sem descrição"}
+        </p>
       </div>
       <button
         onClick={() => onEdit(medicamento)}
@@ -239,17 +243,30 @@ const MedicamentoCard: React.FC<{
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-600">
       <div>
-        <span className="font-medium text-gray-900">Lote:</span> {medicamento.lote}
+        <span className="font-medium text-gray-900">Lote:</span>{" "}
+        {medicamento.lote}
       </div>
       <div>
-        <span className="font-medium text-gray-900">Quantidade:</span> {medicamento.quantidade}
+        <span className="font-medium text-gray-900">Quantidade:</span>{" "}
+        {medicamento.quantidade === 0 ? (
+          <span className="text-red-600 font-semibold">Sem estoque</span>
+        ) : (
+          medicamento.quantidade
+        )}
       </div>
       <div>
-        <span className="font-medium text-gray-900">Validade:</span> {medicamento.dataValidade ? format(new Date(medicamento.dataValidade), 'dd/MM/yyyy', { locale: ptBR }) : 'Não informado'}
+        <span className="font-medium text-gray-900">Validade:</span>{" "}
+        {medicamento.dataValidade
+          ? format(new Date(medicamento.dataValidade), "dd/MM/yyyy", {
+              locale: ptBR,
+            })
+          : "Não informado"}
       </div>
       <div className="sm:col-span-3">
-        <span className="font-medium text-gray-900">Status:</span>{' '}
-        {medicamento.vencido ? (
+        <span className="font-medium text-gray-900">Status:</span>{" "}
+        {medicamento.quantidade === 0 ? (
+          <span className="text-red-600 font-semibold">Sem estoque</span>
+        ) : medicamento.vencido ? (
           <span className="text-red-600">Vencido</span>
         ) : (
           <span className="text-green-600">Válido</span>
@@ -260,50 +277,70 @@ const MedicamentoCard: React.FC<{
 );
 
 // Componente Card de Campanha
-const CampanhaCard: React.FC<{ 
-  campanha: any; 
+const CampanhaCard: React.FC<{
+  campanha: any;
   inscricoes: any[];
-  onEdit: (campanha: any) => void; 
+  onEdit: (campanha: any) => void;
   onDelete: (id: string) => void;
   onInscricoes: (campanha: any) => void;
 }> = ({ campanha, inscricoes, onEdit, onDelete, onInscricoes }) => {
-  const agendados = inscricoes?.filter(i => i.status === 'agendado').length || 0;
-  const pendentes = inscricoes?.filter(i => i.status === 'inscrito').length || 0;
+  const agendados =
+    inscricoes?.filter((i) => i.status === "agendado").length || 0;
+  const pendentes =
+    inscricoes?.filter((i) => i.status === "inscrito").length || 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
-      <h3 className="text-lg font-semibold text-gray-900 mb-3">{campanha.titulo}</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+        {campanha.titulo}
+      </h3>
       <div className="space-y-2 text-sm text-gray-600 mb-4">
-        <p><span className="font-medium">Tipo:</span> {campanha.tipo}</p>
         <p>
-          <span className="font-medium">Início:</span> {format(new Date(campanha.dataIni), 'dd/MM/yyyy', { locale: ptBR })}
+          <span className="font-medium">Tipo:</span> {campanha.tipo}
+        </p>
+        <p>
+          <span className="font-medium">Início:</span>{" "}
+          {format(new Date(campanha.dataIni), "dd/MM/yyyy", { locale: ptBR })}
           {campanha.dataFim && (
-            <> | <span className="font-medium">Fim:</span> {format(new Date(campanha.dataFim), 'dd/MM/yyyy', { locale: ptBR })}</>
+            <>
+              {" "}
+              | <span className="font-medium">Fim:</span>{" "}
+              {format(new Date(campanha.dataFim), "dd/MM/yyyy", {
+                locale: ptBR,
+              })}
+            </>
           )}
         </p>
         <p className="text-gray-700">{campanha.descricao}</p>
       </div>
       <div className="bg-gray-50 rounded-md p-3 mb-4">
         <div className="flex justify-between text-sm">
-          <span><span className="font-medium">Total:</span> {campanha._count.inscricoes}</span>
-          <span><span className="font-medium">Agendados:</span> {agendados}</span>
-          <span><span className="font-medium">Pendentes:</span> {pendentes}</span>
+          <span>
+            <span className="font-medium">Total:</span>{" "}
+            {campanha._count.inscricoes}
+          </span>
+          <span>
+            <span className="font-medium">Agendados:</span> {agendados}
+          </span>
+          <span>
+            <span className="font-medium">Pendentes:</span> {pendentes}
+          </span>
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <button 
+        <button
           onClick={() => onEdit(campanha)}
           className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
         >
           <Edit className="w-4 h-4 mr-1" /> Editar
         </button>
-        <button 
+        <button
           onClick={() => onInscricoes(campanha)}
           className="flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors"
         >
           <Users className="w-4 h-4 mr-1" /> Inscrições
         </button>
-        <button 
+        <button
           onClick={() => onDelete(campanha.id)}
           className="flex items-center px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
         >
@@ -409,8 +446,8 @@ const UBSDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const queryClient = useQueryClient();
-  
-  const [activeTab, setActiveTab] = useState('funcionarios');
+
+  const [activeTab, setActiveTab] = useState("funcionarios");
   const [showFuncModal, setShowFuncModal] = useState(false);
   const [showCampanhaModal, setShowCampanhaModal] = useState(false);
   const [showAgendamentoModal, setShowAgendamentoModal] = useState(false);
@@ -418,8 +455,10 @@ const UBSDashboard: React.FC = () => {
   const [showPacienteModal, setShowPacienteModal] = useState(false);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
   const [showInscricoesModal, setShowInscricoesModal] = useState(false);
-  const [showAgendamentoCampanhaModal, setShowAgendamentoCampanhaModal] = useState(false);
-  const [showConsultaPacienteModal, setShowConsultaPacienteModal] = useState(false);
+  const [showAgendamentoCampanhaModal, setShowAgendamentoCampanhaModal] =
+    useState(false);
+  const [showConsultaPacienteModal, setShowConsultaPacienteModal] =
+    useState(false);
   const [showEditCampanhaModal, setShowEditCampanhaModal] = useState(false);
   const [showInternacaoModal, setShowInternacaoModal] = useState(false);
   const [showMedModal, setShowMedModal] = useState(false);
@@ -427,265 +466,322 @@ const UBSDashboard: React.FC = () => {
   const [editingCampanha, setEditingCampanha] = useState<any>(null);
   const [editingMed, setEditingMed] = useState<any>(null);
   const [medData, setMedData] = useState({
-    nome: '',
-    descricao: '',
-    lote: '',
-    quantidade: '',
-    dataValidade: '',
-    vencido: false
+    nome: "",
+    descricao: "",
+    lote: "",
+    quantidade: "",
+    dataValidade: "",
+    vencido: false,
   });
   const [selectedConsulta, setSelectedConsulta] = useState<any>(null);
   const [selectedPaciente, setSelectedPaciente] = useState<any>(null);
   const [selectedCampanha, setSelectedCampanha] = useState<any>(null);
-  const [inscricoesPorCampanha, setInscricoesPorCampanha] = useState<{[key: string]: any[]}>({});
+  const [inscricoesPorCampanha, setInscricoesPorCampanha] = useState<{
+    [key: string]: any[];
+  }>({});
   const [selectedInscricao, setSelectedInscricao] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [consultaSearchTerm, setConsultaSearchTerm] = useState("");
+  const [consultaStatusFilter, setConsultaStatusFilter] = useState("todas");
+
   const [funcData, setFuncData] = useState({
-    nome: '',
-    funcao: '',
-    crm: '',
-    cpf: '',
-    telefone: '',
-    email: '',
-    senha: ''
+    nome: "",
+    funcao: "",
+    crm: "",
+    cpf: "",
+    telefone: "",
+    email: "",
+    senha: "",
   });
 
   const [campanhaData, setCampanhaData] = useState({
-    titulo: '',
-    descricao: '',
-    tipo: '',
-    dataIni: '',
-    dataFim: ''
+    titulo: "",
+    descricao: "",
+    tipo: "",
+    dataIni: "",
+    dataFim: "",
   });
 
   const [agendamentoData, setAgendamentoData] = useState({
-    dataAgendada: '',
-    funcionarioId: '',
-    observacoes: ''
+    dataAgendada: "",
+    funcionarioId: "",
+    observacoes: "",
   });
 
   const [cancelamentoData, setCancelamentoData] = useState({
-    observacoes: ""
+    observacoes: "",
   });
 
   const [pacienteEditData, setPacienteEditData] = useState({
-    endereco: '',
-    telefone: ''
+    endereco: "",
+    telefone: "",
   });
 
   const [consultaPacienteData, setConsultaPacienteData] = useState({
-    especialidade: '',
-    motivo: '',
-    dataAgendada: '',
-    funcionarioId: '',
-    observacoes: ''
+    especialidade: "",
+    motivo: "",
+    dataAgendada: "",
+    funcionarioId: "",
+    observacoes: "",
   });
 
   const [agendamentoCampanhaData, setAgendamentoCampanhaData] = useState({
-    dataAgendada: '',
-    horaAgendada: '',
-    localAtendimento: '',
-    observacoes: ''
+    dataAgendada: "",
+    horaAgendada: "",
+    localAtendimento: "",
+    observacoes: "",
   });
 
   const [editCampanhaData, setEditCampanhaData] = useState({
-    titulo: '',
-    descricao: '',
-    tipo: '',
-    dataIni: '',
-    dataFim: ''
+    titulo: "",
+    descricao: "",
+    tipo: "",
+    dataIni: "",
+    dataFim: "",
   });
 
   const [internacaoData, setInternacaoData] = useState({
-    hospitalId: '',
-    funcionarioId: '',
-    tipo: '',
-    motivo: '',
-    detalhes: '',
-    laudoMedico: '',
-    prioridade: 'media'
+    hospitalId: "",
+    funcionarioId: "",
+    tipo: "",
+    motivo: "",
+    detalhes: "",
+    laudoMedico: "",
+    prioridade: "media",
   });
 
   // Queries
   const { data: funcionarios, isLoading: loadingFuncionarios } = useQuery(
-    'ubs-funcionarios',
-    () => api.get('/ubs/funcionarios').then(res => res.data),
-    { enabled: activeTab === 'funcionarios' || showAgendamentoModal || showCancelamentoModal || showConsultaPacienteModal || showInternacaoModal }
+    "ubs-funcionarios",
+    () => api.get("/ubs/funcionarios").then((res) => res.data),
+    {
+      enabled:
+        activeTab === "funcionarios" ||
+        showAgendamentoModal ||
+        showCancelamentoModal ||
+        showConsultaPacienteModal ||
+        showInternacaoModal,
+    },
   );
 
   const { data: pacientes, isLoading: loadingPacientes } = useQuery(
-    ['ubs-pacientes', searchTerm],
-    () => api.get(`/ubs/pacientes?busca=${searchTerm}`).then(res => res.data),
-    { enabled: activeTab === 'pacientes' }
+    ["ubs-pacientes", searchTerm],
+    () => api.get(`/ubs/pacientes?busca=${searchTerm}`).then((res) => res.data),
+    { enabled: activeTab === "pacientes" },
   );
 
   const { data: historicoPaciente } = useQuery(
-    ['paciente-historico-ubs', selectedPaciente?.id],
-    () => api.get(`/ubs/pacientes/${selectedPaciente.id}/historico`).then(res => res.data),
-    { enabled: !!selectedPaciente && showHistoricoModal }
+    ["paciente-historico-ubs", selectedPaciente?.id],
+    () =>
+      api
+        .get(`/ubs/pacientes/${selectedPaciente.id}/historico`)
+        .then((res) => res.data),
+    { enabled: !!selectedPaciente && showHistoricoModal },
   );
 
   const { data: consultasPaciente } = useQuery(
-    ['paciente-consultas-ubs', selectedPaciente?.id],
-    () => api.get(`/ubs/pacientes/${selectedPaciente.id}/consultas`).then(res => res.data),
-    { enabled: !!selectedPaciente && showHistoricoModal }
+    ["paciente-consultas-ubs", selectedPaciente?.id],
+    () =>
+      api
+        .get(`/ubs/pacientes/${selectedPaciente.id}/consultas`)
+        .then((res) => res.data),
+    { enabled: !!selectedPaciente && showHistoricoModal },
   );
 
   const { data: inscricoesCampanha } = useQuery(
-    ['campanha-inscricoes', selectedCampanha?.id],
-    () => api.get(`/ubs/campanhas/${selectedCampanha.id}/inscricoes`).then(res => res.data),
-    { enabled: !!selectedCampanha && showInscricoesModal }
+    ["campanha-inscricoes", selectedCampanha?.id],
+    () =>
+      api
+        .get(`/ubs/campanhas/${selectedCampanha.id}/inscricoes`)
+        .then((res) => res.data),
+    { enabled: !!selectedCampanha && showInscricoesModal },
   );
 
   const { data: campanhas, isLoading: loadingCampanhas } = useQuery(
-    'ubs-campanhas',
-    () => api.get('/ubs/campanhas').then(res => res.data),
-    { 
-      enabled: activeTab === 'campanhas',
+    "ubs-campanhas",
+    () => api.get("/ubs/campanhas").then((res) => res.data),
+    {
+      enabled: activeTab === "campanhas",
       onSuccess: (data) => {
         data.forEach((campanha: any) => {
           if (campanha._count.inscricoes > 0) {
-            api.get(`/ubs/campanhas/${campanha.id}/inscricoes`)
-              .then(res => {
-                setInscricoesPorCampanha(prev => ({
+            api
+              .get(`/ubs/campanhas/${campanha.id}/inscricoes`)
+              .then((res) => {
+                setInscricoesPorCampanha((prev) => ({
                   ...prev,
-                  [campanha.id]: res.data
+                  [campanha.id]: res.data,
                 }));
               })
-              .catch(err => console.error('Erro ao carregar inscrições:', err));
+              .catch((err) =>
+                console.error("Erro ao carregar inscrições:", err),
+              );
           }
         });
-      }
-    }
+      },
+    },
   );
 
   const { data: consultas, isLoading: loadingConsultas } = useQuery(
-    'ubs-consultas',
-    () => api.get('/ubs/consultas').then(res => res.data),
-    { enabled: activeTab === 'consultas' }
+    "ubs-consultas",
+    () => api.get("/ubs/consultas").then((res) => res.data),
+    { enabled: activeTab === "consultas" },
   );
 
+  const filteredConsultas = (consultas || []).filter((consulta: any) => {
+    const matchesStatus =
+      consultaStatusFilter === "todas" || consulta.status === consultaStatusFilter;
+
+    const pacienteNome = consulta?.paciente?.nome?.toLowerCase() || "";
+    const matchesSearch = pacienteNome.includes(
+      consultaSearchTerm.toLowerCase(),
+    );
+
+    return matchesStatus && matchesSearch;
+  });
+
   // Query para buscar hospitais
-  const { data: hospitaisList, isLoading: loadingHospitais } = useQuery(
-    'hospitais',
-    () => api.get('/routes/hospitais-publico').then(res => res.data),
+  const {
+    data: hospitaisList,
+    isLoading: loadingHospitais,
+    isError: hospitaisError,
+  } = useQuery(
+    "hospitais",
+    () => api.get("/ubs/hospitais").then((res) => res.data),
     {
       enabled: showInternacaoModal,
       onError: (error) => {
-        console.error('Erro ao carregar hospitais:', error);
-        toast.error('Erro ao carregar lista de hospitais');
-      }
-    }
+        console.error("Erro ao carregar hospitais:", error);
+        toast.error("Erro ao carregar lista de hospitais");
+      },
+    },
   );
 
   const { data: medicamentos, isLoading: loadingMedicamentos } = useQuery(
-    ['ubs-medicamentos', searchTerm],
-    () => api.get('/medicamentos').then(res => res.data),
-    { enabled: activeTab === 'medicamentos' }
+    ["ubs-medicamentos", searchTerm],
+    () =>
+      api
+        .get("/ubs/medicamentos", { params: { busca: searchTerm } })
+        .then((res) => res.data),
+    { enabled: activeTab === "medicamentos" },
   );
 
   // Mutations
   const createFuncMutation = useMutation(
-    (data: any) => api.post('/ubs/funcionarios', data),
+    (data: any) => api.post("/ubs/funcionarios", data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-funcionarios');
-        toast.success('Funcionário cadastrado com sucesso!');
+        queryClient.invalidateQueries("ubs-funcionarios");
+        toast.success("Funcionário cadastrado com sucesso!");
         setShowFuncModal(false);
         resetFuncForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao cadastrar funcionário');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao cadastrar funcionário",
+        );
+      },
+    },
   );
 
   const updateFuncMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) => api.put(`/ubs/funcionarios/${id}`, data),
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/ubs/funcionarios/${id}`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-funcionarios');
-        toast.success('Funcionário atualizado com sucesso!');
+        queryClient.invalidateQueries("ubs-funcionarios");
+        toast.success("Funcionário atualizado com sucesso!");
         setShowFuncModal(false);
         resetFuncForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao atualizar funcionário');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao atualizar funcionário",
+        );
+      },
+    },
   );
 
   const deleteFuncMutation = useMutation(
     (id: string) => api.delete(`/ubs/funcionarios/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-funcionarios');
-        toast.success('Funcionário deletado com sucesso!');
+        queryClient.invalidateQueries("ubs-funcionarios");
+        toast.success("Funcionário deletado com sucesso!");
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao deletar funcionário');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao deletar funcionário",
+        );
+      },
+    },
   );
 
   const createCampanhaMutation = useMutation(
-    (data: any) => api.post('/ubs/campanhas', data),
+    (data: any) => api.post("/ubs/campanhas", data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-campanhas');
-        toast.success('Campanha criada com sucesso!');
+        queryClient.invalidateQueries("ubs-campanhas");
+        toast.success("Campanha criada com sucesso!");
         setShowCampanhaModal(false);
         resetCampanhaForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao criar campanha');
-      }
-    }
+        toast.error(error.response?.data?.message || "Erro ao criar campanha");
+      },
+    },
   );
 
   const updateCampanhaMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) => api.put(`/ubs/campanhas/${id}`, data),
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/ubs/campanhas/${id}`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-campanhas');
-        toast.success('Campanha atualizada com sucesso!');
+        queryClient.invalidateQueries("ubs-campanhas");
+        toast.success("Campanha atualizada com sucesso!");
         setShowEditCampanhaModal(false);
         resetEditCampanhaForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao atualizar campanha');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao atualizar campanha",
+        );
+      },
+    },
   );
 
-  const deleteCampanhaMutation = useMutation( 
+  const deleteCampanhaMutation = useMutation(
     (id: string) => api.delete(`/ubs/campanhas/${id}`),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-campanhas');
-        toast.success('Campanha excluída com sucesso!');
+        queryClient.invalidateQueries("ubs-campanhas");
+        toast.success("Campanha excluída com sucesso!");
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao excluir campanha');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao excluir campanha",
+        );
+      },
+    },
   );
 
   const agendarConsultaMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) => api.put(`/ubs/consultas/${id}/agendar`, data),
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/ubs/consultas/${id}/agendar`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries('ubs-consultas');
-        toast.success('Consulta agendada com sucesso!');
+        queryClient.invalidateQueries("ubs-consultas");
+        toast.success("Consulta agendada com sucesso!");
         setShowAgendamentoModal(false);
         setSelectedConsulta(null);
         resetAgendamentoForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao agendar consulta');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao agendar consulta",
+        );
+      },
+    },
   );
   const cancelamentoConsultaMutation = useMutation(
     ({ id, data }: { id: string; data: any }) =>
@@ -699,193 +795,222 @@ const UBSDashboard: React.FC = () => {
         resetCancelamentoForm();
       },
       onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao canc consulta",
-        );
+        toast.error(error.response?.data?.message || "Erro ao canc consulta");
       },
     },
   );
 
   const editPacienteMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) => api.put(`/ubs/pacientes/${id}`, data),
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/ubs/pacientes/${id}`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['ubs-pacientes', searchTerm]);
-        toast.success('Paciente atualizado com sucesso!');
+        queryClient.invalidateQueries(["ubs-pacientes", searchTerm]);
+        toast.success("Paciente atualizado com sucesso!");
         setShowPacienteModal(false);
         setSelectedPaciente(null);
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao atualizar paciente');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao atualizar paciente",
+        );
+      },
+    },
   );
 
   const agendarConsultaPacienteMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) => api.post(`/ubs/pacientes/${id}/agendar-consulta`, data),
+    ({ id, data }: { id: string; data: any }) =>
+      api.post(`/ubs/pacientes/${id}/agendar-consulta`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['paciente-consultas-ubs', selectedPaciente?.id]);
-        toast.success('Consulta agendada com sucesso!');
+        queryClient.invalidateQueries([
+          "paciente-consultas-ubs",
+          selectedPaciente?.id,
+        ]);
+        toast.success("Consulta agendada com sucesso!");
         setShowConsultaPacienteModal(false);
         resetConsultaPacienteForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao agendar consulta');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao agendar consulta",
+        );
+      },
+    },
   );
-  
 
   const agendarAtendimentoCampanhaMutation = useMutation(
-    ({ campanhaId, inscricaoId, data }: { campanhaId: string; inscricaoId: string; data: any }) => 
-      api.put(`/ubs/campanhas/${campanhaId}/inscricoes/${inscricaoId}/agendar`, data),
+    ({
+      campanhaId,
+      inscricaoId,
+      data,
+    }: {
+      campanhaId: string;
+      inscricaoId: string;
+      data: any;
+    }) =>
+      api.put(
+        `/ubs/campanhas/${campanhaId}/inscricoes/${inscricaoId}/agendar`,
+        data,
+      ),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['campanha-inscricoes', selectedCampanha?.id]);
-        toast.success('Atendimento agendado com sucesso!');
+        queryClient.invalidateQueries([
+          "campanha-inscricoes",
+          selectedCampanha?.id,
+        ]);
+        toast.success("Atendimento agendado com sucesso!");
         setShowAgendamentoCampanhaModal(false);
         setSelectedInscricao(null);
         resetAgendamentoCampanhaForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao agendar atendimento');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao agendar atendimento",
+        );
+      },
+    },
   );
 
   const solicitarInternacaoMutation = useMutation(
-    (data: any) => api.post('/ubs/solicitar-internacao', data),
+    (data: any) => api.post("/ubs/solicitar-internacao", data),
     {
       onSuccess: () => {
-        toast.success('Solicitação de internação enviada com sucesso!');
+        toast.success("Solicitação de internação enviada com sucesso!");
         setShowInternacaoModal(false);
         resetInternacaoForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao solicitar internação');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao solicitar internação",
+        );
+      },
+    },
   );
 
   const createMedMutation = useMutation(
-    (data: any) => api.post('/medicamentos', data),
+    (data: any) => api.post("/medicamentos", data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['ubs-medicamentos']);
-        toast.success('Medicamento cadastrado com sucesso!');
+        queryClient.invalidateQueries(["ubs-medicamentos"]);
+        toast.success("Medicamento cadastrado com sucesso!");
         setShowMedModal(false);
         resetMedForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao cadastrar medicamento');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao cadastrar medicamento",
+        );
+      },
+    },
   );
 
   const updateMedMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) => api.put(`/medicamentos/${id}`, data),
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/medicamentos/${id}`, data),
     {
       onSuccess: () => {
-        queryClient.invalidateQueries(['ubs-medicamentos']);
-        toast.success('Medicamento atualizado com sucesso!');
+        queryClient.invalidateQueries(["ubs-medicamentos"]);
+        toast.success("Medicamento atualizado com sucesso!");
         setShowMedModal(false);
         resetMedForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Erro ao atualizar medicamento');
-      }
-    }
+        toast.error(
+          error.response?.data?.message || "Erro ao atualizar medicamento",
+        );
+      },
+    },
   );
 
   // Reset functions
   const resetFuncForm = () => {
     setFuncData({
-      nome: '',
-      funcao: '',
-      crm: '',
-      cpf: '',
-      telefone: '',
-      email: '',
-      senha: ''
+      nome: "",
+      funcao: "",
+      crm: "",
+      cpf: "",
+      telefone: "",
+      email: "",
+      senha: "",
     });
     setEditingItem(null);
   };
 
   const resetCampanhaForm = () => {
     setCampanhaData({
-      titulo: '',
-      descricao: '',
-      tipo: '',
-      dataIni: '',
-      dataFim: ''
+      titulo: "",
+      descricao: "",
+      tipo: "",
+      dataIni: "",
+      dataFim: "",
     });
   };
 
   const resetEditCampanhaForm = () => {
     setEditCampanhaData({
-      titulo: '',
-      descricao: '',
-      tipo: '',
-      dataIni: '',
-      dataFim: ''
+      titulo: "",
+      descricao: "",
+      tipo: "",
+      dataIni: "",
+      dataFim: "",
     });
     setEditingCampanha(null);
   };
 
   const resetAgendamentoForm = () => {
     setAgendamentoData({
-      dataAgendada: '',
-      funcionarioId: '',
-      observacoes: ''
+      dataAgendada: "",
+      funcionarioId: "",
+      observacoes: "",
     });
   };
 
-   const resetCancelamentoForm = () => {
+  const resetCancelamentoForm = () => {
     setCancelamentoData({
-      observacoes: ''
+      observacoes: "",
     });
   };
 
   const resetConsultaPacienteForm = () => {
     setConsultaPacienteData({
-      especialidade: '',
-      motivo: '',
-      dataAgendada: '',
-      funcionarioId: '',
-      observacoes: ''
+      especialidade: "",
+      motivo: "",
+      dataAgendada: "",
+      funcionarioId: "",
+      observacoes: "",
     });
   };
 
   const resetAgendamentoCampanhaForm = () => {
     setAgendamentoCampanhaData({
-      dataAgendada: '',
-      horaAgendada: '',
-      localAtendimento: '',
-      observacoes: ''
+      dataAgendada: "",
+      horaAgendada: "",
+      localAtendimento: "",
+      observacoes: "",
     });
   };
 
   const resetInternacaoForm = () => {
     setInternacaoData({
-      hospitalId: '',
-      funcionarioId: '',
-      tipo: '',
-      motivo: '',
-      detalhes: '',
-      laudoMedico: '',
-      prioridade: 'media'
+      hospitalId: "",
+      funcionarioId: "",
+      tipo: "",
+      motivo: "",
+      detalhes: "",
+      laudoMedico: "",
+      prioridade: "media",
     });
   };
 
   const resetMedForm = () => {
     setMedData({
-      nome: '',
-      descricao: '',
-      lote: '',
-      quantidade: '',
-      dataValidade: '',
-      vencido: false
+      nome: "",
+      descricao: "",
+      lote: "",
+      quantidade: "",
+      dataValidade: "",
+      vencido: false,
     });
     setEditingMed(null);
   };
@@ -893,7 +1018,7 @@ const UBSDashboard: React.FC = () => {
   // Handlers
   const handleFuncSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (editingItem) {
       updateFuncMutation.mutate({ id: editingItem.id, data: funcData });
     } else {
@@ -911,7 +1036,7 @@ const UBSDashboard: React.FC = () => {
     if (editingCampanha) {
       updateCampanhaMutation.mutate({
         id: editingCampanha.id,
-        data: editCampanhaData
+        data: editCampanhaData,
       });
     }
   };
@@ -919,9 +1044,9 @@ const UBSDashboard: React.FC = () => {
   const handleAgendamentoSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedConsulta) {
-      agendarConsultaMutation.mutate({ 
-        id: selectedConsulta.id, 
-        data: agendamentoData 
+      agendarConsultaMutation.mutate({
+        id: selectedConsulta.id,
+        data: agendamentoData,
       });
     }
   };
@@ -940,7 +1065,7 @@ const UBSDashboard: React.FC = () => {
     if (selectedPaciente) {
       editPacienteMutation.mutate({
         id: selectedPaciente.id,
-        data: pacienteEditData
+        data: pacienteEditData,
       });
     }
   };
@@ -950,7 +1075,7 @@ const UBSDashboard: React.FC = () => {
     if (selectedPaciente) {
       agendarConsultaPacienteMutation.mutate({
         id: selectedPaciente.id,
-        data: consultaPacienteData
+        data: consultaPacienteData,
       });
     }
   };
@@ -961,7 +1086,7 @@ const UBSDashboard: React.FC = () => {
       agendarAtendimentoCampanhaMutation.mutate({
         campanhaId: selectedCampanha.id,
         inscricaoId: selectedInscricao.id,
-        data: agendamentoCampanhaData
+        data: agendamentoCampanhaData,
       });
     }
   };
@@ -971,7 +1096,7 @@ const UBSDashboard: React.FC = () => {
     if (selectedPaciente) {
       solicitarInternacaoMutation.mutate({
         pacienteId: selectedPaciente.id,
-        ...internacaoData
+        ...internacaoData,
       });
     }
   };
@@ -997,11 +1122,13 @@ const UBSDashboard: React.FC = () => {
   const handleEditMed = (medicamento: any) => {
     setEditingMed(medicamento);
     setMedData({
-      nome: medicamento.nome || '',
-      descricao: medicamento.descricao || '',
-      lote: medicamento.lote || '',
-      quantidade: String(medicamento.quantidade ?? ''),
-      dataValidade: medicamento.dataValidade ? medicamento.dataValidade.split('T')[0] : '',
+      nome: medicamento.nome || "",
+      descricao: medicamento.descricao || "",
+      lote: medicamento.lote || "",
+      quantidade: String(medicamento.quantidade ?? ""),
+      dataValidade: medicamento.dataValidade
+        ? medicamento.dataValidade.split("T")[0]
+        : "",
       vencido: medicamento.vencido || false,
     });
     setShowMedModal(true);
@@ -1012,11 +1139,11 @@ const UBSDashboard: React.FC = () => {
     setFuncData({
       nome: func.nome,
       funcao: func.funcao,
-      crm: func.crm || '',
+      crm: func.crm || "",
       cpf: func.cpf,
       telefone: func.telefone,
       email: func.email,
-      senha: ''
+      senha: "",
     });
     setShowFuncModal(true);
   };
@@ -1027,20 +1154,20 @@ const UBSDashboard: React.FC = () => {
       titulo: camp.titulo,
       descricao: camp.descricao,
       tipo: camp.tipo,
-      dataIni: camp.dataIni.split('T')[0],
-      dataFim: camp.dataFim ? camp.dataFim.split('T')[0] : ''
+      dataIni: camp.dataIni.split("T")[0],
+      dataFim: camp.dataFim ? camp.dataFim.split("T")[0] : "",
     });
     setShowEditCampanhaModal(true);
   };
 
   const handleDeleteFunc = (id: string) => {
-    if (window.confirm('Tem certeza que deseja deletar este funcionário?')) {
+    if (window.confirm("Tem certeza que deseja deletar este funcionário?")) {
       deleteFuncMutation.mutate(id);
     }
   };
 
   const handleDeleteCampanha = (id: string) => {
-    if (window.confirm('Tem certeza que deseja deletar esta campanha?')) {
+    if (window.confirm("Tem certeza que deseja deletar esta campanha?")) {
       deleteCampanhaMutation.mutate(id);
     }
   };
@@ -1054,13 +1181,12 @@ const UBSDashboard: React.FC = () => {
     setSelectedConsulta(consulta);
     setShowCancelamentoModal(true);
   };
-  
 
   const openPacienteModal = (paciente: any) => {
     setSelectedPaciente(paciente);
     setPacienteEditData({
       endereco: paciente.endereco,
-      telefone: paciente.telefone
+      telefone: paciente.telefone,
     });
     setShowPacienteModal(true);
   };
@@ -1088,27 +1214,86 @@ const UBSDashboard: React.FC = () => {
   const openInternacaoModal = (paciente: any) => {
     setSelectedPaciente(paciente);
     setShowInternacaoModal(true);
+    queryClient.prefetchQuery("hospitais", () =>
+      api.get("/ubs/hospitais").then((res) => res.data),
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{ background: "#F0F4F8", fontFamily: "'DM Sans', sans-serif" }}
+    >
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header style={{ background: "#0A6B6B" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Building2 className="h-8 w-8 text-blue-600 mr-3" />
-              <h1 className="text-xl font-semibold text-gray-900">
+          <div
+            className="flex justify-between items-center"
+            style={{ height: "60px" }}
+          >
+            <div className="flex items-center" style={{ gap: "12px" }}>
+              <div
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  background: "rgba(255,255,255,0.12)",
+                  borderRadius: "9px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Building2 className="h-5 w-5 text-white" />
+              </div>
+              <h1
+                style={{
+                  fontFamily: "'Playfair Display', serif",
+                  fontSize: "16px",
+                  fontWeight: 500,
+                  color: "#ffffff",
+                  letterSpacing: "0.01em",
+                }}
+              >
                 UBS Dashboard
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-700">Olá, {user?.nome}</span>
+
+            <div className="flex items-center" style={{ gap: "16px" }}>
+              <span
+                style={{ fontSize: "13px", color: "rgba(255,255,255,0.7)" }}
+              >
+                Olá,{" "}
+                <strong style={{ color: "#ffffff", fontWeight: 500 }}>
+                  {user?.nome}
+                </strong>
+              </span>
               <button
                 onClick={logout}
-                className="flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                className="flex items-center"
+                style={{
+                  gap: "7px",
+                  padding: "7px 14px",
+                  borderRadius: "8px",
+                  border: "0.5px solid rgba(255,255,255,0.25)",
+                  background: "rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.85)",
+                  fontSize: "12px",
+                  fontWeight: 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.16)";
+                  e.currentTarget.style.color = "#ffffff";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.85)";
+                }}
               >
-                <LogOut className="h-4 w-4 mr-2" />
+                <LogOut className="h-3.5 w-3.5" />
                 Sair
               </button>
             </div>
@@ -1116,35 +1301,61 @@ const UBSDashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-8">
-          <nav className="-mb-px flex space-x-8">
-            {[
-              { key: "funcionarios", label: "Funcionários", icon: Users },
-              { key: "pacientes", label: "Pacientes", icon: Heart },
-              { key: "campanhas", label: "Campanhas", icon: Megaphone },
-              { key: "consultas", label: "Consultas", icon: Calendar },
-              { key: "medicamentos", label: "Medicamentos", icon: Pill },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`${
-                    activeTab === tab.key
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center transition-colors`}
-                >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: '20px' }}>
+
+        
+          {/* Navigation Tabs */}
+          <div style={{ marginBottom: "24px" }}>
+            <nav
+              className="flex"
+              style={{
+                gap: "4px",
+                background: "#ffffff",
+                borderRadius: "12px",
+                padding: "5px",
+                border: "0.5px solid #E2E8F0",
+                width: "fit-content",
+              }}
+            >
+              {[
+                { key: "funcionarios", label: "Funcionários", icon: Users },
+                { key: "pacientes", label: "Pacientes", icon: Heart },
+                { key: "campanhas", label: "Campanhas", icon: Megaphone },
+                { key: "consultas", label: "Consultas", icon: Calendar },
+                { key: "medicamentos", label: "Medicamentos", icon: Pill },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className="flex items-center transition-all duration-150"
+                    style={{
+                      gap: "7px",
+                      padding: "8px 14px",
+                      borderRadius: "8px",
+                      border: "none",
+                      cursor: "pointer",
+                      fontSize: "12.5px",
+                      fontWeight: active ? 500 : 400,
+                      fontFamily: "'DM Sans', sans-serif",
+                      whiteSpace: "nowrap",
+                      background: active ? "#0A6B6B" : "transparent",
+                      color: active ? "#ffffff" : "#5A7A7A",
+                    }}
+                  >
+                    <Icon
+                      className="h-3.5 w-3.5 flex-shrink-0"
+                      style={{ opacity: active ? 1 : 0.65 }}
+                    />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        
 
         {/* Funcionários Tab */}
         {activeTab === "funcionarios" && (
@@ -1257,17 +1468,59 @@ const UBSDashboard: React.FC = () => {
         {/* Consultas Tab */}
         {activeTab === "consultas" && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Consultas</h2>
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <h2 className="text-2xl font-bold text-gray-900">Consultas</h2>
+                <div className="text-sm text-gray-500">
+                  {filteredConsultas.length} consulta(s) encontrada(s)
+                </div>
+              </div>
+
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={consultaSearchTerm}
+                    onChange={(e) => setConsultaSearchTerm(e.target.value)}
+                    placeholder="Buscar por nome do paciente"
+                    className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-2.5 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    value={consultaStatusFilter}
+                    onChange={(e) => setConsultaStatusFilter(e.target.value)}
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="todas">Todas</option>
+                    <option value="solicitada">Solicitada</option>
+                    <option value="agendada">Agendada</option>
+                    <option value="realizada">Realizada</option>
+                    <option value="cancelada">Cancelada</option>
+                  </select>
+                </div>
+              </div>
             </div>
+
             {loadingConsultas ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
                 <p className="mt-2 text-gray-600">Carregando consultas...</p>
               </div>
+            ) : filteredConsultas.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-white px-6 py-12 text-center text-gray-500">
+                Nenhuma consulta encontrada para os filtros selecionados.
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {consultas?.map((consulta: any) => (
+                {filteredConsultas.map((consulta: any) => (
                   <ConsultaCard
                     key={consulta.id}
                     consulta={consulta}
@@ -1690,7 +1943,9 @@ const UBSDashboard: React.FC = () => {
               <input
                 type="text"
                 value={medData.nome}
-                onChange={(e) => setMedData({ ...medData, nome: e.target.value })}
+                onChange={(e) =>
+                  setMedData({ ...medData, nome: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
@@ -1702,7 +1957,9 @@ const UBSDashboard: React.FC = () => {
               </label>
               <textarea
                 value={medData.descricao}
-                onChange={(e) => setMedData({ ...medData, descricao: e.target.value })}
+                onChange={(e) =>
+                  setMedData({ ...medData, descricao: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
               />
@@ -1716,7 +1973,9 @@ const UBSDashboard: React.FC = () => {
                 <input
                   type="text"
                   value={medData.lote}
-                  onChange={(e) => setMedData({ ...medData, lote: e.target.value })}
+                  onChange={(e) =>
+                    setMedData({ ...medData, lote: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -1730,7 +1989,9 @@ const UBSDashboard: React.FC = () => {
                   type="number"
                   min="0"
                   value={medData.quantidade}
-                  onChange={(e) => setMedData({ ...medData, quantidade: e.target.value })}
+                  onChange={(e) =>
+                    setMedData({ ...medData, quantidade: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -1743,7 +2004,9 @@ const UBSDashboard: React.FC = () => {
                 <input
                   type="date"
                   value={medData.dataValidade}
-                  onChange={(e) => setMedData({ ...medData, dataValidade: e.target.value })}
+                  onChange={(e) =>
+                    setMedData({ ...medData, dataValidade: e.target.value })
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
@@ -1755,7 +2018,9 @@ const UBSDashboard: React.FC = () => {
                 id="med-vencido"
                 type="checkbox"
                 checked={medData.vencido}
-                onChange={(e) => setMedData({ ...medData, vencido: e.target.checked })}
+                onChange={(e) =>
+                  setMedData({ ...medData, vencido: e.target.checked })
+                }
                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <label htmlFor="med-vencido" className="text-sm text-gray-700">
@@ -1775,7 +2040,7 @@ const UBSDashboard: React.FC = () => {
                 type="submit"
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
               >
-                {editingMed ? 'Atualizar' : 'Cadastrar'}
+                {editingMed ? "Atualizar" : "Cadastrar"}
               </button>
             </div>
           </form>
@@ -2536,6 +2801,10 @@ const UBSDashboard: React.FC = () => {
                   <option value="">Selecione um hospital</option>
                   {loadingHospitais ? (
                     <option disabled>Carregando hospitais...</option>
+                  ) : hospitaisError ? (
+                    <option disabled>Erro ao carregar hospitais</option>
+                  ) : hospitaisList?.length === 0 ? (
+                    <option disabled>Nenhum hospital cadastrado</option>
                   ) : (
                     hospitaisList?.map((hospital: any) => (
                       <option key={hospital.id} value={hospital.id}>
@@ -2713,29 +2982,57 @@ const UBSDashboard: React.FC = () => {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Medicamentos</h2>
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={() => {
-                    resetMedForm();
-                    setShowMedModal(true);
-                  }}
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> Novo Medicamento
-                </button>
-                <div className="relative w-full max-w-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Buscar medicamentos..."
-                  />
-                </div>
-              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+  <button
+    onClick={() => {
+      resetMedForm();
+      setShowMedModal(true);
+    }}
+    className="
+      inline-flex items-center justify-center
+      bg-gradient-to-r from-green-950 to-emerald-700
+      hover:from-green-700 hover:to-emerald-700
+      text-white font-medium
+      px-6 py-2.5
+      rounded-xl
+      shadow-sm hover:shadow-md
+      transition-all duration-200
+      active:scale-[0.98]
+      whitespace-nowrap
+    "
+  >
+    <Plus className="w-4 h-4 mr-2" />
+    Novo Medicamento
+  </button>
+
+  <div className="relative w-full max-w-md">
+    <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+      <Search className="w-5 h-5 text-gray-400" />
+    </div>
+
+    <input
+      type="text"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      placeholder="Buscar medicamentos..."
+      className="
+        w-full
+        pl-12 pr-4 py-3
+        rounded-xl
+        border border-gray-200
+        bg-white/90
+        text-gray-700
+        placeholder:text-gray-400
+        shadow-sm
+        transition-all duration-200
+        focus:outline-none
+        focus:ring-2 focus:ring-blue-500/30
+        focus:border-blue-500
+        hover:border-gray-300
+      "
+    />
+  </div>
+</div>
             </div>
             {loadingMedicamentos ? (
               <div className="text-center py-12">
@@ -2744,12 +3041,23 @@ const UBSDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {medicamentos?.filter((med: any) =>
-                  med.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  med.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-                ).map((med: any) => (
-                  <MedicamentoCard key={med.id} medicamento={med} onEdit={handleEditMed} />
-                ))}
+                {medicamentos
+                  ?.filter(
+                    (med: any) =>
+                      med.nome
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase()) ||
+                      med.descricao
+                        ?.toLowerCase()
+                        .includes(searchTerm.toLowerCase()),
+                  )
+                  .map((med: any) => (
+                    <MedicamentoCard
+                      key={med.id}
+                      medicamento={med}
+                      onEdit={handleEditMed}
+                    />
+                  ))}
               </div>
             )}
           </div>
@@ -2760,4 +3068,3 @@ const UBSDashboard: React.FC = () => {
 };
 
 export default UBSDashboard;
-
