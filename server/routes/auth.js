@@ -1,20 +1,25 @@
-import express from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { prisma } from '../config/database.js';
-import { authLimiter } from '../middleware/auth.js';
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { prisma } from "../config/database.js";
+import { authLimiter } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Função para validar CPF
 const validarCPF = (cpf) => {
-  cpf = cpf.replace(/[^\d]+/g, '');
+  cpf = cpf.replace(/[^\d]+/g, "");
   if (cpf.length !== 11 || !!cpf.match(/(\d)\1{10}/)) return false;
-  
-  const cpfArray = cpf.split('').map(el => +el);
-  const rest = (count) => (cpfArray.slice(0, count-12)
-    .reduce((soma, el, index) => (soma + el * (count-index)), 0) * 10) % 11 % 10;
-  
+
+  const cpfArray = cpf.split("").map((el) => +el);
+  const rest = (count) =>
+    ((cpfArray
+      .slice(0, count - 12)
+      .reduce((soma, el, index) => soma + el * (count - index), 0) *
+      10) %
+      11) %
+    10;
+
   return rest(10) === cpfArray[9] && rest(11) === cpfArray[10];
 };
 
@@ -25,36 +30,38 @@ const validarCNS = (cns) => {
 };
 
 // ✅ SEGURANÇA: Login para pacientes com rate limiting de força bruta
-router.post('/login-paciente', authLimiter, async (req, res) => {
+router.post("/login-paciente", authLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
-      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+      return res
+        .status(400)
+        .json({ message: "Email e senha são obrigatórios" });
     }
 
     const paciente = await prisma.paciente.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: email.toLowerCase() },
     });
 
     if (!paciente) {
-      return res.status(401).json({ message: 'Email ou senha inválidos' });
+      return res.status(401).json({ message: "Email ou senha inválidos" });
     }
 
     const senhaValida = await bcrypt.compare(senha, paciente.senha);
     if (!senhaValida) {
-      return res.status(401).json({ message: 'Email ou senha inválidos' });
+      return res.status(401).json({ message: "Email ou senha inválidos" });
     }
 
     const token = jwt.sign(
-      { 
-        id: paciente.id, 
+      {
+        id: paciente.id,
         email: paciente.email,
-        tipo: 'paciente',
-        nome: paciente.nome 
+        tipo: "paciente",
+        nome: paciente.nome,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: "24h" },
     );
 
     res.json({
@@ -63,95 +70,111 @@ router.post('/login-paciente', authLimiter, async (req, res) => {
         id: paciente.id,
         nome: paciente.nome,
         email: paciente.email,
-        tipo: 'paciente'
-      }
+        tipo: "paciente",
+      },
     });
   } catch (error) {
-    console.error('Erro no login do paciente:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro no login do paciente:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // ✅ SEGURANÇA: Login para sistema com rate limiting de força bruta
-router.post('/login-sistema', authLimiter, async (req, res) => {
+router.post("/login-sistema", authLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body;
 
     if (!email || !senha) {
-      return res.status(400).json({ message: 'Email e senha são obrigatórios' });
+      return res
+        .status(400)
+        .json({ message: "Email e senha são obrigatórios" });
     }
 
     // Buscar em todas as tabelas de usuários do sistema
     let usuario = null;
-    let tipo = '';
+    let tipo = "";
 
     // Verificar Admin
-    usuario = await prisma.admin.findUnique({ where: { email: email.toLowerCase() } });
-    if (usuario) tipo = 'admin';
+    usuario = await prisma.admin.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+    if (usuario) tipo = "admin";
 
     // Verificar UBS
     if (!usuario) {
-      usuario = await prisma.uBS.findUnique({ where: { email: email.toLowerCase() } });
-      if (usuario) tipo = 'ubs';
+      usuario = await prisma.uBS.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (usuario) tipo = "ubs";
     }
     // Verificar hospital
     if (!usuario) {
-      usuario = await prisma.hospital.findUnique({ where: { email: email.toLowerCase() } });
-      if (usuario) tipo = 'hospital';
+      usuario = await prisma.hospital.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (usuario) tipo = "hospital";
     }
     // Verificar hospital
     if (!usuario) {
-      usuario = await prisma.hospital.findUnique({ where: { email: email.toLowerCase() } });
-      if (usuario) tipo = 'hospital';
+      usuario = await prisma.hospital.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (usuario) tipo = "hospital";
     }
 
     // verificar farmacia
     if (!usuario) {
-      usuario = await prisma.farmacia.findUnique({ where: { email: email.toLowerCase() } });
-      if (usuario) tipo = 'farmacia';
+      usuario = await prisma.farmacia.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (usuario) tipo = "farmacia";
     }
 
     // Verificar Funcionário
     if (!usuario) {
-      usuario = await prisma.funcionario.findUnique({ 
+      usuario = await prisma.funcionario.findUnique({
         where: { email: email.toLowerCase() },
-        include: { ubs: true }
+        include: { ubs: true },
       });
-      if (usuario) tipo = 'funcionario';
+      if (usuario) tipo = "funcionario";
     }
 
     // Verificar Laboratório
     if (!usuario) {
-      usuario = await prisma.laboratorio.findUnique({ where: { email: email.toLowerCase() } });
-      if (usuario) tipo = 'laboratorio';
+      usuario = await prisma.laboratorio.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (usuario) tipo = "laboratorio";
     }
 
     // Verificar UPA
     if (!usuario) {
-      usuario = await prisma.upa.findUnique({ where: { email: email.toLowerCase() } });
-      if (usuario) tipo = 'upa';
+      usuario = await prisma.upa.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+      if (usuario) tipo = "upa";
     }
 
     if (!usuario) {
-      return res.status(401).json({ message: 'Email ou senha inválidos' });
+      return res.status(401).json({ message: "Email ou senha inválidos" });
     }
 
     const senhaValida = await bcrypt.compare(senha, usuario.senha);
     if (!senhaValida) {
-      return res.status(401).json({ message: 'Email ou senha inválidos' });
+      return res.status(401).json({ message: "Email ou senha inválidos" });
     }
 
     const token = jwt.sign(
-      { 
-        id: usuario.id, 
-        email: usuario.email, 
+      {
+        id: usuario.id,
+        email: usuario.email,
         tipo,
         nome: usuario.nome,
-        funcao: tipo === 'funcionario' ? usuario.funcao : undefined,
-        ubsId: tipo === 'funcionario' ? usuario.ubsId : undefined
+        funcao: tipo === "funcionario" ? usuario.funcao : undefined,
+        ubsId: tipo === "funcionario" ? usuario.ubsId : undefined,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: "24h" },
     );
 
     res.json({
@@ -161,40 +184,62 @@ router.post('/login-sistema', authLimiter, async (req, res) => {
         nome: usuario.nome,
         email: usuario.email,
         tipo,
-        funcao: tipo === 'funcionario' ? usuario.funcao : undefined,
-        ubsId: tipo === 'funcionario' ? usuario.ubsId : undefined
-      }
+        funcao: tipo === "funcionario" ? usuario.funcao : undefined,
+        ubsId: tipo === "funcionario" ? usuario.ubsId : undefined,
+      },
     });
   } catch (error) {
-    console.error('Erro no login do sistema:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error("Erro no login do sistema:", error);
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 
 // Registro de paciente
-router.post('/register-paciente', async (req, res) => {
+router.post("/register-paciente", async (req, res) => {
   try {
-    const { nome, cpf, cns, endereco, cep, nascimento, telefone, email, senha } = req.body;
+    const {
+      nome,
+      cpf,
+      cns,
+      endereco,
+      cep,
+      nascimento,
+      telefone,
+      email,
+      senha,
+    } = req.body;
 
     // Validações
-    if (!nome || !cpf || !cns || !endereco || !cep || !nascimento || !telefone || !email || !senha) {
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
+    if (
+      !nome ||
+      !cpf ||
+      !cns ||
+      !endereco ||
+      !cep ||
+      !nascimento ||
+      !telefone ||
+      !email ||
+      !senha
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Todos os campos são obrigatórios" });
     }
 
     // Validar CPF
     if (!validarCPF(cpf)) {
-      return res.status(400).json({ message: 'CPF inválido' });
+      return res.status(400).json({ message: "CPF inválido" });
     }
 
     // Validar CNS
     if (!validarCNS(cns)) {
-      return res.status(400).json({ message: 'CNS deve ter 15 dígitos' });
+      return res.status(400).json({ message: "CNS deve ter 15 dígitos" });
     }
 
     // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: 'Email inválido' });
+      return res.status(400).json({ message: "Email inválido" });
     }
 
     // ✅ SEGURANÇA: Validar senha com critérios fortes
@@ -202,7 +247,8 @@ router.post('/register-paciente', async (req, res) => {
     const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!senhaRegex.test(senha)) {
       return res.status(400).json({
-        message: 'Senha deve ter: mínimo 8 caracteres, uma letra maiúscula, uma letra minúscula e um número'
+        message:
+          "Senha deve ter: mínimo 8 caracteres, uma letra maiúscula, uma letra minúscula e um número",
       });
     }
 
@@ -211,21 +257,23 @@ router.post('/register-paciente', async (req, res) => {
       where: {
         OR: [
           { email: email.toLowerCase() },
-          { cpf: cpf.replace(/[^\d]/g, '') },
-          { cns }
-        ]
-      }
+          { cpf: cpf.replace(/[^\d]/g, "") },
+          { cns },
+        ],
+      },
     });
 
     if (pacienteExistente) {
       if (pacienteExistente.email === email.toLowerCase()) {
-        return res.status(400).json({ message: 'Este email já está cadastrado' });
+        return res
+          .status(400)
+          .json({ message: "Este email já está cadastrado" });
       }
-      if (pacienteExistente.cpf === cpf.replace(/[^\d]/g, '')) {
-        return res.status(400).json({ message: 'Este CPF já está cadastrado' });
+      if (pacienteExistente.cpf === cpf.replace(/[^\d]/g, "")) {
+        return res.status(400).json({ message: "Este CPF já está cadastrado" });
       }
       if (pacienteExistente.cns === cns) {
-        return res.status(400).json({ message: 'Este CNS já está cadastrado' });
+        return res.status(400).json({ message: "Este CNS já está cadastrado" });
       }
     }
 
@@ -236,27 +284,27 @@ router.post('/register-paciente', async (req, res) => {
     const novoPaciente = await prisma.paciente.create({
       data: {
         nome: nome.trim(),
-        cpf: cpf.replace(/[^\d]/g, ''),
+        cpf: cpf.replace(/[^\d]/g, ""),
         cns,
         endereco: endereco.trim(),
-        cep: cep.replace(/[^\d]/g, ''),
+        cep: cep.replace(/[^\d]/g, ""),
         nascimento: new Date(nascimento),
         telefone: telefone.trim(),
         email: email.toLowerCase().trim(),
-        senha: senhaHash
-      }
+        senha: senhaHash,
+      },
     });
 
     // Gerar token
     const token = jwt.sign(
-      { 
-        id: novoPaciente.id, 
-        email: novoPaciente.email, 
-        tipo: 'paciente',
-        nome: novoPaciente.nome 
+      {
+        id: novoPaciente.id,
+        email: novoPaciente.email,
+        tipo: "paciente",
+        nome: novoPaciente.nome,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: "24h" },
     );
 
     res.status(201).json({
@@ -265,29 +313,37 @@ router.post('/register-paciente', async (req, res) => {
         id: novoPaciente.id,
         nome: novoPaciente.nome,
         email: novoPaciente.email,
-        tipo: 'paciente'
+        tipo: "paciente",
       },
-      message: 'Cadastro realizado com sucesso!'
+      message: "Cadastro realizado com sucesso!",
     });
   } catch (error) {
-    console.error('Erro no registro do paciente:', error);
-    
+    console.error("Erro no registro do paciente:", error);
+
     // Verificar se é erro de constraint do Prisma
-    if (error.code === 'P2002') {
+    if (error.code === "P2002") {
       const field = error.meta?.target?.[0];
       switch (field) {
-        case 'email':
-          return res.status(400).json({ message: 'Este email já está cadastrado' });
-        case 'cpf':
-          return res.status(400).json({ message: 'Este CPF já está cadastrado' });
-        case 'cns':
-          return res.status(400).json({ message: 'Este CNS já está cadastrado' });
+        case "email":
+          return res
+            .status(400)
+            .json({ message: "Este email já está cadastrado" });
+        case "cpf":
+          return res
+            .status(400)
+            .json({ message: "Este CPF já está cadastrado" });
+        case "cns":
+          return res
+            .status(400)
+            .json({ message: "Este CNS já está cadastrado" });
         default:
-          return res.status(400).json({ message: 'Dados já cadastrados no sistema' });
+          return res
+            .status(400)
+            .json({ message: "Dados já cadastrados no sistema" });
       }
     }
-    
-    res.status(500).json({ message: 'Erro interno do servidor' });
+
+    res.status(500).json({ message: "Erro interno do servidor" });
   }
 });
 

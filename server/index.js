@@ -32,10 +32,10 @@ dotenv.config();
 // ✅ SEGURANÇA: Validar variáveis de ambiente críticas
 if (!process.env.JWT_SECRET) {
   console.error(
-    "❌ ERRO CRÍTICO: JWT_SECRET não configurado nas variáveis de ambiente."
+    "❌ ERRO CRÍTICO: JWT_SECRET não configurado nas variáveis de ambiente.",
   );
   console.error(
-    "   Verifique o arquivo .env e certifique-se que JWT_SECRET está definido."
+    "   Verifique o arquivo .env e certifique-se que JWT_SECRET está definido.",
   );
   process.exit(1);
 }
