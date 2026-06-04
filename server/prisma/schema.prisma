@@ -322,6 +322,7 @@ model DispensacaoReceita {
   id                      String   @id @default(cuid())
   receitaId               String
   farmaciaId              String?
+  receitaMedicamentoId    String?
   ubsId                   String?
   funcionarioId           String?
   statusDispensacao       String   @default("completa") // "completa" | "parcial"
@@ -338,6 +339,7 @@ model DispensacaoReceita {
   farmacia    Farmacia?     @relation(fields: [farmaciaId], references: [id])
   ubs         UBS?          @relation(fields: [ubsId], references: [id])
   funcionario Funcionario?  @relation(fields: [funcionarioId], references: [id])
+  receitaMedicamento ReceitaMedicamento? @relation(fields: [receitaMedicamentoId], references: [id])
 
   @@map("dispensacoes_receitas")
 }
@@ -370,7 +372,30 @@ model ReceitaMedica {
   ubs         UBS         @relation(fields: [ubsId], references: [id])
   dispensacoes DispensacaoReceita[]
 
+  itens ReceitaMedicamento[]
+
   @@map("receitas_medicas")
+}
+
+model ReceitaMedicamento {
+
+
+  id            String   @id @default(cuid())
+  receitaId     String
+  medicamento   String
+  dosagem       String
+  quantidade    Int @default(1)
+  posologia     String?
+  observacoes   String?
+  status        String @default("pendente")// pendente// dispensado
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  receita ReceitaMedica @relation(fields: [receitaId], references: [id])
+
+  dispensacoes DispensacaoReceita[]
+
+  @@map("receita_medicamentos")
 }
 
 model AtestadoMedico {

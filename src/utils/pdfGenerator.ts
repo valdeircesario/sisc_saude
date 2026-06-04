@@ -311,345 +311,500 @@ export const generateHistoricoMedicoPDF = async (
   );
 };
 
-//pdf receitas e atestado
+// ─── generateReceitaPDF — Layout profissional P&B ────────────────────────────
+// Requer: jspdf (npm i jspdf)
+// Uso: import { generateReceitaPDF } from "./generateReceitaPDF";
+
+import jsPDF from "jspdf";
+
+// ─── Tipos ────────────────────────────────────────────────────────────────────
+
+interface MedicamentoItem {
+  medicamento: string;
+  dosagem?: string;
+  quantidade?: string | number;
+  posologia?: string;
+  observacoes?: string;
+}
+
+interface Assinatura {
+  texto?: string;
+  posX?: number;
+  posY?: number;
+  registro?: string;
+  data?: string;
+}
+
+interface ReceitaData {
+  dataEmissao?: string | Date;
+  cid?: string;
+  status?: string;
+  medicamento?: string; // legado
+  dosagem?: string;     // legado
+  itens?: MedicamentoItem[];
+}
+
+interface Paciente {
+  nome?: string;
+  cpf?: string;
+  cns?: string;
+  dataNascimento?: string;
+  endereco?: string;
+}
+
+interface Medico {
+  nome?: string;
+  crm?: string;
+  especialidade?: string;
+  ubs?: { nome?: string };
+}
+
+interface UBS {
+  nome?: string;
+  endereco?: string;
+  cnpj?: string;
+}
 
 // ─── Utilitários ─────────────────────────────────────────────────────────────
 
-const norm = (value: string | undefined | null): string =>
-  String(value ?? "")
+const norm = (v: string | undefined | null): string =>
+  String(v ?? "")
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
     .trim() || "—";
 
-const slug = (name: string) => norm(name).toLowerCase().replace(/\s+/g, "-");
+const slug = (name: string) =>
+  norm(name).toLowerCase().replace(/\s+/g, "-");
 
-// ─── Primitivos de layout ─────────────────────────────────────────────────────
+const formatDate = (d?: string | Date): string => {
+  if (!d) return "—";
+  try {
+    return new Date(d).toLocaleDateString("pt-BR");
+  } catch {
+    return String(d);
+  }
+};
 
-/** Linha horizontal fina */
-const hRule = (
+
+
+// Texto seguro — evita crash com caracteres fora do latin1
+
+
+// ─── Constantes de layout ────────────────────────────────────────────────────
+
+const ML = 28;          // margem esquerda
+const MR = 28;          // margem direita
+const LINE_GRAY  = [180, 180, 180] as const;
+const DARK       = [26, 26, 26]    as const;
+const MID_GRAY   = [110, 110, 110] as const;
+const LIGHT_GRAY = [240, 240, 240] as const;
+
+// ─── Primitivos ───────────────────────────────────────────────────────────────
+
+const pageWidth = (pdf: jsPDF) => pdf.internal.pageSize.getWidth();
+const pageHeight = (pdf: jsPDF) => pdf.internal.pageSize.getHeight();
+const contentWidth = (pdf: jsPDF) => pageWidth(pdf) - ML - MR;
+
+const hLine = (
   pdf: jsPDF,
   y: number,
-  weight: number = 0.3,
-  color: [number, number, number] = [200, 200, 200],
+  weight = 0.3,
+  color: readonly [number, number, number] = LINE_GRAY,
+  x1?: number,
+  x2?: number,
 ) => {
-  const W = pdf.internal.pageSize.getWidth();
-  pdf.setDrawColor(...color);
+  const W = pageWidth(pdf);
+  pdf.setDrawColor(color[0], color[1], color[2]);
   pdf.setLineWidth(weight);
-  pdf.line(32, y, W - 32, y);
+  pdf.line(x1 ?? ML, y, x2 ?? W - MR, y);
 };
 
-/** Label em versalete + linha underline */
-const fieldUnderline = (
+// ─── Cabeçalho ────────────────────────────────────────────────────────────────
+
+/**
+ * @param logoBase64 — string base64 da imagem (sem prefixo data:image/…)
+ *                     Se omitido, exibe apenas o nome do sistema
+ */
+const addHeader = (
   pdf: jsPDF,
-  label: string,
-  value: string,
-  x: number,
-  y: number,
-  maxW: number,
-): number => {
-  const lines = pdf.splitTextToSize(value, maxW);
+  docTitle: string,
+  logoBase64?: string,
+  logoMime: string = "PNG",
+) => {
+  const W = pageWidth(pdf);
+  const CX = W / 2; // centro horizontal
 
-  // Label versalete
+  let logoBottom = 14; // onde a logo termina
+
+  // ── Logo centralizada
+  if (logoBase64) {
+    const logoW = 36;
+    const logoH = 14;
+    pdf.addImage(
+      logoBase64,
+      logoMime,
+      CX - logoW / 2,
+      10,
+      logoW,
+      logoH,
+    );
+    logoBottom = 10 + logoH + 2;
+  } else {
+    // Fallback: nome do sistema centralizado
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+    safeText(pdf, "SaúdeDigital", CX, 21, { align: "center" });
+    logoBottom = 25;
+  }
+
+  // Subtítulo do sistema
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7);
-  pdf.setTextColor(160, 160, 160);
-  pdf.text(label.toUpperCase(), x, y);
-
-  // Valor
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(10);
-  pdf.setTextColor(26, 26, 26);
-  pdf.text(lines, x, y + 6);
-
-  // Underline
-  const lineY = y + 6 + (lines.length - 1) * 5.5 + 4;
-  pdf.setDrawColor(224, 224, 224);
-  pdf.setLineWidth(0.3);
-  pdf.line(x, lineY, x + maxW, lineY);
-
-  return lineY + 6; // próximo y disponível
-};
-
-/** Seção com título em versalete e régua */
-const sectionTitle = (pdf: jsPDF, label: string, y: number): number => {
-  const W = pdf.internal.pageSize.getWidth();
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7);
-  pdf.setTextColor(150, 150, 150);
-  pdf.text(label.toUpperCase(), 32, y);
-  pdf.setDrawColor(220, 220, 220);
-  pdf.setLineWidth(0.3);
-  pdf.line(32, y + 2, W - 32, y + 2);
-  return y + 10;
-};
-
-/** Bloco de destaque neutro (medicamento / dias de repouso) */
-const highlightBlock = (
-  pdf: jsPDF,
-  label: string,
-  main: string,
-  sub: string,
-  y: number,
-): number => {
-  const W = pdf.internal.pageSize.getWidth();
-  const bW = W - 64;
-
-  pdf.setDrawColor(180, 180, 180);
-  pdf.setLineWidth(0.4);
-  pdf.rect(32, y, bW, 26, "S");
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7);
-  pdf.setTextColor(150, 150, 150);
-  pdf.text(label.toUpperCase(), 38, y + 7);
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(13);
-  pdf.setTextColor(26, 26, 26);
-  pdf.text(main, 38, y + 16);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.setTextColor(100, 100, 100);
-  pdf.text(sub, 38, y + 23);
-
-  return y + 32;
-};
-
-/** Caixa de texto com label (descrição / observações) */
-const textBlock = (
-  pdf: jsPDF,
-  label: string,
-  value: string,
-  y: number,
-): number => {
-  const W = pdf.internal.pageSize.getWidth();
-  const bW = W - 64;
-  const lines = pdf.splitTextToSize(value, bW - 12);
-  const bH = 14 + lines.length * 5.2;
-
-  pdf.setFillColor(249, 249, 249);
-  pdf.setDrawColor(224, 224, 224);
-  pdf.setLineWidth(0.3);
-  pdf.rect(32, y, bW, bH, "FD");
-
-  // Borda esquerda discreta (cinza escuro)
-  pdf.setFillColor(140, 140, 140);
-  pdf.rect(32, y, 1.5, bH, "F");
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7);
-  pdf.setTextColor(160, 160, 160);
-  pdf.text(label.toUpperCase(), 38, y + 7);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.setTextColor(68, 68, 68);
-  pdf.text(lines, 38, y + 13);
-
-  return y + bH + 6;
-};
-
-// ─── Cabeçalho e rodapé ───────────────────────────────────────────────────────
-
-const addHeader = (pdf: jsPDF, docTitle: string) => {
-  const W = pdf.internal.pageSize.getWidth();
-
-  // Nome do sistema — lado esquerdo
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(11);
-  pdf.setTextColor(26, 26, 26);
-  pdf.text("SaúdeDigital", 32, 20);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8);
-  pdf.setTextColor(130, 130, 130);
-  pdf.text("Sistema Individual de Saude do Cidadão   ·  Documento oficial", 32, 27);
-
-  // Badge SUS — lado direito
-  pdf.setDrawColor(26, 26, 26);
-  pdf.setLineWidth(0.5);
-  pdf.rect(W - 52, 13, 20, 10, "S");
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(7.5);
-  pdf.setTextColor(26, 26, 26);
-  pdf.text("Sisc", W - 42, 19.5, { align: "center" });
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(
+    pdf,
+    "Sistema Individual de Saúde do Cidadão  ·  Documento oficial",
+    CX,
+    logoBottom + 4,
+    { align: "center" },
+  );
 
   // Linha dupla separadora
-  pdf.setDrawColor(26, 26, 26);
-  pdf.setLineWidth(1.2);
-  pdf.line(32, 34, W - 32, 34);
-  pdf.setLineWidth(0.3);
-  pdf.line(32, 36.5, W - 32, 36.5);
+  const sepY = logoBottom + 8;
+  hLine(pdf, sepY, 1.0, DARK);
+  hLine(pdf, sepY + 2.5, 0.3, [140, 140, 140]);
 
-  // Título do documento
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(20);
-  pdf.setTextColor(26, 26, 26);
-  pdf.setCharSpace(2.5);
-  pdf.text(docTitle.toUpperCase(), 32, 50);
+  // Título do documento — centralizado, com letter-spacing
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(16);
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+  pdf.setCharSpace(3);
+  safeText(pdf, docTitle.toUpperCase(), CX, sepY + 14, { align: "center" });
   pdf.setCharSpace(0);
+
+  return sepY + 22; // y inicial para o conteúdo
 };
 
-const addDocFooter = (pdf: jsPDF) => {
-  const W = pdf.internal.pageSize.getWidth();
-  const H = pdf.internal.pageSize.getHeight();
+// ─── Rodapé ───────────────────────────────────────────────────────────────────
 
-  hRule(pdf, H - 36, 0.3, [200, 200, 200]);
+const addFooter = (pdf: jsPDF) => {
+  const W = pageWidth(pdf);
+  const H = pageHeight(pdf);
 
-  // Linha de assinatura
-  pdf.setDrawColor(100, 100, 100);
-  pdf.setLineWidth(0.4);
-  pdf.line(32, H - 22, 150, H - 22);
+  hLine(pdf, H - 42, 0.3, LINE_GRAY);
+
+  // Área de assinatura
+  pdf.setDrawColor(DARK[0], DARK[1], DARK[2]);
+  pdf.setLineWidth(0.5);
+  pdf.line(ML, H - 20, ML + 110, H - 20);
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7.5);
-  pdf.setTextColor(130, 130, 130);
-  pdf.text("Assinatura e carimbo do médico", 32, H - 16);
+  pdf.setFontSize(7);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(pdf, "Assinatura e carimbo do médico", ML, H - 14);
 
-  // Info direita
-  pdf.setFontSize(7.5);
-  pdf.setTextColor(170, 170, 170);
-  pdf.text("Sistema Individual de Saude do Cidadão", W - 32, H - 24, {
-    align: "right",
-  });
-  pdf.text(`Emitido em ${new Date().toLocaleString("pt-BR")}`, W - 32, H - 17, {
-    align: "right",
-  });
+  // Info rodapé — direita
+  pdf.setFontSize(7);
+  pdf.setTextColor(160, 160, 160);
+  safeText(
+    pdf,
+    "Sistema Individual de Saúde do Cidadão",
+    W - MR,
+    H - 26,
+    { align: "right" },
+  );
+  safeText(
+    pdf,
+    `Emitido em ${new Date().toLocaleString("pt-BR")}`,
+    W - MR,
+    H - 19,
+    { align: "right" },
+  );
 };
 
-const drawSignature = (
-  pdf: jsPDF,
-  assinatura?: {
-    texto?: string;
-    posX?: number;
-    posY?: number;
-    registro?: string;
-    data?: string;
-  },
-) => {
-  if (!assinatura?.texto || assinatura.posX == null || assinatura.posY == null) {
+// ─── Assinatura digital ───────────────────────────────────────────────────────
+
+const drawSignature = (pdf: jsPDF, assinatura?: Assinatura) => {
+  if (!assinatura?.texto || assinatura.posX == null || assinatura.posY == null)
     return;
-  }
 
   pdf.setFont("helvetica", "bolditalic");
   pdf.setFontSize(11);
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
   safeText(pdf, assinatura.texto, assinatura.posX, assinatura.posY);
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
-  safeText(pdf, `Registro: ${assinatura.registro || "—"}`, assinatura.posX, assinatura.posY + 6);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(
+    pdf,
+    `CRM: ${norm(assinatura.registro)}`,
+    assinatura.posX,
+    assinatura.posY + 6,
+  );
   safeText(
     pdf,
     `Assinado em ${assinatura.data || new Date().toLocaleDateString("pt-BR")}`,
     assinatura.posX,
-    assinatura.posY + 11,
+    assinatura.posY + 12,
   );
 };
 
-// ─── Campos em duas colunas ───────────────────────────────────────────────────
+// ─── Bloco de dados do paciente (compacto, 2 colunas) ────────────────────────
 
-const twoColumns = (
+const addPatientBlock = (
   pdf: jsPDF,
-  left: { label: string; value: string },
-  right: { label: string; value: string },
+  paciente: Paciente,
+  receita: ReceitaData,
+  medico: Medico,
+  ubs: UBS,
   y: number,
 ): number => {
-  const W = pdf.internal.pageSize.getWidth();
-  const colW = (W - 64 - 10) / 2;
+  const W = pageWidth(pdf);
+  const CW = contentWidth(pdf);
+  const blockH = 28;
 
-  const yL = fieldUnderline(pdf, left.label, left.value, 32, y, colW);
-  const yR = fieldUnderline(
-    pdf,
-    right.label,
-    right.value,
-    32 + colW + 10,
-    y,
-    colW,
-  );
+  // Fundo cinza claro
+  pdf.setFillColor(LIGHT_GRAY[0], LIGHT_GRAY[1], LIGHT_GRAY[2]);
+  pdf.setDrawColor(LINE_GRAY[0], LINE_GRAY[1], LINE_GRAY[2]);
+  pdf.setLineWidth(0.3);
+  pdf.rect(ML, y, CW, blockH, "FD");
 
-  return Math.max(yL, yR) + 2;
-};
+  // Padding interno
+  const px = ML + 5;
+  const py = y + 5;
 
-// ─── Exportações ──────────────────────────────────────────────────────────────
-
-export const generateReceitaPDF = (
-  receita: any,
-  paciente: any,
-  medico: any,
-  ubs: any,
-  assinatura?: {
-    texto?: string;
-    posX?: number;
-    posY?: number;
-    registro?: string;
-    data?: string;
-  },
-) => {
-  const pdf = new jsPDF({ unit: "mm", format: "a4" });
-  const W = pdf.internal.pageSize.getWidth();
-  const colFull = W - 64;
-
-  addHeader(pdf, "Receita Médica");
-
-  let y = 60;
+  // Coluna esquerda (60 %)
+  const colL = CW * 0.6 - 5;
+  // Coluna direita (40 %)
+  const colR = CW * 0.4 - 5;
+  const xR = ML + CW * 0.6 + 2;
 
   // ── Paciente
-  y = sectionTitle(pdf, "Dados do Paciente", y);
-  y =
-    fieldUnderline(pdf, "Nome completo", norm(paciente?.nome), 32, y, colFull) +
-    4;
-  y = twoColumns(
-    pdf,
-    { label: "CPF", value: norm(paciente?.cpf) },
-    { label: "CNS", value: norm(paciente?.cns) },
-    y,
-  );
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(pdf, "PACIENTE", px, py);
 
-  y += 4;
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+  const nomeLines = pdf.splitTextToSize(norm(paciente.nome), colL);
+  pdf.text(nomeLines, px, py + 5);
 
-  // ── Atendimento
-  y = sectionTitle(pdf, "Dados do Atendimento", y);
-  y = twoColumns(
-    pdf,
-    { label: "Médico responsável", value: norm(medico?.nome) },
-    { label: "UBS", value: norm(ubs?.nome || medico?.ubs?.nome) },
-    y,
-  );
-  y = twoColumns(
-    pdf,
-    {
-      label: "Data de emissão",
-      value: receita?.dataEmissao
-        ? new Date(receita.dataEmissao).toLocaleDateString("pt-BR")
-        : "—",
-    },
-    { label: "CID", value: norm(receita?.cid) },
-    y,
-  );
-
-  y += 4;
-
-  // ── Prescrição
-  y = sectionTitle(pdf, "Prescrição", y);
-  y = highlightBlock(
-    pdf,
-    "Medicamento",
-    norm(receita?.medicamento),
-    `Dosagem: ${norm(receita?.dosagem)}`,
-    y,
-  );
-  y = textBlock(pdf, "Descrição", norm(receita?.descricao), y);
-  y = textBlock(pdf, "Observações", norm(receita?.observacoes || "Nenhuma"), y);
-
-  // Status discreto
+  // CPF · CNS
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
-  pdf.setTextColor(130, 130, 130);
-  pdf.text(`Status: ${norm(receita?.status || "Ativo")}`, 32, y + 4);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(
+    pdf,
+    `CPF: ${norm(paciente.cpf)}   CNS: ${norm(paciente.cns)}`,
+    px,
+    py + 11,
+  );
 
+  // Data de emissão + CID
+  pdf.setFontSize(8);
+  safeText(
+    pdf,
+    `Emissão: ${formatDate(receita.dataEmissao)}   CID: ${norm(receita.cid)}`,
+    px,
+    py + 17,
+  );
+
+  // ── Médico / UBS (coluna direita)
+  // Divisor vertical
+  pdf.setDrawColor(LINE_GRAY[0], LINE_GRAY[1], LINE_GRAY[2]);
+  pdf.setLineWidth(0.3);
+  pdf.line(xR - 3, y + 3, xR - 3, y + blockH - 3);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(6.5);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(pdf, "MÉDICO RESPONSÁVEL", xR, py);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+  const medicoLines = pdf.splitTextToSize(norm(medico.nome), colR);
+  pdf.text(medicoLines, xR, py + 5);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(pdf, `CRM: ${norm(medico.crm)}`, xR, py + 11);
+
+  const ubsNome = norm(ubs?.nome || medico?.ubs?.nome);
+  const ubsLines = pdf.splitTextToSize(ubsNome, colR);
+  pdf.setFontSize(7);
+  pdf.text(ubsLines, xR, py + 16);
+
+  return y + blockH + 8;
+};
+
+// ─── Título de seção ─────────────────────────────────────────────────────────
+
+const sectionTitle = (pdf: jsPDF, label: string, y: number): number => {
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(pdf, label.toUpperCase(), ML, y);
+  hLine(pdf, y + 2, 0.5, DARK);
+  return y + 10;
+};
+
+// ─── Bloco de medicamento ────────────────────────────────────────────────────
+
+const medicamentoBlock = (
+  pdf: jsPDF,
+  numero: number,
+  item: MedicamentoItem,
+  y: number,
+): number => {
+  const W = pageWidth(pdf);
+  const CW = contentWidth(pdf);
+
+  // Linhas de conteúdo
+  const nameLines = pdf.splitTextToSize(norm(item.medicamento), CW - 18);
+  const posLines  = item.posologia
+    ? pdf.splitTextToSize(norm(item.posologia), CW - 18)
+    : [];
+  const obsLines  = item.observacoes
+    ? pdf.splitTextToSize(norm(item.observacoes), CW - 18)
+    : [];
+
+  // Altura do bloco
+  const lineH = 4.5;
+  const bH =
+    5 +
+    nameLines.length * 5 +
+    (posLines.length  ? posLines.length  * lineH + 2 : 0) +
+    (obsLines.length  ? obsLines.length  * lineH + 1 : 0) +
+    6;
+
+  // Borda esquerda negra (destaque)
+  pdf.setFillColor(DARK[0], DARK[1], DARK[2]);
+  pdf.rect(ML, y, 2, bH, "F");
+
+  // Borda exterior fina
+  pdf.setDrawColor(LINE_GRAY[0], LINE_GRAY[1], LINE_GRAY[2]);
+  pdf.setLineWidth(0.3);
+  pdf.rect(ML + 2, y, CW - 2, bH, "S");
+
+  const px = ML + 9;
+  let cy = y + 6;
+
+  // Número
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+  safeText(pdf, String(numero).padStart(2, "0"), ML + 4, cy - 1);
+
+  // Nome do medicamento
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+  pdf.text(nameLines, px, cy);
+  cy += nameLines.length * 5;
+
+  // Dosagem · Quantidade (tags inline)
+  const tags: string[] = [];
+  if (item.dosagem)   tags.push(`Dosagem: ${norm(item.dosagem)}`);
+  if (item.quantidade) tags.push(`Qtd.: ${item.quantidade}`);
+
+  if (tags.length) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+    safeText(pdf, tags.join("   ·   "), px, cy);
+    cy += lineH + 1;
+  }
+
+  // Posologia
+  if (posLines.length) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+    pdf.text(posLines, px, cy);
+    cy += posLines.length * lineH + 2;
+  }
+
+  // Observações
+  if (obsLines.length) {
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+    pdf.text(obsLines, px, cy);
+    cy += obsLines.length * lineH;
+  }
+
+  return y + bH + 5;
+};
+
+// ─── Função principal ─────────────────────────────────────────────────────────
+
+/**
+ * Gera e salva a receita médica em PDF (preto e branco, layout profissional).
+ *
+ * @param receita     — dados da receita (itens[] ou legado medicamento/dosagem)
+ * @param paciente    — dados do paciente
+ * @param medico      — dados do médico (incluindo crm)
+ * @param ubs         — dados da UBS
+ * @param assinatura  — assinatura digital opcional
+ * @param logoBase64  — imagem da logo em base64 puro (sem prefixo data:)
+ * @param logoMime    — formato da logo: "PNG" | "JPEG" (default "PNG")
+ */
+export const generateReceitaPDF = (
+  receita: ReceitaData,
+  paciente: Paciente,
+  medico: Medico,
+  ubs: UBS,
+  assinatura?: Assinatura,
+  logoBase64?: string,
+  logoMime: string = "PNG",
+): void => {
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+
+  // ── Cabeçalho
+  let y = addHeader(pdf, "Receita Médica", logoBase64, logoMime);
+
+  y += 2;
+
+  // ── Bloco do paciente (compacto, uma linha)
+  y = addPatientBlock(pdf, paciente, receita, medico, ubs, y);
+
+  // ── Prescrição (centro vertical da folha)
+  y = sectionTitle(pdf, "Prescrição Médica", y);
+
+  // Medicamentos
+  const itens: MedicamentoItem[] =
+    Array.isArray(receita.itens) && receita.itens.length
+      ? receita.itens
+      : receita.medicamento
+        ? [{ medicamento: receita.medicamento, dosagem: receita.dosagem }]
+        : [];
+
+  itens.forEach((item, idx) => {
+    y = medicamentoBlock(pdf, idx + 1, item, y);
+  });
+
+  // Status discreto
+  if (receita.status && receita.status !== "Ativo") {
+    pdf.setFont("helvetica", "italic");
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+    safeText(pdf, `Status: ${norm(receita.status)}`, ML, y + 4);
+    y += 10;
+  }
+
+  // ── Assinatura digital (se houver)
   drawSignature(pdf, assinatura);
-  addDocFooter(pdf);
-  pdf.save(`receita-${slug(paciente?.nome)}.pdf`);
+
+  // ── Rodapé
+  addFooter(pdf);
+
+  // ── Salva
+  pdf.save(`receita-${slug(paciente.nome)}.pdf`);
 };
 
 export const generateAtestadoPDF = (

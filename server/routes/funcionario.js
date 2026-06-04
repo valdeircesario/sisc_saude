@@ -98,62 +98,168 @@ router.post("/vacinas", async (req, res) => {
   }
 });
 
-// Solicitar exame
+// registrar receita
 router.post("/receitas", async (req, res) => {
   try {
     const {
       pacienteId,
       descricao,
       cid,
+
+      // Compatibilidade com modelo antigo
       medicamento,
       dosagem,
+
+      // Novo modelo
+      medicamentos = [],
+
       status = "ativo",
       observacoes,
       dataEmissao,
     } = req.body;
 
-    if (!pacienteId || !descricao || !cid || !medicamento || !dosagem) {
+    if (!pacienteId || !descricao || !cid) {
       return res.status(400).json({
-        message:
-          "Campos obrigatórios: pacienteId, descricao, cid, medicamento e dosagem.",
+        message: "Campos obrigatórios: pacienteId, descricao e cid.",
+      });
+    }
+
+    const possuiListaMedicamentos =
+      Array.isArray(medicamentos) && medicamentos.length > 0;
+
+    if (!possuiListaMedicamentos && (!medicamento || !dosagem)) {
+      return res.status(400).json({
+        message: "Informe medicamento/dosagem ou uma lista de medicamentos.",
       });
     }
 
     const funcionario = await prisma.funcionario.findUnique({
-      where: { id: req.user.id },
-      select: { ubsId: true },
+      where: {
+        id: req.user.id,
+      },
+      select: {
+        id: true,
+        nome: true,
+        crm: true,
+        funcao: true,
+        ubsId: true,
+      },
     });
 
     if (!funcionario) {
-      return res.status(404).json({ message: "Funcionário não encontrado." });
+      return res.status(404).json({
+        message: "Funcionário não encontrado.",
+      });
     }
 
+    // Cria a receita principal
     const receita = await prisma.receitaMedica.create({
       data: {
         pacienteId,
         funcionarioId: req.user.id,
         ubsId: funcionario.ubsId,
+
         descricao,
         cid,
-        medicamento,
-        dosagem,
+
+        // Mantém compatibilidade com o modelo atual
+        medicamento:
+          medicamento || medicamentos?.[0]?.medicamento || "MULTIPLOS",
+
+        dosagem: dosagem || medicamentos?.[0]?.dosagem || "",
+
+        quantidade: medicamentos?.[0]?.quantidade?.toString() || "1",
+
         status,
         observacoes,
+
         dataEmissao: dataEmissao ? new Date(dataEmissao) : undefined,
-      },
-      include: {
-        paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
-        funcionario: {
-          select: { id: true, nome: true, funcao: true, crm: true },
-        },
-        ubs: { select: { id: true, nome: true, endereco: true } },
       },
     });
 
-    res.status(201).json(receita);
+    // NOVA IMPLEMENTAÇÃO
+    // Cria os itens da receita
+    if (possuiListaMedicamentos) {
+      await prisma.receitaMedicamento.createMany({
+        data: medicamentos.map((item) => ({
+          receitaId: receita.id,
+
+          medicamento: item.medicamento,
+          dosagem: item.dosagem,
+
+          quantidade: Number(item.quantidade || 1),
+
+          posologia: item.posologia || null,
+
+          observacoes: item.observacoes || null,
+
+          status: "pendente",
+        })),
+      });
+    } else {
+      // Compatibilidade com receitas antigas
+      await prisma.receitaMedicamento.create({
+        data: {
+          receitaId: receita.id,
+
+          medicamento,
+          dosagem,
+
+          quantidade: 1,
+
+          status: "pendente",
+        },
+      });
+    }
+
+    // Busca a receita completa já com os itens
+    const receitaCompleta = await prisma.receitaMedica.findUnique({
+      where: {
+        id: receita.id,
+      },
+      include: {
+        paciente: {
+          select: {
+            id: true,
+            nome: true,
+            cpf: true,
+            cns: true,
+          },
+        },
+
+        funcionario: {
+          select: {
+            id: true,
+            nome: true,
+            funcao: true,
+            crm: true,
+          },
+        },
+
+        ubs: {
+          select: {
+            id: true,
+            nome: true,
+            endereco: true,
+          },
+        },
+
+        itens: {
+          orderBy: {
+            createdAt: "asc",
+          },
+        },
+      },
+    });
+
+    return res.status(201).json(receitaCompleta);
   } catch (error) {
     console.error("Erro ao salvar receita médica:", error);
-    res.status(500).json({ message: "Erro ao salvar receita médica." });
+
+    return res.status(500).json({
+      message: "Erro ao salvar receita médica.",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 });
 
@@ -244,6 +350,9 @@ router.patch("/receitas/:id/assinatura", async (req, res) => {
           select: { id: true, nome: true, funcao: true, crm: true },
         },
         ubs: { select: { id: true, nome: true, endereco: true } },
+        itens: {
+          orderBy: { createdAt: "asc" },
+        },
       },
     });
 
@@ -366,6 +475,12 @@ router.get("/receitas", async (req, res) => {
           select: { id: true, nome: true, funcao: true, crm: true },
         },
         ubs: { select: { id: true, nome: true, endereco: true } },
+        itens: {
+          orderBy: { createdAt: "asc" },
+        },
+        dispensacoes: {
+          orderBy: { createdAt: "desc" },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -1367,6 +1482,11 @@ router.get(
           paciente: true,
           funcionario: true,
           ubs: true,
+          itens: {
+            orderBy: {
+              createdAt: "asc",
+            },
+          },
           dispensacoes: {
             include: {
               farmacia: true,
@@ -1403,11 +1523,12 @@ router.get(
         return res.status(400).json({ message: "ID da receita é obrigatório" });
       }
 
-      // Buscar receita
+      // Buscar receita com itens (medicamentos) e dispensacoes
       const receita = await prisma.receitaMedica.findUnique({
         where: { id: receitaId },
         include: {
           ubs: true,
+          itens: true,
           dispensacoes: {
             include: {
               farmacia: true,
@@ -1438,36 +1559,44 @@ router.get(
         });
       }
 
-      // Verificar se há dispensações da receita
-      if (receita.dispensacoes.length > 0) {
-        // Verificar se há dispensação pela farmácia
-        const dispensacaoFarmacia = receita.dispensacoes.find(
-          (d) => d.farmaciaId !== null,
-        );
-        if (dispensacaoFarmacia) {
-          return res.status(409).json({
-            message:
-              "Receita já está em dispensação por uma farmácia. UBS não pode dispensar a mesma receita.",
-            dispensacaoExistente: dispensacaoFarmacia,
-          });
-        }
+      // Verificar se há dispensação pela farmácia
+      const dispensacaoFarmacia = receita.dispensacoes.find(
+        (d) => d.farmaciaId !== null,
+      );
+      if (dispensacaoFarmacia) {
+        return res.status(409).json({
+          message:
+            "Receita já está em dispensação por uma farmácia. UBS não pode dispensar a mesma receita.",
+          dispensacaoExistente: dispensacaoFarmacia,
+        });
+      }
 
-        // Verificar se há dispensação pela UBS
-        const dispensacaoUbs = receita.dispensacoes.find(
-          (d) => d.ubsId === funcionario.ubsId,
-        );
-        if (dispensacaoUbs) {
-          return res.status(409).json({
-            message: "Receita já foi dispensada por sua UBS",
-            dispensacaoExistente: dispensacaoUbs,
-          });
-        }
+      // Contar medicamentos pendentes
+      const medicamentosPendentes = receita.itens.filter(
+        (item) => item.status === "pendente",
+      ).length;
+      const medicamentosDispensados = receita.itens.filter(
+        (item) => item.status === "dispensado",
+      ).length;
+      const receitaCompleta = medicamentosDispensados === receita.itens.length;
+
+      // Se receita está 100% dispensada, bloquear
+      if (receitaCompleta) {
+        return res.status(409).json({
+          message:
+            "Receita já foi completamente dispensada. Nenhum medicamento pode ser dispensado novamente.",
+          receita,
+          podeDispensar: false,
+        });
       }
 
       res.json({
         podeDispensar: true,
-        message: "Receita pode ser dispensada",
+        message: "Receita pode receber dispensações",
         receita,
+        medicamentosPendentes,
+        medicamentosDispensados,
+        receitaCompleta,
       });
     } catch (error) {
       console.error("Erro ao validar dispensação:", error);
@@ -1605,6 +1734,180 @@ router.post(
     } catch (error) {
       console.error("Erro ao dispensar receita:", error);
       res.status(500).json({ message: "Erro interno do servidor" });
+    }
+  },
+);
+
+// Rota para dispensar medicamentos individuais de uma receita
+router.post(
+  "/dispensar-medicamentos",
+  funcionarioPodeConsultarReceita,
+  async (req, res) => {
+    try {
+      const {
+        receitaId,
+        medicamentos, // array de { receitaMedicamentoId, medicamentoFornecido, quantidadeDispensada, observacoes }
+      } = req.body;
+      const funcionarioId = req.user.id;
+
+      if (
+        !receitaId ||
+        !Array.isArray(medicamentos) ||
+        medicamentos.length === 0
+      ) {
+        return res.status(400).json({
+          message: "receitaId e array de medicamentos são obrigatórios",
+        });
+      }
+
+      // Buscar receita completa com itens
+      const receita = await prisma.receitaMedica.findUnique({
+        where: { id: receitaId },
+        include: {
+          itens: true,
+          ubs: true,
+          dispensacoes: true,
+        },
+      });
+
+      if (!receita) {
+        return res.status(404).json({ message: "Receita não encontrada" });
+      }
+
+      // Buscar funcionário com UBS e nome
+      const funcionario = await prisma.funcionario.findUnique({
+        where: { id: funcionarioId },
+        select: { ubsId: true, nome: true, funcao: true },
+      });
+
+      if (!funcionario) {
+        return res.status(404).json({ message: "Funcionário não encontrado" });
+      }
+
+      // Validar se a receita foi emitida pela mesma UBS do funcionário
+      if (receita.ubsId !== funcionario.ubsId) {
+        return res.status(403).json({
+          message: "Você só pode dispensar receitas emitidas pela sua UBS",
+        });
+      }
+
+      // Validar cada medicamento a dispensar
+      const dispensacoesCriadas = [];
+      const atualizacoesMedicamentos = [];
+
+      for (const med of medicamentos) {
+        const {
+          receitaMedicamentoId,
+          medicamentoFornecido,
+          quantidadeDispensada,
+          observacoes,
+        } = med;
+
+        if (!receitaMedicamentoId) {
+          return res.status(400).json({
+            message: "receitaMedicamentoId é obrigatório para cada medicamento",
+          });
+        }
+
+        // Buscar o medicamento da receita
+        const receitaMedicamento = receita.itens.find(
+          (item) => item.id === receitaMedicamentoId,
+        );
+
+        if (!receitaMedicamento) {
+          return res.status(404).json({
+            message: `Medicamento com ID ${receitaMedicamentoId} não encontrado na receita`,
+          });
+        }
+
+        // Validar status - só pode dispensar se estiver pendente
+        if (receitaMedicamento.status === "dispensado") {
+          return res.status(409).json({
+            message: `Medicamento "${receitaMedicamento.medicamento}" já foi dispensado`,
+          });
+        }
+
+        // Criar dispensação para este medicamento
+        dispensacoesCriadas.push({
+          receitaId,
+          receitaMedicamentoId,
+          ubsId: funcionario.ubsId,
+          funcionarioId,
+          statusDispensacao: "completa", // Individual, então sempre completa
+          medicamentoFornecido:
+            medicamentoFornecido || receitaMedicamento.medicamento,
+          quantidadeDispensada:
+            quantidadeDispensada || receitaMedicamento.quantidade,
+          ubsResponsavel: funcionario.nome,
+          observacoesDispensacao: observacoes || null,
+        });
+
+        // Marcar medicamento como dispensado
+        atualizacoesMedicamentos.push({
+          id: receitaMedicamentoId,
+          status: "dispensado",
+        });
+      }
+
+      // Executar operações em transação
+      const resultado = await prisma.$transaction(async (tx) => {
+        // Criar todas as dispensações
+        const dispensacoes = await Promise.all(
+          dispensacoesCriadas.map((disp) =>
+            tx.dispensacaoReceita.create({
+              data: disp,
+              include: { receita: true },
+            }),
+          ),
+        );
+
+        // Atualizar status dos medicamentos
+        const medicamentosAtualizados = await Promise.all(
+          atualizacoesMedicamentos.map((med) =>
+            tx.receitaMedicamento.update({
+              where: { id: med.id },
+              data: { status: med.status },
+            }),
+          ),
+        );
+
+        // Verificar se todos os medicamentos foram dispensados
+        const receitaAtualizada = await tx.receitaMedica.findUnique({
+          where: { id: receitaId },
+          include: { itens: true },
+        });
+
+        const todosMedicamentoDispensados = receitaAtualizada.itens.every(
+          (item) => item.status === "dispensado",
+        );
+
+        // Atualizar status da receita se todos forem dispensados
+        if (todosMedicamentoDispensados) {
+          await tx.receitaMedica.update({
+            where: { id: receitaId },
+            data: { status: "dispensada" },
+          });
+        } else {
+          await tx.receitaMedica.update({
+            where: { id: receitaId },
+            data: { status: "parcialmente_dispensada" },
+          });
+        }
+
+        return { dispensacoes, medicamentosAtualizados };
+      });
+
+      res.status(201).json({
+        message: "Medicamentos dispensados com sucesso",
+        dispensacoes: resultado.dispensacoes,
+        medicamentosAtualizados: resultado.medicamentosAtualizados,
+      });
+    } catch (error) {
+      console.error("Erro ao dispensar medicamentos:", error);
+      res.status(500).json({
+        message: "Erro ao dispensar medicamentos",
+        details: error.message,
+      });
     }
   },
 );

@@ -1,13 +1,21 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Search, X } from "lucide-react";
+import { FileText, Download, Search, X, Plus, Trash2 } from "lucide-react";
 import { api } from "../services/api";
 import { generateAtestadoPDF, generateReceitaPDF } from "../utils/pdfGenerator";
 import { toast } from "react-toastify";
 import { useAuth } from "../contexts/AuthContext";
-import { quartersToMonths } from "date-fns";
 
 interface ReceitasAtestadoProps {
   onClose?: () => void;
+}
+
+interface Medicamento {
+  id?: string;
+  medicamento: string;
+  dosagem: string;
+  quantidade: string;
+  posologia: string;
+  observacoes: string;
 }
 
 const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
@@ -28,15 +36,45 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
   const estadoInicial = {
     descricao: "",
     cid: "",
-    medicamento: "",
-    dosagem: "",
-    quantidade: "",
+    medicamentos: [{ medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }],
     diasRepouso: "",
     observacoes: "",
     dataEmissao: new Date().toISOString().slice(0, 10),
   };
 
   const [form, setForm] = useState(estadoInicial);
+
+  // Funções para gerenciar medicamentos
+  const adicionarMedicamento = () => {
+    setForm((prev) => ({
+      ...prev,
+      medicamentos: [
+        ...prev.medicamentos,
+        { medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" },
+      ],
+    }));
+  };
+
+  const removerMedicamento = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      medicamentos: prev.medicamentos.filter((_, i) => i !== index),
+    }));
+  };
+
+  const atualizarMedicamento = (index: number, campo: string, valor: string) => {
+    setForm((prev) => {
+      const novosMedicamentos = [...prev.medicamentos];
+      novosMedicamentos[index] = {
+        ...novosMedicamentos[index],
+        [campo]: valor,
+      };
+      return {
+        ...prev,
+        medicamentos: novosMedicamentos,
+      };
+    });
+  };
 
   const gerarRegistroAssinatura = () =>
     `REG-SISC${Date.now().toString(36).toUpperCase()}-${Math.random()
@@ -128,7 +166,7 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
       );
 
       setDocumentosSalvos(lista);
-    } catch (error) {
+    } catch {
       setDocumentosSalvos([]);
     } finally {
       setCarregandoDocumentos(false);
@@ -210,13 +248,25 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
     setSalvando(true);
     try {
       if (tipo === "receita") {
+        // Validar se há medicamentos
+        const medicamentosValidos = form.medicamentos.filter(m => m.medicamento.trim());
+        if (medicamentosValidos.length === 0) {
+          toast.error("Adicione pelo menos um medicamento!");
+          setSalvando(false);
+          return;
+        }
+
         const res = await api.post("/funcionario/receitas", {
           pacienteId: paciente.id,
           descricao: form.descricao,
           cid: form.cid,
-          medicamento: form.medicamento,
-          dosagem: form.dosagem,
-          quantidade: form.quantidade,
+          medicamentos: medicamentosValidos.map(m => ({
+            medicamento: m.medicamento,
+            dosagem: m.dosagem,
+            quantidade: Number.parseInt(m.quantidade) || 1,
+            posologia: m.posologia,
+            observacoes: m.observacoes,
+          })),
           observacoes: form.observacoes,
           dataEmissao: form.dataEmissao,
           status: "ativo",
@@ -435,53 +485,127 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
             </div>
 
             {tipo === "receita" ? (
-              <>
-                <div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-[#1A2E4A]">
-                    Medicamento
+                    Medicamentos prescritos
                   </label>
-                  <input
-                    value={form.medicamento}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        medicamento: e.target.value,
-                      }))
-                    }
-                    className="mt-2 w-full rounded-xl border border-[#C8D9ED] bg-[#F8FAFD] px-3 py-2.5 text-sm text-[#1A2E4A] outline-none"
-                    placeholder="Nome do medicamento"
-                  />
+                  <span className="text-xs text-[#5C7A9B]">
+                    {form.medicamentos.length} medicamento(s)
+                  </span>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-[#1A2E4A]">
-                    Dosagem
-                  </label>
-                  <input
-                    value={form.dosagem}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, dosagem: e.target.value }))
-                    }
-                    className="mt-2 w-full rounded-xl border border-[#C8D9ED] bg-[#F8FAFD] px-3 py-2.5 text-sm text-[#1A2E4A] outline-none"
-                    placeholder="Ex.: 500 mg"
-                  />
+
+                {/* Lista de medicamentos */}
+                <div className="space-y-3 rounded-xl border border-[#E4EDF7] bg-[#F8FAFD] p-4">
+                  {form.medicamentos.map((med, index) => (
+                    <div
+                      key={index}
+                      className="space-y-3 rounded-xl border border-[#D9E4F0] bg-white p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-[#1A2E4A]">
+                          Medicamento {index + 1}
+                        </p>
+                        {form.medicamentos.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removerMedicamento(index)}
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#FEE2E2] px-2 py-1 text-xs font-semibold text-[#DC2626] hover:bg-[#FECACA]"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Remover
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <label className="text-xs font-semibold text-[#5C7A9B]">
+                            Nome do medicamento *
+                          </label>
+                          <input
+                            type="text"
+                            value={med.medicamento}
+                            onChange={(e) =>
+                              atualizarMedicamento(index, "medicamento", e.target.value)
+                            }
+                            placeholder="Ex.: Amoxicilina"
+                            className="mt-1 w-full rounded-lg border border-[#C8D9ED] bg-white px-3 py-2 text-sm text-[#1A2E4A] outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-[#5C7A9B]">
+                            Dosagem *
+                          </label>
+                          <input
+                            type="text"
+                            value={med.dosagem}
+                            onChange={(e) =>
+                              atualizarMedicamento(index, "dosagem", e.target.value)
+                            }
+                            placeholder="Ex.: 500 mg"
+                            className="mt-1 w-full rounded-lg border border-[#C8D9ED] bg-white px-3 py-2 text-sm text-[#1A2E4A] outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-[#5C7A9B]">
+                            Quantidade
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            value={med.quantidade}
+                            onChange={(e) =>
+                              atualizarMedicamento(index, "quantidade", e.target.value)
+                            }
+                            placeholder="Ex.: 30"
+                            className="mt-1 w-full rounded-lg border border-[#C8D9ED] bg-white px-3 py-2 text-sm text-[#1A2E4A] outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-[#5C7A9B]">
+                            Posologia
+                          </label>
+                          <input
+                            type="text"
+                            value={med.posologia}
+                            onChange={(e) =>
+                              atualizarMedicamento(index, "posologia", e.target.value)
+                            }
+                            placeholder="Ex.: 1 comprimido a cada 8h"
+                            className="mt-1 w-full rounded-lg border border-[#C8D9ED] bg-white px-3 py-2 text-sm text-[#1A2E4A] outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-[#5C7A9B]">
+                          Observações
+                        </label>
+                        <textarea
+                          value={med.observacoes}
+                          onChange={(e) =>
+                            atualizarMedicamento(index, "observacoes", e.target.value)
+                          }
+                          placeholder="Ex.: Tomar com alimento"
+                          rows={2}
+                          className="mt-1 w-full rounded-lg border border-[#C8D9ED] bg-white px-3 py-2 text-sm text-[#1A2E4A] outline-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-[#1A2E4A]">
-                    Quantidade
-                  </label>
-                  <input
-                    value={form.quantidade}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        quantidade: e.target.value,
-                      }))
-                    }
-                    className="mt-2 w-full rounded-xl border border-[#C8D9ED] bg-[#F8FAFD] px-3 py-2.5 text-sm text-[#1A2E4A] outline-none"
-                    placeholder="Ex.: 30 comprimidos"
-                  />
-                </div>
-              </>
+
+                {/* Botão adicionar medicamento */}
+                <button
+                  type="button"
+                  onClick={adicionarMedicamento}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#C8D9ED] bg-[#EEF4FA] px-4 py-2 text-sm font-semibold text-[#1A3F72] hover:bg-[#DFE8F4]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar mais medicamento
+                </button>
+              </div>
             ) : (
               <div>
                 <label className="text-sm font-semibold text-[#1A2E4A]">
@@ -560,13 +684,18 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
             {tipo === "receita" ? (
               <>
                 <p className="text-[#5C7A9B]">
-                  Medicamento: {form.medicamento || " "}
+                  Medicamentos: {form.medicamentos.filter(m => m.medicamento).length} prescrito(s)
                 </p>
-                <p className="text-[#5C7A9B]">Dosagem: {form.dosagem || " "}</p>
-                <p className="text-[#5C7A9B]">
-                  Medicamento: {form.medicamento || " "}
-                </p>
-                <p className="text-[#5C7A9B]">Quantidade: {form.quantidade || " "}</p>
+                {form.medicamentos.map((med, idx) => (
+                  med.medicamento && (
+                    <div key={idx} className="rounded-lg bg-[#F0F5FA] p-2 text-sm">
+                      <p className="font-semibold text-[#0F2242]">{med.medicamento}</p>
+                      <p className="text-[#5C7A9B]">Dosagem: {med.dosagem || "—"}</p>
+                      <p className="text-[#5C7A9B]">Qtd: {med.quantidade || "—"}</p>
+                      {med.posologia && <p className="text-[#5C7A9B]">Posologia: {med.posologia}</p>}
+                    </div>
+                  )
+                ))}
               </>
             ) : (
               <p className="text-[#5C7A9B]">
@@ -602,6 +731,17 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
                 <p className="text-[#5C7A9B]">
                   Registro: {documentoSalvo.registroAssinatura}
                 </p>
+              )}
+              {documentoSalvo.tipoDocumento === "receita" && documentoSalvo.itens && documentoSalvo.itens.length > 0 && (
+                <div className="mt-3 space-y-1.5 rounded-lg bg-white p-2 border border-[#D9E4F0]">
+                  <p className="text-xs font-semibold text-[#0F2242]">Medicamentos prescritos:</p>
+                  {documentoSalvo.itens.map((med: any, idx: number) => (
+                    <p key={idx} className="text-xs text-[#5C7A9B]">
+                      • {med.medicamento} - {med.dosagem} (Qtd: {med.quantidade})
+                      {med.posologia && ` - ${med.posologia}`}
+                    </p>
+                  ))}
+                </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
                 {!documentoSalvo.assinaturaConcluida ? (
@@ -683,7 +823,7 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
                         </h4>
                       </div>
                     </div>
-                    <div className="grid gap-2 text-sm text-[#5C7A9B]">
+                  <div className="grid gap-2 text-sm text-[#5C7A9B]">
                       <p>
                         <span className="font-semibold">CID:</span>{" "}
                         {item.cid || "—"}
@@ -696,6 +836,16 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
                             )
                           : "—"}
                       </p>
+                      {item.tipoDocumento === "receita" && item.itens && item.itens.length > 0 && (
+                        <div className="mt-2 space-y-1.5 rounded-lg bg-[#F0F5FA] p-2">
+                          <p className="text-xs font-semibold text-[#0F2242]">Medicamentos:</p>
+                          {item.itens.map((med: any, idx: number) => (
+                            <p key={idx} className="text-xs text-[#5C7A9B]">
+                              • {med.medicamento} {med.dosagem ? `(${med.dosagem})` : ""}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
