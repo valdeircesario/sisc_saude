@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import { prisma } from '../config/database.js';
 
 export const authenticateToken = async (req, res, next) => {
@@ -46,3 +47,17 @@ export const authorizePaciente = (req, res, next) => {
     return res.status(403).json({ message: 'Token inválido' });
   }
 };
+
+// ✅ SEGURANÇA: Rate limiter específico para rotas de autenticação
+// Limite muito mais rígido para prevenir ataques de força bruta
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // Máximo 5 tentativas
+  message: 'Muitas tentativas de login. Tente novamente em 15 minutos.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req, res) => {
+    // Não aplicar rate limit se a requisição foi bem-sucedida (status 200)
+    return false;
+  },
+});

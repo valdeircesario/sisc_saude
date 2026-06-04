@@ -1,14 +1,20 @@
 import express from 'express';
 import path from 'path';
 import { prisma } from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Download de arquivo de exame
-router.get('/download/:filename', async (req, res) => {
+// ✅ SEGURANÇA: Download de arquivo de exame com autenticação e sanitização
+// Requer token JWT válido e sanitiza o filename para prevenir path traversal
+router.get('/download/:filename', authenticateToken, async (req, res) => {
   try {
     const { filename } = req.params;
-    const filePath = path.join(process.cwd(), 'uploads', 'exames', filename);
+    
+    // ✅ SEGURANÇA: Sanitizar o filename com path.basename para prevenir path traversal
+    // Isso remove qualquer '../' ou '..\' da URL, impedindo acesso a arquivos fora da pasta de uploads
+    const sanitizedFilename = path.basename(filename);
+    const filePath = path.join(process.cwd(), 'uploads', 'exames', sanitizedFilename);
     
     res.download(filePath, (err) => {
       if (err) {

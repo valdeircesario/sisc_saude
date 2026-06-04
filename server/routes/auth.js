@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/database.js';
+import { authLimiter } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -23,8 +24,8 @@ const validarCNS = (cns) => {
   return /^\d{15}$/.test(cns);
 };
 
-// Login para pacientes
-router.post('/login-paciente', async (req, res) => {
+// ✅ SEGURANÇA: Login para pacientes com rate limiting de força bruta
+router.post('/login-paciente', authLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body;
 
@@ -71,8 +72,8 @@ router.post('/login-paciente', async (req, res) => {
   }
 });
 
-// Login para outros usuários (admin, ubs, funcionario, laboratorio)
-router.post('/login-sistema', async (req, res) => {
+// ✅ SEGURANÇA: Login para sistema com rate limiting de força bruta
+router.post('/login-sistema', authLimiter, async (req, res) => {
   try {
     const { email, senha } = req.body;
 
@@ -196,9 +197,13 @@ router.post('/register-paciente', async (req, res) => {
       return res.status(400).json({ message: 'Email inválido' });
     }
 
-    // Validar senha
-    if (senha.length < 6) {
-      return res.status(400).json({ message: 'Senha deve ter pelo menos 6 caracteres' });
+    // ✅ SEGURANÇA: Validar senha com critérios fortes
+    // Exigir: mínimo 8 caracteres, pelo menos uma letra maiúscula, uma letra minúscula e um número
+    const senhaRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!senhaRegex.test(senha)) {
+      return res.status(400).json({
+        message: 'Senha deve ter: mínimo 8 caracteres, uma letra maiúscula, uma letra minúscula e um número'
+      });
     }
 
     // Verificar se já existe

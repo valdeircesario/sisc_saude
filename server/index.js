@@ -29,6 +29,17 @@ const __dirname = path.dirname(__filename);
 // Carregar variáveis de ambiente
 dotenv.config();
 
+// ✅ SEGURANÇA: Validar variáveis de ambiente críticas
+if (!process.env.JWT_SECRET) {
+  console.error(
+    "❌ ERRO CRÍTICO: JWT_SECRET não configurado nas variáveis de ambiente."
+  );
+  console.error(
+    "   Verifique o arquivo .env e certifique-se que JWT_SECRET está definido."
+  );
+  process.exit(1);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
@@ -61,8 +72,9 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Servir arquivos estáticos
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// ✅ SEGURANÇA: REMOVIDO - Os uploads agora só podem ser acessados através de rotas autenticadas
+// Evita exposição pública de dados médicos sensíveis (IDOR)
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
 app.use("/api/auth", authRoutes);
