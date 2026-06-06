@@ -8,10 +8,7 @@ import useDispensacao from "../../hooks/useDispensacao";
 import { FarmaciaHeader } from "../../components/Farmacia/FarmaciaHeader";
 import { FarmaciaSidebar } from "../../components/Farmacia/FarmaciaSidebar";
 import { FarmaciaConsultaTab } from "../../components/Farmacia/FarmaciaConsultaTab";
-import {
-  FarmaciaDispensacaoModal,
-  DispensacaoFormState,
-} from "../../components/Farmacia/FarmaciaDispensacaoModal";
+import { FarmaciaDispensacaoModalNovo, MedicamentoPendente } from "../../components/Farmacia/FarmaciaDispensacaoModalNovo";
 import {
   ReceitaPayload,
   DispensacaoPayload,
@@ -35,64 +32,20 @@ const FarmaciaDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [registroInput, setRegistroInput] = useState("");
   const [receita, setReceita] = useState<ReceitaPayload | null>(null);
-  const [dispensacaoForm, setDispensacaoForm] = useState<DispensacaoFormState>({
-    medicamentoFornecido: "",
-    observacoesDispensacao: "",
-    statusDispensacao: "completa",
-    farmaciaResponsavel: "",
-    quantidadeDispensada: "",
-  });
   const [showDispensacaoModal, setShowDispensacaoModal] = useState(false);
-  const [isEditingDispensacao, setIsEditingDispensacao] = useState(false);
   const [loadingDispensacao, setLoadingDispensacao] = useState(false);
-  const [editingDispensacaoId, setEditingDispensacaoId] = useState<
-    string | null
-  >(null);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
-  const openDispensacaoModal = (edit: boolean, dispensacaoId?: string) => {
+  const openDispensacaoModal = () => {
     if (!receita) return;
-
-    let formData: DispensacaoFormState = {
-      medicamentoFornecido: receita.medicamento,
-      observacoesDispensacao: "",
-      statusDispensacao: "completa",
-      farmaciaResponsavel: "",
-      quantidadeDispensada: receita.quantidade,
-    };
-
-    if (edit && dispensacaoId) {
-      const dispParaEditar = receita.dispensacoes?.find(
-        (d) => d.id === dispensacaoId,
-      );
-      if (dispParaEditar) {
-        formData = {
-          medicamentoFornecido:
-            dispParaEditar.medicamentoFornecido || receita.medicamento,
-          observacoesDispensacao: dispParaEditar.observacoesDispensacao || "",
-          statusDispensacao:
-            (dispParaEditar.statusDispensacao as "completa" | "parcial") ||
-            "completa",
-          farmaciaResponsavel:
-            dispParaEditar.farmaciaResponsavel || user?.nome || "",
-          quantidadeDispensada: "",
-        };
-        setEditingDispensacaoId(dispensacaoId);
-      }
-    }
-
-    setDispensacaoForm(formData);
-    setIsEditingDispensacao(edit);
     setShowDispensacaoModal(true);
   };
 
   const resetBusca = () => {
     setRegistroInput("");
     setReceita(null);
-    setIsEditingDispensacao(false);
     setShowDispensacaoModal(false);
-    setEditingDispensacaoId(null);
   };
 
   const buscarReceita = async () => {
@@ -113,80 +66,46 @@ const FarmaciaDashboard: React.FC = () => {
     }
   };
 
-  const handleDispensacaoFormChange = (
-    field: keyof DispensacaoFormState,
-    value: string,
+  const handleDispensarMedicamentos = async (
+    medicamentos: MedicamentoPendente[]
   ) => {
-    setDispensacaoForm({
-      ...dispensacaoForm,
-      [field]: value,
-    });
-  };
-
-  const handleDispensacaoSubmit = async () => {
     if (!receita) return;
 
-    // Validações obrigatórias
-    if (!dispensacaoForm.observacoesDispensacao.trim()) {
-      toast.error("Observações são obrigatórias");
-      return;
-    }
-
-    if (!dispensacaoForm.farmaciaResponsavel.trim()) {
-      toast.error("Atendente responsável é obrigatório");
+    if (medicamentos.length === 0) {
+      toast.error("Selecione ao menos um medicamento para dispensar");
       return;
     }
 
     setLoadingDispensacao(true);
     try {
       const payload = {
-        farmaciaResponsavel: dispensacaoForm.farmaciaResponsavel,
-        medicamentoFornecido: dispensacaoForm.medicamentoFornecido,
-        observacoesDispensacao: dispensacaoForm.observacoesDispensacao,
-        statusDispensacao: dispensacaoForm.statusDispensacao,
-        quantidadeDispensada: Number(dispensacaoForm.quantidadeDispensada) || 1,
+        receitaId: receita.id,
+        medicamentos: medicamentos.map((med) => ({
+          receitaMedicamentoId: med.receitaMedicamentoId,
+          medicamentoFornecido: med.medicamentoFornecido,
+          quantidadeDispensada: med.quantidadeDispensada,
+          observacoes: med.observacoes,
+          atendente: med.atendente,
+        })),
       };
 
-      let respData: typeof payload & { id?: string; createdAt?: string };
-      if (isEditingDispensacao && editingDispensacaoId) {
-        respData = (
-          await api.put(
-            `/farmacia/dispensacoes/${editingDispensacaoId}`,
-            payload,
-          )
-        ).data;
-        const dispensacoesAtualizadas = receita.dispensacoes?.map((d) =>
-          d.id === editingDispensacaoId
-            ? {
-                ...respData,
-                quantidadeDispensada: String(respData.quantidadeDispensada),
-              }
-            : d,
+      const response = await api.post("/farmacia/dispensar-medicamentos", payload);
+      
+      // Atualizar o status dos medicamentos dispensados
+      if (receita.itens) {
+        const itensPendentesIds = new Set(
+          medicamentos.map((m) => m.receitaMedicamentoId)
         );
-        setReceita({ ...receita, dispensacoes: dispensacoesAtualizadas });
-        toast.success("Dispensação atualizada com sucesso");
-      } else {
-        respData = (
-          await api.post("/farmacia/dispensar", {
-            receitaId: receita.id,
-            ...payload,
-          })
-        ).data;
-        setReceita({
-          ...receita,
-          dispensacoes: [
-            ...(receita.dispensacoes || []),
-            {
-              ...respData,
-              quantidadeDispensada: String(respData.quantidadeDispensada),
-            },
-          ],
-        });
-        toast.success("Dispensação registrada com sucesso");
+        const itensAtualizados = receita.itens.map((item) =>
+          itensPendentesIds.has(item.id)
+            ? { ...item, status: "dispensado", dispensado: true }
+            : item
+        );
+        setReceita({ ...receita, itens: itensAtualizados });
       }
 
+      toast.success(`${medicamentos.length} medicamento(s) dispensado(s) com sucesso!`);
       setShowDispensacaoModal(false);
-      setEditingDispensacaoId(null);
     } catch (err) {
       const axiosError = err as { response?: { data?: { message?: string } } };
       if (
@@ -198,7 +117,7 @@ const FarmaciaDashboard: React.FC = () => {
       } else if (err instanceof Error) {
         toast.error(err.message);
       } else {
-        toast.error("Erro ao registrar dispensação");
+        toast.error("Erro ao dispensar medicamentos");
       }
     } finally {
       setLoadingDispensacao(false);
@@ -213,7 +132,7 @@ const FarmaciaDashboard: React.FC = () => {
   const ultimaDispensacao = getUltimaDispensacao(receita?.dispensacoes);
   const validacaoDispensacao =
     receita && receita.dispensacoes
-      ? dispensacao.podeDispensar(receita.dispensacoes)
+      ? dispensacao.podeDispensar(receita.dispensacoes, receita.itens)
       : { pode: false, motivo: null };
   const contagem =
     receita && receita.dispensacoes
@@ -284,7 +203,7 @@ const FarmaciaDashboard: React.FC = () => {
                 contagem={contagem}
                 ultimaDispensacao={ultimaDispensacao}
                 validacaoDispensacao={validacaoDispensacao}
-                onDispensarClick={() => openDispensacaoModal(false)}
+                onDispensarClick={() => openDispensacaoModal()}
                 formatarDataDispensacao={
                   dispensacao.formatarDataDispensacao
                     ? dispensacao.formatarDataDispensacao
@@ -304,21 +223,11 @@ const FarmaciaDashboard: React.FC = () => {
 
       {/* ── Modal de Dispensação ── */}
       {showDispensacaoModal && receita && (
-        <FarmaciaDispensacaoModal
+        <FarmaciaDispensacaoModalNovo
           receita={receita}
-          isEditing={isEditingDispensacao}
-          formData={dispensacaoForm}
-          onFormChange={handleDispensacaoFormChange}
-          onSubmit={handleDispensacaoSubmit}
-          onCancel={() => {
-            setShowDispensacaoModal(false);
-            setIsEditingDispensacao(false);
-            setEditingDispensacaoId(null);
-          }}
+          onSubmit={handleDispensarMedicamentos}
+          onCancel={() => setShowDispensacaoModal(false)}
           isLoading={loadingDispensacao}
-          contagem={contagem}
-          validacaoDispensacao={validacaoDispensacao}
-          maxDispensacoes={dispensacao.MAX_DISPENSACOES}
           userName={user?.nome || "Farmácia"}
         />
       )}

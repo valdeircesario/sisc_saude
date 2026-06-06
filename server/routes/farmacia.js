@@ -13,8 +13,11 @@ router.use(authorizeRole(["farmacia"]));
 // Buscar receita por registroAssinatura
 router.get("/receita/:registro", farmaciaController.buscarReceita);
 
-// Registrar dispensação de receita
+// Registrar dispensação de receita (legado - um medicamento por vez)
 router.post("/dispensar", farmaciaController.dispensarReceita);
+
+// Dispensar múltiplos medicamentos de uma receita
+router.post("/dispensar-medicamentos", farmaciaController.dispensarMedicamentos);
 
 // Atualizar dispensação parcial
 router.put("/dispensacoes/:dispensacaoId", farmaciaController.atualizarDispensacao);

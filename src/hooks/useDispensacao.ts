@@ -11,7 +11,17 @@ export const useDispensacao = () => {
   /**
    * Verifica se pode dispensar uma receita
    */
-  const podeDispensar = useCallback((dispensacoes: any[] = []) => {
+  const podeDispensar = useCallback((dispensacoes: any[] = [], itens?: any[]) => {
+    // Nova validação baseada nos itens da receita (para múltiplos medicamentos)
+    if (itens && itens.length > 0) {
+      const todosDispensados = itens.every(i => i.status === "dispensado" || i.dispensado);
+      if (todosDispensados) {
+        return { pode: false, motivo: "Esta receita já foi completamente dispensada" };
+      }
+      return { pode: true, motivo: null };
+    }
+
+    // Validação legada
     if (!dispensacoes || dispensacoes.length === 0) {
       return { pode: true, motivo: null };
     }

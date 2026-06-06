@@ -35,6 +35,19 @@ export const dispensarReceita = async (req, res) => {
   }
 };
 
+export const dispensarMedicamentos = async (req, res) => {
+  try {
+    const farmacia = {
+      id: req.user.id,
+      nome: req.user.nome,
+    };
+    const result = await farmaciaService.dispensarMedicamentosFarmacia(farmacia, req.body);
+    res.status(201).json({ message: "Medicamentos dispensados com sucesso", ...result });
+  } catch (error) {
+    handleError(res, error);
+  }
+};
+
 export const atualizarDispensacao = async (req, res) => {
   try {
     const { dispensacaoId } = req.params;
@@ -57,7 +70,7 @@ export const deletarDispensacao = async (req, res) => {
 
 export const listarTodas = async (req, res) => {
   try {
-    const data = await farmaciaService.listarTodasDispensacoes();
+    const data = await farmaciaService.listarTodasDispensacoes(req.user.id);
     res.json(data);
   } catch (error) {
     handleError(res, error);
@@ -66,7 +79,7 @@ export const listarTodas = async (req, res) => {
 
 export const obterEstatisticas = async (req, res) => {
   try {
-    const data = await farmaciaService.obterEstatisticas();
+    const data = await farmaciaService.obterEstatisticas(req.user.id);
     res.json(data);
   } catch (error) {
     handleError(res, error);

@@ -325,6 +325,7 @@ model DispensacaoReceita {
   receitaMedicamentoId    String?
   ubsId                   String?
   funcionarioId           String?
+  atendente               String?
   statusDispensacao       String   @default("completa") // "completa" | "parcial"
   observacoesDispensacao  String?  // ex: "Amoxicilina indisponível, apenas Dipirona fornecida"
   medicamentoFornecido    String?  // pode diferir do prescrito (genérico, etc.)

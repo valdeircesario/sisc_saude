@@ -7,11 +7,23 @@ export interface DispensacaoPayload {
   dataDispensacao?: string;
   createdAt?: string;
   statusDispensacao?: string;
-  quantidadeDispensada?: string;
+  quantidadeDispensada?: string | number;
   farmaciaResponsavel?: string | null;
   medicamentoFornecido?: string | null;
   observacoesDispensacao?: string | null;
   farmacia?: { nome: string } | null;
+  receitaMedicamentoId?: string | null;
+}
+
+export interface ReceitaMedicamento {
+  id: string;
+  medicamento: string;
+  dosagem: string;
+  quantidade: number;
+  posologia?: string;
+  observacoes?: string;
+  status: string; // "pendente" | "dispensado"
+  dispensado?: boolean;
 }
 
 export interface ReceitaPayload {
@@ -27,6 +39,7 @@ export interface ReceitaPayload {
   funcionario?: { nome: string } | null;
   ubs?: { nome: string } | null;
   dispensacoes?: DispensacaoPayload[] | null;
+  itens?: ReceitaMedicamento[] | null;
 }
 
 interface FarmaciaResultCardProps {
@@ -97,22 +110,71 @@ export const FarmaciaResultCard: React.FC<FarmaciaResultCardProps> = ({
       {/* Prescrição */}
       <section>
         <h4 className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-          Prescrição médica
+          Medicamentos prescritos
         </h4>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <InfoItem
-              label="Medicamento prescrito"
-              value={receita.medicamento}
-              fullWidth
-            />
+        {receita.itens && receita.itens.length > 0 ? (
+          <div className="space-y-3">
+            {receita.itens.map((item) => (
+              <div
+                key={item.id}
+                className={`rounded-xl border p-4 ${
+                  item.status === "dispensado"
+                    ? "border-emerald-200 bg-emerald-50"
+                    : "border-slate-200 bg-slate-50"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`mt-1 h-2.5 w-2.5 flex-shrink-0 rounded-full ${
+                      item.status === "dispensado"
+                        ? "bg-emerald-500"
+                        : "bg-slate-300"
+                    }`}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-slate-700">
+                      {item.medicamento}
+                      {item.status === "dispensado" && (
+                        <span className="ml-2 text-xs font-semibold text-emerald-600">
+                          ✓ Dispensado
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      <strong>Dosagem:</strong> {item.dosagem} |{" "}
+                      <strong>Qtd:</strong> {item.quantidade}
+                    </p>
+                    {item.posologia && (
+                      <p className="mt-1 text-xs text-slate-600">
+                        <strong>Posologia:</strong> {item.posologia}
+                      </p>
+                    )}
+                    {item.observacoes && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        <strong>Obs:</strong> {item.observacoes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <InfoItem
+                label="Medicamento prescrito"
+                value={receita.medicamento}
+                fullWidth
+              />
+            </div>
 
-          <InfoItem label="Dosagem" value={receita.dosagem} />
+            <InfoItem label="Dosagem" value={receita.dosagem} />
 
-          <InfoItem label="Comprimidos" value={receita.quantidade} />
-        </div>
+            <InfoItem label="Comprimidos" value={receita.quantidade} />
+          </div>
+        )}
       </section>
 
       {receita.observacoes && (
