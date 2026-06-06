@@ -121,6 +121,8 @@ import { PacienteHeader } from "../../components/Paciente/PacienteHeader";
 import { PacienteSidebar } from "../../components/Paciente/PacienteSidebar";
 import { PacienteHomeTab } from "../../components/Paciente/PacienteHomeTab";
 import { PacientePerfilTab } from "../../components/Paciente/PacientePerfilTab";
+import { PacienteConsultasTab } from "../../components/Paciente/PacienteConsultasTab";
+import { PacienteHistoricoTab } from "../../components/Paciente/PacienteHistoricoTab";
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -892,134 +894,21 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── CONSULTAS ───────────────────────────────────── */}
           {activeTab === "consultas" && (
-            <div className="max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <SectionHeader icon={Stethoscope} title="Minhas Consultas" />
-                  <button
-                    onClick={() => setShowConsultaModal(true)}
-                    className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all duration-150"
-                  >
-                    <Calendar className="h-4 w-4" /> Solicitar
-                  </button>
-                </div>
+            <>
+              <PacienteConsultasTab
+                consultas={consultas || []}
+                consultasFiltradas={consultasFiltradas || []}
+                filtroEspecialidade={filtroEspecialidade}
+                setFiltroEspecialidade={setFiltroEspecialidade}
+                especialidadesUnicas={especialidadesUnicas}
+                setShowConsultaModal={setShowConsultaModal}
+                openDetalhesModal={openDetalhesModal}
+                SectionHeader={SectionHeader}
+                StatusBadge={StatusBadge}
+                EmptyState={EmptyState}
+              />
 
-                {/* Filtro de especialidade */}
-                {consultas && consultas.length > 0 && (
-                  <div className="mb-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                    <label
-                      htmlFor="filtro-especialidade"
-                      className="text-sm font-semibold text-gray-600"
-                    >
-                      Filtrar por especialidade:
-                    </label>
-                    <select
-                      id="filtro-especialidade"
-                      value={filtroEspecialidade}
-                      onChange={(e) => setFiltroEspecialidade(e.target.value)}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"
-                    >
-                      <option value="">Todas as especialidades</option>
-                      {especialidadesUnicas.map((esp) => (
-                        <option key={esp} value={esp}>
-                          {esp}
-                        </option>
-                      ))}
-                    </select>
-                    {filtroEspecialidade && (
-                      <button
-                        onClick={() => setFiltroEspecialidade("")}
-                        className="text-xs font-semibold text-teal-600 hover:text-teal-700 underline"
-                      >
-                        Limpar filtro
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {consultasFiltradas && consultasFiltradas.length > 0 ? (
-                  <div className="overflow-x-auto rounded-xl border border-gray-100">
-                    <table className="w-full">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                            Especialidade
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                            Data
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                            Unidade de Saúde
-                          </th>
-                          <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-4 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">
-                            Ações
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100 bg-white">
-                        {consultasFiltradas.map((consulta: any) => (
-                          <tr
-                            key={consulta.id}
-                            className="hover:bg-slate-50 transition-colors duration-150"
-                          >
-                            <td className="px-6 py-4">
-                              <p className="text-sm font-semibold text-gray-900">
-                                {consulta.especialidade}
-                              </p>
-                            </td>
-                            <td className="px-6 py-4">
-                              <p className="text-sm text-gray-600">
-                                {consulta.dataAgendada
-                                  ? format(
-                                      new Date(consulta.dataAgendada),
-                                      "dd/MM/yyyy HH:mm",
-                                      { locale: ptBR },
-                                    )
-                                  : "—"}
-                              </p>
-                            </td>
-                            <td className="px-6 py-4">
-                              <p className="text-sm text-gray-600">
-                                {consulta.ubs?.nome || "—"}
-                              </p>
-                            </td>
-                            <td className="px-6 py-4">
-                              <StatusBadge status={consulta.status} />
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <button
-                                onClick={() => openDetalhesModal(consulta)}
-                                className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-600 hover:bg-teal-100 transition-colors border border-teal-100"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                Visualizar
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : consultas && consultas.length > 0 ? (
-                  <div className="rounded-xl border border-gray-100 bg-slate-50 p-6 text-center">
-                    <p className="text-sm font-medium text-gray-600">
-                      Nenhuma consulta encontrada com a especialidade{" "}
-                      <span className="font-bold text-gray-800">
-                        "{filtroEspecialidade}"
-                      </span>
-                    </p>
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Calendar}
-                    message="Nenhuma consulta encontrada"
-                  />
-                )}
-
-                {/* ── MODAL DE CANCELAMENTO ─────────────────────────────── */}
+              {/* ── MODAL DE CANCELAMENTO ─────────────────────────────── */}
                 {showCancelarModal && selectedItem && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
                     <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden">
@@ -1151,120 +1040,17 @@ const PacienteDashboard: React.FC = () => {
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+            </>
           )}
 
           {/* ── HISTÓRICO MÉDICO ────────────────────────────── */}
           {activeTab === "historico" && (
-            <div className="max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <SectionHeader
-                    icon={Heart}
-                    title="Histórico Médico"
-                    color="rose"
-                  />
-                  {historicoMedico && historicoMedico.length > 0 && (
-                    <button
-                      onClick={() =>
-                        generateHistoricoMedicoPDF(historicoMedico, perfil)
-                      }
-                      className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all"
-                    >
-                      <Printer className="h-4 w-4" /> Imprimir PDF
-                    </button>
-                  )}
-                </div>
-
-                {historicoMedico && historicoMedico.length > 0 ? (
-                  <div className="space-y-4">
-                    {historicoMedico.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="rounded-xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-150"
-                      >
-                        <div className="bg-gradient-to-r from-teal-700 to-teal-600 px-5 py-4 text-white">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-base font-bold leading-snug">
-                                {item.diagnostico}
-                              </p>
-                              <p className="text-xs text-teal-200 mt-1 flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {format(
-                                  new Date(item.dataConsulta),
-                                  "dd/MM/yyyy",
-                                  { locale: ptBR },
-                                )}
-                              </p>
-                            </div>
-                            <div className="text-right flex-shrink-0">
-                              <p className="text-xs font-bold text-white">
-                                {item.funcionario.nome}
-                              </p>
-                              <p className="text-xs text-teal-200">
-                                {item.funcionario.funcao}
-                              </p>
-                              <p className="text-xs text-teal-300">
-                                {item.funcionario.ubs.nome}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-slate-50 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {item.doenca && (
-                            <div className="rounded-lg border border-rose-100 bg-white p-3">
-                              <p className="text-xs font-bold text-rose-500 uppercase tracking-wide mb-1 flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" /> Doença
-                              </p>
-                              <p className="text-sm font-semibold text-gray-800">
-                                {item.doenca}
-                              </p>
-                            </div>
-                          )}
-                          {item.medicacao && (
-                            <div className="rounded-lg border border-emerald-100 bg-white p-3">
-                              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide mb-1 flex items-center gap-1">
-                                <CheckCircle className="h-3 w-3" /> Medicação
-                              </p>
-                              <p className="text-sm font-semibold text-gray-800">
-                                {item.medicacao}
-                              </p>
-                            </div>
-                          )}
-                          {item.laudo && (
-                            <div className="rounded-lg border border-sky-100 bg-white p-3 sm:col-span-2">
-                              <p className="text-xs font-bold text-sky-600 uppercase tracking-wide mb-1 flex items-center gap-1">
-                                <FileText className="h-3 w-3" /> Laudo Médico
-                              </p>
-                              <p className="text-sm text-gray-700 leading-relaxed">
-                                {item.laudo}
-                              </p>
-                            </div>
-                          )}
-                          {item.observacoes && (
-                            <div className="rounded-lg border border-amber-100 bg-white p-3 sm:col-span-2">
-                              <p className="text-xs font-bold text-amber-600 uppercase tracking-wide mb-1 flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" /> Observações
-                              </p>
-                              <p className="text-sm text-gray-700 leading-relaxed">
-                                {item.observacoes}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Heart}
-                    message="Nenhum histórico médico encontrado"
-                  />
-                )}
-              </div>
-            </div>
+            <PacienteHistoricoTab
+              historicoMedico={historicoMedico || []}
+              perfil={perfil}
+              SectionHeader={SectionHeader}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── VACINAS ─────────────────────────────────────── */}
