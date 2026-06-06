@@ -35,43 +35,15 @@ import { UBSFuncionarioModal } from "../../components/UBS/Modals/UBSFuncionarioM
 import { UBSCampanhaModal } from "../../components/UBS/Modals/UBSCampanhaModal";
 import { UBSEditCampanhaModal } from "../../components/UBS/Modals/UBSEditCampanhaModal";
 import { UBSInscricoesCampanhaModal } from "../../components/UBS/Modals/UBSInscricoesCampanhaModal";
-
-// Componente Modal Base
-const Modal: React.FC<{
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
-}> = ({ isOpen, onClose, title, children, size = "md" }) => {
-  if (!isOpen) return null;
-
-  const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-4xl",
-    xl: "max-w-6xl",
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div
-        className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
-      >
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h3 className="text-xl font-bold text-gray-900">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-};
+import { UBSMedicamentoModal } from "../../components/UBS/Modals/UBSMedicamentoModal";
+import { UBSAgendamentoModal } from "../../components/UBS/Modals/UBSAgendamentoModal";
+import { UBSEditarPacienteModal } from "../../components/UBS/Modals/UBSEditarPacienteModal";
+import { UBSCancelamentoConsultaModal } from "../../components/UBS/Modals/UBSCancelamentoConsultaModal";
+import { UBSHistoricoPacienteModal } from "../../components/UBS/Modals/UBSHistoricoPacienteModal";
+import { UBSAgendarConsultaPacienteModal } from "../../components/UBS/Modals/UBSAgendarConsultaPacienteModal";
+import { UBSAgendamentoCampanhaModal } from "../../components/UBS/Modals/UBSAgendamentoCampanhaModal";
+import { UBSSolicitarInternacaoModal } from "../../components/UBS/Modals/UBSSolicitarInternacaoModal";
+import { Modal } from "../../components/UBS/Modals/UBSModalBase";
 
 const UBSDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -1270,623 +1242,65 @@ const UBSDashboard: React.FC = () => {
         </Modal>
 
         {/* Modal de Medicamento */}
-        <Modal
+        <UBSMedicamentoModal
           isOpen={showMedModal}
           onClose={() => setShowMedModal(false)}
-          title={editingMed ? "Editar Medicamento" : "Novo Medicamento"}
-          size="lg"
-        >
-          <form onSubmit={handleMedSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nome do Medicamento *
-              </label>
-              <input
-                type="text"
-                value={medData.nome}
-                onChange={(e) =>
-                  setMedData({ ...medData, nome: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descrição
-              </label>
-              <textarea
-                value={medData.descricao}
-                onChange={(e) =>
-                  setMedData({ ...medData, descricao: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lote *
-                </label>
-                <input
-                  type="text"
-                  value={medData.lote}
-                  onChange={(e) =>
-                    setMedData({ ...medData, lote: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Quantidade *
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={medData.quantidade}
-                  onChange={(e) =>
-                    setMedData({ ...medData, quantidade: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data de Validade *
-                </label>
-                <input
-                  type="date"
-                  value={medData.dataValidade}
-                  onChange={(e) =>
-                    setMedData({ ...medData, dataValidade: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <input
-                id="med-vencido"
-                type="checkbox"
-                checked={medData.vencido}
-                onChange={(e) =>
-                  setMedData({ ...medData, vencido: e.target.checked })
-                }
-                className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <label htmlFor="med-vencido" className="text-sm text-gray-700">
-                Marcar como vencido
-              </label>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowMedModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-              >
-                {editingMed ? "Atualizar" : "Cadastrar"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          editingMed={editingMed}
+          medData={medData}
+          setMedData={setMedData}
+          onSubmit={handleMedSubmit}
+        />
 
         {/* Modal de Agendamento de Consulta */}
-        <Modal
+        <UBSAgendamentoModal
           isOpen={showAgendamentoModal}
           onClose={() => setShowAgendamentoModal(false)}
-          title="Agendar Consulta"
-          size="lg"
-        >
-          {selectedConsulta && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">
-                Detalhes da Consulta
-              </h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>
-                  <span className="font-medium">Paciente:</span>{" "}
-                  {selectedConsulta.paciente.nome}
-                </p>
-                <p>
-                  <span className="font-medium">Especialidade:</span>{" "}
-                  {selectedConsulta.especialidade}
-                </p>
-                <p>
-                  <span className="font-medium">Motivo:</span>{" "}
-                  {selectedConsulta.motivo}
-                </p>
-              </div>
-            </div>
-          )}
-          <form onSubmit={handleAgendamentoSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data e Hora *
-              </label>
-              <input
-                type="datetime-local"
-                value={agendamentoData.dataAgendada}
-                onChange={(e) =>
-                  setAgendamentoData({
-                    ...agendamentoData,
-                    dataAgendada: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Funcionário *
-              </label>
-              <select
-                value={agendamentoData.funcionarioId}
-                onChange={(e) =>
-                  setAgendamentoData({
-                    ...agendamentoData,
-                    funcionarioId: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              >
-                <option value="">Selecione um funcionário</option>
-                {funcionarios?.map((func: any) => (
-                  <option key={func.id} value={func.id}>
-                    {func.nome} - {func.funcao}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Observações
-              </label>
-              <textarea
-                value={agendamentoData.observacoes}
-                onChange={(e) =>
-                  setAgendamentoData({
-                    ...agendamentoData,
-                    observacoes: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowAgendamentoModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Agendar
-              </button>
-            </div>
-          </form>
-        </Modal>
+          selectedConsulta={selectedConsulta}
+          agendamentoData={agendamentoData}
+          setAgendamentoData={setAgendamentoData}
+          funcionarios={funcionarios || []}
+          onSubmit={handleAgendamentoSubmit}
+        />
 
         {/* Modal de Editar Paciente */}
-        <Modal
+        <UBSEditarPacienteModal
           isOpen={showPacienteModal}
           onClose={() => setShowPacienteModal(false)}
-          title="Editar Paciente"
-        >
-          {selectedPaciente && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">
-                Dados do Paciente
-              </h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>
-                  <span className="font-medium">Nome:</span>{" "}
-                  {selectedPaciente.nome}
-                </p>
-                <p>
-                  <span className="font-medium">CPF:</span>{" "}
-                  {selectedPaciente.cpf}
-                </p>
-              </div>
-            </div>
-          )}
-          <form onSubmit={handlePacienteEditSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Endereço *
-              </label>
-              <input
-                type="text"
-                value={pacienteEditData.endereco}
-                onChange={(e) =>
-                  setPacienteEditData({
-                    ...pacienteEditData,
-                    endereco: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Telefone *
-              </label>
-              <input
-                type="text"
-                value={pacienteEditData.telefone}
-                onChange={(e) =>
-                  setPacienteEditData({
-                    ...pacienteEditData,
-                    telefone: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowPacienteModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Atualizar
-              </button>
-            </div>
-          </form>
-        </Modal>
+          selectedPaciente={selectedPaciente}
+          pacienteEditData={pacienteEditData}
+          setPacienteEditData={setPacienteEditData}
+          onSubmit={handlePacienteEditSubmit}
+        />
 
         {/* Modal de Cancelamento de Consulta */}
-        <Modal
+        <UBSCancelamentoConsultaModal
           isOpen={showCancelamentoModal}
           onClose={() => setShowCancelamentoModal(false)}
-          title="Cancelar Consulta"
-          size="lg"
-        >
-          {selectedConsulta && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">
-                Detalhes da Consulta
-              </h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>
-                  <span className="font-medium">Paciente:</span>{" "}
-                  {selectedConsulta.paciente.nome}
-                </p>
-                <p>
-                  <span className="font-medium">Especialidade:</span>{" "}
-                  {selectedConsulta.especialidade}
-                </p>
-                <p>
-                  <span className="font-medium">Motivo:</span>{" "}
-                  {selectedConsulta.motivo}
-                </p>
-              </div>
-            </div>
-          )}
-          <form onSubmit={handleCancelamentoSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Motivo do Cancelamento
-              </label>
-              <textarea
-                value={cancelamentoData.observacoes}
-                onChange={(e) =>
-                  setCancelamentoData({
-                    ...cancelamentoData,
-                    observacoes: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={4}
-                placeholder="Digite o motivo do cancelamento..."
-              />
-            </div>
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowCancelamentoModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar Consulta
-              </button>
-            </div>
-          </form>
-        </Modal>
+          selectedConsulta={selectedConsulta}
+          cancelamentoData={cancelamentoData}
+          setCancelamentoData={setCancelamentoData}
+          onSubmit={handleCancelamentoSubmit}
+        />
 
         {/* Modal de Histórico do Paciente */}
-        <Modal
+        <UBSHistoricoPacienteModal
           isOpen={showHistoricoModal}
           onClose={() => setShowHistoricoModal(false)}
-          title={`Histórico Médico - ${selectedPaciente?.nome}`}
-          size="xl"
-        >
-          <div className="space-y-6">
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                Histórico Médico
-              </h4>
-              {historicoPaciente && historicoPaciente.length > 0 ? (
-                <div className="space-y-4">
-                  {historicoPaciente.map((item: any) => (
-                    <div key={item.id} className="bg-gray-50 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <h5 className="font-medium text-gray-900">
-                          {item.diagnostico}
-                        </h5>
-                        <span className="text-sm text-gray-500">
-                          {format(new Date(item.dataConsulta), "dd/MM/yyyy", {
-                            locale: ptBR,
-                          })}
-                        </span>
-                      </div>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <p>
-                          <span className="font-medium">Médico:</span>{" "}
-                          {item.funcionario.nome} ({item.funcionario.funcao})
-                        </p>
-                        <p>
-                          <span className="font-medium">UBS:</span>{" "}
-                          {item.funcionario.ubs.nome}
-                        </p>
-                        <p>
-                          <span className="font-medium">Laudo:</span>{" "}
-                          {item.laudo}
-                        </p>
-                        {item.doenca && (
-                          <p>
-                            <span className="font-medium">Doença:</span>{" "}
-                            {item.doenca}
-                          </p>
-                        )}
-                        {item.medicacao && (
-                          <p>
-                            <span className="font-medium">Medicação:</span>{" "}
-                            {item.medicacao}
-                          </p>
-                        )}
-                        {item.observacoes && (
-                          <p>
-                            <span className="font-medium">Observações:</span>{" "}
-                            {item.observacoes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">
-                  Nenhum histórico médico encontrado.
-                </p>
-              )}
-            </div>
-
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                Consultas
-              </h4>
-              {consultasPaciente && consultasPaciente.length > 0 ? (
-                <div className="space-y-4">
-                  {consultasPaciente.map((consulta: any) => (
-                    <div
-                      key={consulta.id}
-                      className="bg-gray-50 rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <h5 className="font-medium text-gray-900">
-                          {consulta.especialidade}
-                        </h5>
-                        <span className="text-sm text-gray-500">
-                          {format(new Date(consulta.createdAt), "dd/MM/yyyy", {
-                            locale: ptBR,
-                          })}
-                        </span>
-                      </div>
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <p>
-                          <span className="font-medium">Motivo:</span>{" "}
-                          {consulta.motivo}
-                        </p>
-                        <p>
-                          <span className="font-medium">Status:</span>{" "}
-                          {consulta.status}
-                        </p>
-                        {consulta.dataAgendada && (
-                          <p>
-                            <span className="font-medium">Data Agendada:</span>{" "}
-                            {format(
-                              new Date(consulta.dataAgendada),
-                              "dd/MM/yyyy HH:mm",
-                              { locale: ptBR },
-                            )}
-                          </p>
-                        )}
-                        {consulta.funcionario && (
-                          <p>
-                            <span className="font-medium">Médico:</span>{" "}
-                            {consulta.funcionario.nome}
-                          </p>
-                        )}
-                        {consulta.observacoes && (
-                          <p>
-                            <span className="font-medium">Observações:</span>{" "}
-                            {consulta.observacoes}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">
-                  Nenhuma consulta encontrada.
-                </p>
-              )}
-            </div>
-          </div>
-        </Modal>
+          selectedPaciente={selectedPaciente}
+          historicoPaciente={historicoPaciente || []}
+          consultasPaciente={consultasPaciente || []}
+        />
 
         {/* Modal de Agendar Consulta para Paciente - CORRIGIDO */}
-        <Modal
+        <UBSAgendarConsultaPacienteModal
           isOpen={showConsultaPacienteModal}
           onClose={() => setShowConsultaPacienteModal(false)}
-          title="Agendar Consulta"
-          size="lg"
-        >
-          {selectedPaciente && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">Paciente</h4>
-              <p className="text-sm text-gray-600">{selectedPaciente.nome}</p>
-            </div>
-          )}
-          <form onSubmit={handleConsultaPacienteSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Especialidade *
-              </label>
-              <input
-                type="text"
-                value={consultaPacienteData.especialidade}
-                onChange={(e) =>
-                  setConsultaPacienteData({
-                    ...consultaPacienteData,
-                    especialidade: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Cardiologia, Clínica Geral, etc."
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Motivo *
-              </label>
-              <input
-                type="text"
-                value={consultaPacienteData.motivo}
-                onChange={(e) =>
-                  setConsultaPacienteData({
-                    ...consultaPacienteData,
-                    motivo: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Descreva o motivo da consulta"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data e Hora *
-              </label>
-              <input
-                type="datetime-local"
-                value={consultaPacienteData.dataAgendada}
-                onChange={(e) =>
-                  setConsultaPacienteData({
-                    ...consultaPacienteData,
-                    dataAgendada: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Funcionário *
-              </label>
-              <select
-                value={consultaPacienteData.funcionarioId}
-                onChange={(e) =>
-                  setConsultaPacienteData({
-                    ...consultaPacienteData,
-                    funcionarioId: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              >
-                <option value="">Selecione um funcionário</option>
-                {funcionarios?.map((func: any) => (
-                  <option key={func.id} value={func.id}>
-                    {func.nome} - {func.funcao}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Observações
-              </label>
-              <textarea
-                value={consultaPacienteData.observacoes}
-                onChange={(e) =>
-                  setConsultaPacienteData({
-                    ...consultaPacienteData,
-                    observacoes: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={3}
-                placeholder="Observações adicionais sobre a consulta"
-              />
-            </div>
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowConsultaPacienteModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-              >
-                Agendar Consulta
-              </button>
-            </div>
-          </form>
-        </Modal>
+          selectedPaciente={selectedPaciente}
+          consultaPacienteData={consultaPacienteData}
+          setConsultaPacienteData={setConsultaPacienteData}
+          funcionarios={funcionarios || []}
+          onSubmit={handleConsultaPacienteSubmit}
+        />
 
         {/* Modal de Inscrições da Campanha */}
         <Modal
