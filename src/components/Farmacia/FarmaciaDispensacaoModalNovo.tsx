@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
 import {
   Package,
   Box,
@@ -32,12 +33,11 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
 > = ({ receita, onSubmit, onCancel, isLoading, userName }) => {
   const medicamentosPendentes =
     receita.itens?.filter((item) => item.status === "pendente") || [];
-  const [selecionados, setSelecionados] = useState<Set<string>>(
-    new Set(medicamentosPendentes.map((m) => m.id))
-  );
-  const [formulariosAbertos, setFormulariosAbertos] = useState<Set<string>>(
-    new Set()
-  );
+  
+  // Inicia com nenhum selecionado e nenhum formulário aberto
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
+  const [formulariosAbertos, setFormulariosAbertos] = useState<Set<string>>(new Set());
+  
   const [dadosMedicamentos, setDadosMedicamentos] = useState<
     Record<string, MedicamentoPendente>
   >(
@@ -57,23 +57,21 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
   );
 
   const handleToggleSelecionado = (id: string) => {
-    const novo = new Set(selecionados);
-    if (novo.has(id)) {
-      novo.delete(id);
-    } else {
-      novo.add(id);
-    }
-    setSelecionados(novo);
-  };
+    const novosSelecionados = new Set(selecionados);
+    const novosFormularios = new Set(formulariosAbertos);
 
-  const handleToggleFormulario = (id: string) => {
-    const novo = new Set(formulariosAbertos);
-    if (novo.has(id)) {
-      novo.delete(id);
+    if (novosSelecionados.has(id)) {
+      // Se estava selecionado, remove da seleção e fecha o form
+      novosSelecionados.delete(id);
+      novosFormularios.delete(id);
     } else {
-      novo.add(id);
+      // Se não estava selecionado, adiciona à seleção e abre o form automaticamente
+      novosSelecionados.add(id);
+      novosFormularios.add(id);
     }
-    setFormulariosAbertos(novo);
+    
+    setSelecionados(novosSelecionados);
+    setFormulariosAbertos(novosFormularios);
   };
 
   const handleMudancaDados = (
@@ -97,13 +95,13 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
     }));
 
     if (medicamentosSelecionados.length === 0) {
-      alert("Selecione ao menos um medicamento para dispensar");
+      toast.warning("Selecione ao menos um medicamento para dispensar");
       return;
     }
 
     const faltaAtendente = medicamentosSelecionados.some(med => !med.atendente || !med.atendente.trim());
     if (faltaAtendente) {
-      alert("O nome do atendente é obrigatório para todos os medicamentos selecionados.");
+      toast.error("O nome do atendente é obrigatório para todos os medicamentos selecionados.");
       return;
     }
 
@@ -112,7 +110,7 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2
@@ -144,145 +142,122 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
           <>
             {/* Lista de medicamentos */}
             <div className="space-y-2 mb-6">
-              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Medicamentos disponíveis para dispensação ({medicamentosPendentes.length})
+              <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center justify-between">
+                <span>Medicamentos disponíveis para dispensação ({medicamentosPendentes.length})</span>
+                <span className="text-red-500 normal-case font-medium">Selecione para preencher os dados</span>
               </label>
-              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2">
                 {medicamentosPendentes.map((medicamento) => (
                   <div
                     key={medicamento.id}
-                    className="border border-slate-200 rounded-xl p-3 hover:bg-slate-50 transition"
+                    className={`border transition-all duration-200 rounded-xl ${
+                      selecionados.has(medicamento.id) 
+                        ? "border-red-300 shadow-sm bg-white" 
+                        : "border-slate-200 hover:border-red-200 hover:bg-slate-50 bg-slate-50/50"
+                    }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div 
+                      className="flex items-start gap-4 p-4 cursor-pointer"
+                      onClick={() => handleToggleSelecionado(medicamento.id)}
+                    >
                       <input
                         type="checkbox"
                         checked={selecionados.has(medicamento.id)}
-                        onChange={() =>
-                          handleToggleSelecionado(medicamento.id)
-                        }
-                        className="mt-1 w-4 h-4 text-red-600 cursor-pointer"
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleToggleSelecionado(medicamento.id);
+                        }}
+                        className="mt-1 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-700">
+                        <p className={`text-base font-semibold ${selecionados.has(medicamento.id) ? "text-red-900" : "text-slate-700"}`}>
                           {medicamento.medicamento}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          <strong>Dosagem:</strong> {medicamento.dosagem} |{" "}
-                          <strong>Qtd:</strong> {medicamento.quantidade}
-                        </p>
-                        {medicamento.posologia && (
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
                           <p className="text-xs text-slate-500">
-                            <strong>Posologia:</strong> {medicamento.posologia}
+                            <strong>Dosagem:</strong> {medicamento.dosagem}
                           </p>
-                        )}
+                          <p className="text-xs text-slate-500">
+                            <strong>Qtd Prescrita:</strong> {medicamento.quantidade}
+                          </p>
+                          {medicamento.posologia && (
+                            <p className="text-xs text-slate-500 w-full mt-0.5">
+                              <strong>Posologia:</strong> {medicamento.posologia}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      {selecionados.has(medicamento.id) && (
-                        <button
-                          onClick={() =>
-                            handleToggleFormulario(medicamento.id)
-                          }
-                          className="text-xs font-semibold text-red-600 hover:text-red-700 whitespace-nowrap"
-                        >
-                          {formulariosAbertos.has(medicamento.id)
-                            ? "Ocultar"
-                            : "Editar"}
-                        </button>
-                      )}
                     </div>
 
-                    {/* Formulário expandido */}
-                    {selecionados.has(medicamento.id) &&
-                      formulariosAbertos.has(medicamento.id) && (
-                        <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
-                          <div>
-                            <label className="text-xs font-semibold text-gray-700 block mb-2">
-                              Medicamento fornecido
-                            </label>
-                            <input
-                              type="text"
-                              className={inputClass}
-                              value={
-                                dadosMedicamentos[medicamento.id]
-                                  ?.medicamentoFornecido || ""
-                              }
-                              onChange={(e) =>
-                                handleMudancaDados(
-                                  medicamento.id,
-                                  "medicamentoFornecido",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Nome do medicamento (genérico, etc.)"
-                            />
-                          </div>
+                    {/* Formulário expandido automaticamente */}
+                    {selecionados.has(medicamento.id) && (
+                        <div className="px-5 pb-5 pt-1 border-t border-slate-100 bg-red-50/10">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
+                              <label className="text-[0.8rem] font-semibold text-gray-700 block mb-1.5">
+                                Medicamento prescrito
+                              </label>
+                              <input
+                                type="text"
+                                className={`${inputClass} bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200`}
+                                value={
+                                  dadosMedicamentos[medicamento.id]?.medicamentoFornecido || ""
+                                }
+                                readOnly
+                              />
+                            </div>
 
-                          <div>
-                            <label className="text-xs font-semibold text-gray-700 block mb-2">
-                              Quantidade dispensada
-                            </label>
-                            <input
-                              type="number"
-                              min={1}
-                              max={medicamento.quantidade}
-                              className={inputClass}
-                              value={
-                                dadosMedicamentos[medicamento.id]
-                                  ?.quantidadeDispensada || medicamento.quantidade
-                              }
-                              onChange={(e) =>
-                                handleMudancaDados(
-                                  medicamento.id,
-                                  "quantidadeDispensada",
-                                  Number(e.target.value)
-                                )
-                              }
-                            />
-                            <p className="text-xs text-slate-500 mt-1">
-                              Máximo: {medicamento.quantidade}
-                            </p>
-                          </div>
+                            <div>
+                              <label className="text-[0.8rem] font-semibold text-gray-700 block mb-1.5">
+                                Quantidade prescrita
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  className={`${inputClass} bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200`}
+                                  value={
+                                    dadosMedicamentos[medicamento.id]?.quantidadeDispensada || medicamento.quantidade
+                                  }
+                                  readOnly
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="md:col-span-2 p-3 bg-red-50 rounded-xl border border-red-100 shadow-inner">
+                              <label className="text-[0.8rem] font-bold text-red-900 block mb-1.5 flex items-center gap-1.5">
+                                <AlertCircle size={14} /> Atendente Responsável (Obrigatório)
+                              </label>
+                              <input
+                                type="text"
+                                className={`w-full px-3 py-2 border-2 border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm font-medium bg-white placeholder-red-300`}
+                                value={
+                                  dadosMedicamentos[medicamento.id]?.atendente || ""
+                                }
+                                onChange={(e) =>
+                                  handleMudancaDados(
+                                    medicamento.id,
+                                    "atendente",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Digite seu nome completo..."
+                                required
+                              />
+                            </div>
 
-                          <div>
-                            <label className="text-xs font-semibold text-gray-700 block mb-2">
-                              Atendente (Obrigatório)
-                            </label>
-                            <input
-                              type="text"
-                              className={inputClass}
-                              value={
-                                dadosMedicamentos[medicamento.id]?.atendente || ""
-                              }
-                              onChange={(e) =>
-                                handleMudancaDados(
-                                  medicamento.id,
-                                  "atendente",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Nome do atendente"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="text-xs font-semibold text-gray-700 block mb-2">
-                              Observações
-                            </label>
-                            <textarea
-                              className={`${inputClass} resize-none min-h-[60px]`}
-                              value={
-                                dadosMedicamentos[medicamento.id]
-                                  ?.observacoes || ""
-                              }
-                              onChange={(e) =>
-                                handleMudancaDados(
-                                  medicamento.id,
-                                  "observacoes",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Ex: Medicamento genérico, paciente informado..."
-                              rows={2}
-                            />
+                            <div className="md:col-span-2">
+                              <label className="text-[0.8rem] font-semibold text-gray-700 block mb-1.5">
+                                Observações originais
+                              </label>
+                              <textarea
+                                className={`${inputClass} resize-none min-h-[60px] bg-slate-100 text-slate-500 cursor-not-allowed border-slate-200`}
+                                value={
+                                  dadosMedicamentos[medicamento.id]?.observacoes || "Nenhuma observação registrada."
+                                }
+                                readOnly
+                                rows={2}
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
