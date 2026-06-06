@@ -1,18 +1,18 @@
 import React from "react";
+import { Menu } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Menu } from "lucide-react";
 
 interface PacienteHeaderProps {
-  activeTab: string;
-  navigation: any[];
   setSidebarOpen: (open: boolean) => void;
+  activeTab: string;
+  navigation: Array<{ name: string; key: string; icon: any }>;
 }
 
 export const PacienteHeader: React.FC<PacienteHeaderProps> = ({
+  setSidebarOpen,
   activeTab,
   navigation,
-  setSidebarOpen,
 }) => {
   return (
     <header className="flex h-16 items-center justify-between border-b border-gray-100 bg-white px-5 shadow-sm">

@@ -2,23 +2,23 @@ import React from "react";
 import { Heart, User, LogOut } from "lucide-react";
 
 interface PacienteSidebarProps {
-  user: any;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
-  navigation: any[];
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  user: any;
   logout: () => void;
+  navigation: Array<{ name: string; key: string; icon: any }>;
 }
 
 export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
-  user,
-  activeTab,
-  setActiveTab,
   sidebarOpen,
   setSidebarOpen,
-  navigation,
+  activeTab,
+  setActiveTab,
+  user,
   logout,
+  navigation,
 }) => {
   return (
     <>
@@ -31,9 +31,7 @@ export const PacienteSidebar: React.FC<PacienteSidebarProps> = ({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-30 flex flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{
           width: "240px",
           background: "#ffffff",
