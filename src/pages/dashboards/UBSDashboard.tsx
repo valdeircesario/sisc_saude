@@ -31,6 +31,8 @@ import { ptBR } from "date-fns/locale";
 import { UBSHeader } from "../../components/UBS/UBSHeader";
 import { UBSTabs } from "../../components/UBS/UBSTabs";
 import { FuncionarioCard, PacienteCard, MedicamentoCard, CampanhaCard, ConsultaCard } from "../../components/UBS/UBSCards";
+import { UBSFuncionariosTab } from "../../components/UBS/UBSFuncionariosTab";
+import { UBSPacientesTab } from "../../components/UBS/UBSPacientesTab";
 import { UBSFuncionarioModal } from "../../components/UBS/Modals/UBSFuncionarioModal";
 import { UBSCampanhaModal } from "../../components/UBS/Modals/UBSCampanhaModal";
 import { UBSEditCampanhaModal } from "../../components/UBS/Modals/UBSEditCampanhaModal";
@@ -839,76 +841,27 @@ const UBSDashboard: React.FC = () => {
 
         {/* Funcionários Tab */}
         {activeTab === "funcionarios" && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Funcionários</h2>
-              <button
-                onClick={() => setShowFuncModal(true)}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center transition-colors"
-              >
-                <Plus className="w-4 h-4 mr-2" /> Novo Funcionário
-              </button>
-            </div>
-            {loadingFuncionarios ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
-                <p className="mt-2 text-gray-600">Carregando funcionários...</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {funcionarios?.map((funcionario: any) => (
-                  <FuncionarioCard
-                    key={funcionario.id}
-                    funcionario={funcionario}
-                    onEdit={handleEditFunc}
-                    onDelete={handleDeleteFunc}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <UBSFuncionariosTab
+            funcionarios={funcionarios || []}
+            loadingFuncionarios={loadingFuncionarios}
+            setShowFuncModal={setShowFuncModal}
+            handleEditFunc={handleEditFunc}
+            handleDeleteFunc={handleDeleteFunc}
+          />
         )}
 
         {/* Pacientes Tab */}
         {activeTab === "pacientes" && (
-          <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Pacientes</h2>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Search className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Buscar pacientes..."
-                  />
-                </div>
-              </div>
-            </div>
-            {loadingPacientes ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
-                <p className="mt-2 text-gray-600">Carregando pacientes...</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {pacientes?.map((paciente: any) => (
-                  <PacienteCard
-                    key={paciente.id}
-                    paciente={paciente}
-                    onEdit={openPacienteModal}
-                    onHistorico={openHistoricoModal}
-                    onConsulta={openConsultaPacienteModal}
-                    onInternacao={openInternacaoModal}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <UBSPacientesTab
+            pacientes={pacientes || []}
+            loadingPacientes={loadingPacientes}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            openPacienteModal={openPacienteModal}
+            openHistoricoModal={openHistoricoModal}
+            openConsultaPacienteModal={openConsultaPacienteModal}
+            openInternacaoModal={openInternacaoModal}
+          />
         )}
 
         {/* Campanhas Tab */}
@@ -1103,434 +1056,30 @@ const UBSDashboard: React.FC = () => {
         />
 
         {/* Modal de Inscrições da Campanha */}
-        <Modal
+        <UBSInscricoesCampanhaModal
           isOpen={showInscricoesModal}
           onClose={() => setShowInscricoesModal(false)}
-          title={`Inscrições - ${selectedCampanha?.titulo}`}
-          size="xl"
-        >
-          {inscricoesCampanha && inscricoesCampanha.length > 0 ? (
-            <div className="space-y-4">
-              {inscricoesCampanha.map((inscricao: any) => (
-                <div key={inscricao.id} className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-medium text-gray-900">
-                      {inscricao.nome}
-                    </h4>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        inscricao.status === "agendado"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {inscricao.status}
-                    </span>
-                  </div>
-                  <div className="space-y-2 text-sm text-gray-600 mb-4">
-                    <p>
-                      <span className="font-medium">CPF:</span> {inscricao.cpf}{" "}
-                      | <span className="font-medium">Telefone:</span>{" "}
-                      {inscricao.telefone}
-                    </p>
-                    <p>
-                      <span className="font-medium">Email:</span>{" "}
-                      {inscricao.email}
-                    </p>
-                    {inscricao.idade && (
-                      <p>
-                        <span className="font-medium">Idade:</span>{" "}
-                        {inscricao.idade}
-                      </p>
-                    )}
-                    {inscricao.condicoesSaude && (
-                      <p>
-                        <span className="font-medium">Condições de Saúde:</span>{" "}
-                        {inscricao.condicoesSaude}
-                      </p>
-                    )}
-                    <p>
-                      <span className="font-medium">Prioridade:</span>{" "}
-                      {inscricao.prioridade} |{" "}
-                      <span className="font-medium">Pontuação:</span>{" "}
-                      {inscricao.pontuacao}
-                    </p>
-                    {inscricao.dataAgendada && (
-                      <p>
-                        <span className="font-medium">Agendado para:</span>{" "}
-                        {format(
-                          new Date(inscricao.dataAgendada),
-                          "dd/MM/yyyy",
-                          { locale: ptBR },
-                        )}
-                        {inscricao.horaAgendada &&
-                          ` às ${inscricao.horaAgendada}`}
-                      </p>
-                    )}
-                    {inscricao.localAtendimento && (
-                      <p>
-                        <span className="font-medium">Local:</span>{" "}
-                        {inscricao.localAtendimento}
-                      </p>
-                    )}
-                    {inscricao.observacoes && (
-                      <p>
-                        <span className="font-medium">Observações:</span>{" "}
-                        {inscricao.observacoes}
-                      </p>
-                    )}
-                  </div>
-                  {inscricao.status === "inscrito" && (
-                    <button
-                      onClick={() => openAgendamentoCampanhaModal(inscricao)}
-                      className="flex items-center px-3 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      <Calendar className="w-4 h-4 mr-2" /> Agendar
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-8">
-              Nenhuma inscrição encontrada.
-            </p>
-          )}
-        </Modal>
+          selectedCampanha={selectedCampanha}
+          inscricoesCampanha={inscricoesCampanha || []}
+          openAgendamentoCampanhaModal={openAgendamentoCampanhaModal}
+        />
 
-        {/* Modal de Agendamento de Campanha */}
-        <Modal
-          isOpen={showAgendamentoCampanhaModal}
-          onClose={() => setShowAgendamentoCampanhaModal(false)}
-          title="Agendar Atendimento"
-          size="lg"
-        >
-          {selectedInscricao && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">Detalhes</h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>
-                  <span className="font-medium">Inscrito:</span>{" "}
-                  {selectedInscricao.nome}
-                </p>
-                <p>
-                  <span className="font-medium">Campanha:</span>{" "}
-                  {selectedCampanha?.titulo}
-                </p>
-              </div>
-            </div>
-          )}
-          <form
-            onSubmit={handleAgendamentoCampanhaSubmit}
-            className="space-y-6"
-          >
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data *
-              </label>
-              <input
-                type="date"
-                value={agendamentoCampanhaData.dataAgendada}
-                onChange={(e) =>
-                  setAgendamentoCampanhaData({
-                    ...agendamentoCampanhaData,
-                    dataAgendada: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hora *
-              </label>
-              <input
-                type="time"
-                value={agendamentoCampanhaData.horaAgendada}
-                onChange={(e) =>
-                  setAgendamentoCampanhaData({
-                    ...agendamentoCampanhaData,
-                    horaAgendada: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Local de Atendimento *
-              </label>
-              <input
-                type="text"
-                value={agendamentoCampanhaData.localAtendimento}
-                onChange={(e) =>
-                  setAgendamentoCampanhaData({
-                    ...agendamentoCampanhaData,
-                    localAtendimento: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ex: Sala 1, Auditório, etc."
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Observações
-              </label>
-              <textarea
-                value={agendamentoCampanhaData.observacoes}
-                onChange={(e) =>
-                  setAgendamentoCampanhaData({
-                    ...agendamentoCampanhaData,
-                    observacoes: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={3}
-                placeholder="Observações sobre o atendimento"
-              />
-            </div>
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowAgendamentoCampanhaModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Agendar
-              </button>
-            </div>
-          </form>
-        </Modal>
+
 
         {/* Modal de Solicitação de Internação - CORRIGIDO */}
-        <Modal
+        <UBSSolicitarInternacaoModal
           isOpen={showInternacaoModal}
           onClose={() => setShowInternacaoModal(false)}
-          title="Solicitar Internação"
-          size="xl"
-        >
-          {selectedPaciente && (
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <h4 className="font-medium text-gray-900 mb-2">
-                Dados do Paciente
-              </h4>
-              <div className="space-y-1 text-sm text-gray-600">
-                <p>
-                  <span className="font-medium">Nome:</span>{" "}
-                  {selectedPaciente.nome}
-                </p>
-                <p>
-                  <span className="font-medium">CPF:</span>{" "}
-                  {selectedPaciente.cpf}
-                </p>
-                <p>
-                  <span className="font-medium">CNS:</span>{" "}
-                  {selectedPaciente.cns}
-                </p>
-              </div>
-            </div>
-          )}
-          <form onSubmit={handleInternacaoSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <select
-                  value={internacaoData.hospitalId}
-                  onChange={(e) =>
-                    setInternacaoData({
-                      ...internacaoData,
-                      hospitalId: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Selecione um hospital</option>
-                  {loadingHospitais ? (
-                    <option disabled>Carregando hospitais...</option>
-                  ) : hospitaisError ? (
-                    <option disabled>Erro ao carregar hospitais</option>
-                  ) : hospitaisList?.length === 0 ? (
-                    <option disabled>Nenhum hospital cadastrado</option>
-                  ) : (
-                    hospitaisList?.map((hospital: any) => (
-                      <option key={hospital.id} value={hospital.id}>
-                        {hospital.nome}
-                      </option>
-                    ))
-                  )}
-                </select>
-                {loadingHospitais && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Carregando lista de hospitais...
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Funcionário Responsável *
-                </label>
-                <select
-                  value={internacaoData.funcionarioId}
-                  onChange={(e) =>
-                    setInternacaoData({
-                      ...internacaoData,
-                      funcionarioId: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Selecione um funcionário</option>
-                  {funcionarios?.map((func: any) => (
-                    <option key={func.id} value={func.id}>
-                      {func.nome} - {func.funcao}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo *
-                </label>
-                <select
-                  value={internacaoData.tipo}
-                  onChange={(e) =>
-                    setInternacaoData({
-                      ...internacaoData,
-                      tipo: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="internacao">Internação</option>
-                  <option value="cirurgia">Cirurgia</option>
-                  <option value="procedimento">Procedimento</option>
-                  <option value="emergencia">Emergência</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prioridade *
-                </label>
-                <select
-                  value={internacaoData.prioridade}
-                  onChange={(e) =>
-                    setInternacaoData({
-                      ...internacaoData,
-                      prioridade: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="baixa">Baixa</option>
-                  <option value="media">Média</option>
-                  <option value="alta">Alta</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Motivo *
-              </label>
-              <input
-                type="text"
-                value={internacaoData.motivo}
-                onChange={(e) =>
-                  setInternacaoData({
-                    ...internacaoData,
-                    motivo: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Descreva o motivo da internação"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Detalhes *
-              </label>
-              <textarea
-                value={internacaoData.detalhes}
-                onChange={(e) =>
-                  setInternacaoData({
-                    ...internacaoData,
-                    detalhes: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={4}
-                placeholder="Descreva detalhes clínicos relevantes"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Laudo Médico *
-              </label>
-              <textarea
-                value={internacaoData.laudoMedico}
-                onChange={(e) =>
-                  setInternacaoData({
-                    ...internacaoData,
-                    laudoMedico: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                rows={4}
-                placeholder="Laudo médico completo justificando a internação"
-                required
-              />
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={() => setShowInternacaoModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={solicitarInternacaoMutation.isLoading}
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center disabled:opacity-50"
-              >
-                {solicitarInternacaoMutation.isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Solicitar Internação
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </Modal>
+          selectedPaciente={selectedPaciente}
+          internacaoData={internacaoData}
+          setInternacaoData={setInternacaoData}
+          hospitaisList={hospitaisList || []}
+          loadingHospitais={loadingHospitais}
+          hospitaisError={hospitaisError}
+          funcionarios={funcionarios || []}
+          solicitarInternacaoMutation={solicitarInternacaoMutation}
+          onSubmit={handleInternacaoSubmit}
+        />
 
         {/* Medicamentos Tab */}
         {activeTab === "medicamentos" && (
