@@ -39,6 +39,27 @@ import {
   generateVacinasPDF,
 } from "../../utils/pdfGenerator";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import { PacienteHeader } from "../../components/Paciente/PacienteHeader";
+import { PacienteSidebar } from "../../components/Paciente/PacienteSidebar";
+import { PacienteHomeTab } from "../../components/Paciente/PacienteHomeTab";
+import { PacientePerfilTab } from "../../components/Paciente/PacientePerfilTab";
+import { PacienteConsultasTab } from "../../components/Paciente/PacienteConsultasTab";
+import { PacienteHistoricoTab } from "../../components/Paciente/PacienteHistoricoTab";
+import { PacienteVacinasTab } from "../../components/Paciente/PacienteVacinasTab";
+import { PacienteExamesTab } from "../../components/Paciente/PacienteExamesTab";
+import { PacienteInternacoesTab } from "../../components/Paciente/PacienteInternacoesTab";
+import { PacienteProcedimentosTab } from "../../components/Paciente/PacienteProcedimentosTab";
+import { PacienteMedicacoesTab } from "../../components/Paciente/PacienteMedicacoesTab";
+import { PacienteAgendamentosTab } from "../../components/Paciente/PacienteAgendamentosTab";
+import { PacienteHistoricoHospitalarTab } from "../../components/Paciente/PacienteHistoricoHospitalarTab";
+import { PacienteSolicitarConsultaModal } from "../../components/Paciente/PacienteSolicitarConsultaModal";
+import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEditarPerfilModal";
+import { PacienteDetalhesModal } from "../../components/Paciente/PacienteDetalhesModal";
+import { PacienteConfirmarAgendamentoModal } from "../../components/Paciente/PacienteConfirmarAgendamentoModal";
+import { PacienteCancelarConsultaModal } from "../../components/Paciente/PacienteCancelarConsultaModal";
+import { EmptyState } from "../../components/UI/EmptyState";
+import { StatusBadge } from "../../components/UI/StatusBadge";
+import { SectionHeader } from "../../components/UI/SectionHeader";
 
 type InternacaoRef = {
   id?: string;
@@ -80,27 +101,7 @@ const getPrioridadeColor = (prioridade: string) => {
   }
 };
 
-import { PacienteHeader } from "../../components/Paciente/PacienteHeader";
-import { PacienteSidebar } from "../../components/Paciente/PacienteSidebar";
-import { PacienteHomeTab } from "../../components/Paciente/PacienteHomeTab";
-import { PacientePerfilTab } from "../../components/Paciente/PacientePerfilTab";
-import { PacienteConsultasTab } from "../../components/Paciente/PacienteConsultasTab";
-import { PacienteHistoricoTab } from "../../components/Paciente/PacienteHistoricoTab";
-import { PacienteVacinasTab } from "../../components/Paciente/PacienteVacinasTab";
-import { PacienteExamesTab } from "../../components/Paciente/PacienteExamesTab";
-import { PacienteInternacoesTab } from "../../components/Paciente/PacienteInternacoesTab";
-import { PacienteProcedimentosTab } from "../../components/Paciente/PacienteProcedimentosTab";
-import { PacienteMedicacoesTab } from "../../components/Paciente/PacienteMedicacoesTab";
-import { PacienteAgendamentosTab } from "../../components/Paciente/PacienteAgendamentosTab";
-import { PacienteHistoricoHospitalarTab } from "../../components/Paciente/PacienteHistoricoHospitalarTab";
-import { PacienteSolicitarConsultaModal } from "../../components/Paciente/PacienteSolicitarConsultaModal";
-import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEditarPerfilModal";
-import { PacienteDetalhesModal } from "../../components/Paciente/PacienteDetalhesModal";
-import { PacienteConfirmarAgendamentoModal } from "../../components/Paciente/PacienteConfirmarAgendamentoModal";
-import { PacienteCancelarConsultaModal } from "../../components/Paciente/PacienteCancelarConsultaModal";
-import { EmptyState } from "../../components/UI/EmptyState";
-import { StatusBadge } from "../../components/UI/StatusBadge";
-import { SectionHeader } from "../../components/UI/SectionHeader";
+
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();

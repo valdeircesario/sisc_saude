@@ -36,6 +36,7 @@ router.put("/campanhas/:id", ubsController.editarCampanha);
 router.delete("/campanhas/:id", ubsController.deletarCampanha);
 router.get("/campanhas/:id/inscricoes", ubsController.listarInscricoesCampanha);
 router.put("/campanhas/:campanhaId/inscricoes/:inscricaoId/agendar", ubsController.agendarInscricaoCampanha);
+router.put("/agendamentos-campanha/:id/cancelar", ubsController.cancelarAgendamentoCampanha);
 
 // Consultas da UBS
 router.get("/consultas", ubsController.listarConsultas);

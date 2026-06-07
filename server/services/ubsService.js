@@ -392,17 +392,65 @@ export const agendarInscricaoCampanha = async (campanhaId, inscricaoId, ubsId, d
     throw { status: 404, data: { message: "Campanha não encontrada" } };
   }
 
-  return await prisma.inscricaoCampanha.update({
+  const agendamento = await prisma.agendamentoCampanha.upsert({
+    where: { inscricaoId: inscricaoId },
+    create: {
+      campanhaId,
+      ubsId,
+      inscricaoId,
+      dataAgendada: new Date(dataAgendada),
+      horaAgendada,
+      localAtendimento,
+      observacoes,
+      status: "agendado",
+    },
+    update: {
+      dataAgendada: new Date(dataAgendada),
+      horaAgendada,
+      localAtendimento,
+      observacoes,
+      status: "agendado",
+    }
+  });
+
+  await prisma.inscricaoCampanha.update({
     where: { id: inscricaoId },
     data: {
-      dataAgendada: dataAgendada ? new Date(dataAgendada) : null,
+      status: "agendado",
+      dataAgendada: new Date(dataAgendada),
       horaAgendada,
       localAtendimento,
       observacoes,
       tipoAgendamento: "campanha",
-      status: "agendado",
     },
   });
+
+  return agendamento;
+};
+
+export const cancelarAgendamentoCampanha = async (id, ubsId, justificativa) => {
+  const agendamento = await prisma.agendamentoCampanha.findFirst({
+    where: { id, ubsId },
+  });
+
+  if (!agendamento) {
+    throw { status: 404, data: { message: "Agendamento não encontrado" } };
+  }
+
+  const updatedAgendamento = await prisma.agendamentoCampanha.update({
+    where: { id },
+    data: {
+      status: "cancelada",
+      justificativa,
+    },
+  });
+
+  await prisma.inscricaoCampanha.update({
+    where: { id: agendamento.inscricaoId },
+    data: { status: "cancelada", observacoes: justificativa },
+  });
+
+  return updatedAgendamento;
 };
 
 export const listarConsultas = async (ubsId) => {

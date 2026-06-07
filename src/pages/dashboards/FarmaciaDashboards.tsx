@@ -3,18 +3,11 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { api } from "../../services/api";
 import useDispensacao from "../../hooks/useDispensacao";
-
-// Import de componentes
 import { FarmaciaHeader } from "../../components/Farmacia/FarmaciaHeader";
 import { FarmaciaSidebar } from "../../components/Farmacia/FarmaciaSidebar";
 import { FarmaciaConsultaTab } from "../../components/Farmacia/FarmaciaConsultaTab";
 import { FarmaciaDispensacaoModalNovo, MedicamentoPendente } from "../../components/Farmacia/FarmaciaDispensacaoModalNovo";
-import {
-  ReceitaPayload,
-  DispensacaoPayload,
-} from "../../components/Farmacia/FarmaciaResultCard";
-
-// Import de componentes existentes
+import { ReceitaPayload, DispensacaoPayload, } from "../../components/Farmacia/FarmaciaResultCard";
 import DispensacoesLista from "../../components/DispensacoesLista";
 import FarmaciaDashboardHome from "../../components/FarmaciaDashboardHome";
 import FarmaciaInformacoes from "../../components/FarmaciaInformacoes";
