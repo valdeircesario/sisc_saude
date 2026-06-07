@@ -63,42 +63,6 @@ export interface MedicacaoAdministrada {
   observacoes?: string | null;
 }
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "cancelada":
-      return "bg-amber-50 text-amber-900 ring-1 ring-amber-200";
-    case "pendente":
-      return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
-    case "avaliando":
-      return "bg-sky-50 text-sky-700 ring-1 ring-sky-200";
-    case "agendado":
-      return "bg-violet-50 text-violet-700 ring-1 ring-violet-200";
-    case "realizado":
-      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
-    case "cancelado":
-      return "bg-rose-50 text-rose-700 ring-1 ring-rose-200";
-    case "confirmada":
-      return "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200";
-    case "solicitada":
-      return "bg-amber-50 text-amber-700 ring-1 ring-amber-200";
-    default:
-      return "bg-slate-50 text-slate-600 ring-1 ring-slate-200";
-  }
-};
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "realizado":
-    case "realizada":
-      return <CheckCircle className="h-3.5 w-3.5" />;
-    case "agendado":
-    case "agendada":
-      return <Clock className="h-3.5 w-3.5" />;
-    case "solicitada":
-      return <AlertCircle className="h-3.5 w-3.5" />;
-    default:
-      return <Clock className="h-3.5 w-3.5" />;
-  }
-};
 const getPrioridadeColor = (prioridade: string) => {
   switch (prioridade) {
     case "gravissimo":
@@ -131,6 +95,10 @@ import { PacienteSolicitarConsultaModal } from "../../components/Paciente/Pacien
 import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEditarPerfilModal";
 import { PacienteDetalhesModal } from "../../components/Paciente/PacienteDetalhesModal";
 import { PacienteConfirmarAgendamentoModal } from "../../components/Paciente/PacienteConfirmarAgendamentoModal";
+import { PacienteCancelarConsultaModal } from "../../components/Paciente/PacienteCancelarConsultaModal";
+import { EmptyState } from "../../components/UI/EmptyState";
+import { StatusBadge } from "../../components/UI/StatusBadge";
+import { SectionHeader } from "../../components/UI/SectionHeader";
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -365,8 +333,9 @@ const PacienteDashboard: React.FC = () => {
         setSelectedItem(null);
         setConfirmacaoObservacoes("");
       },
-      onError: (e: any) =>
-        toast.error(e.response?.data?.message || "Erro ao confirmar"),
+      onError: (e: any) => {
+        toast.error(e.response?.data?.message || "Erro ao confirmar");
+      },
     },
   );
   const confirmarAgendamentoHospitalarMutation = useMutation(
@@ -382,8 +351,9 @@ const PacienteDashboard: React.FC = () => {
         setSelectedItem(null);
         setConfirmacaoObservacoes("");
       },
-      onError: (e: any) =>
-        toast.error(e.response?.data?.message || "Erro ao confirmar"),
+      onError: (e: any) => {
+        toast.error(e.response?.data?.message || "Erro ao confirmar");
+      },
     },
   );
   const atualizarPerfilMutation = useMutation(
@@ -394,8 +364,9 @@ const PacienteDashboard: React.FC = () => {
         toast.success("Perfil atualizado!");
         setShowEditarPerfilModal(false);
       },
-      onError: (e: any) =>
-        toast.error(e.response?.data?.message || "Erro ao atualizar"),
+      onError: (e: any) => {
+        toast.error(e.response?.data?.message || "Erro ao atualizar");
+      },
     },
   );
   const solicitarConsultaMutation = useMutation(
@@ -407,8 +378,9 @@ const PacienteDashboard: React.FC = () => {
         setShowConsultaModal(false);
         setConsultaData({ ubsId: "", motivo: "", especialidade: "" });
       },
-      onError: (e: any) =>
-        toast.error(e.response?.data?.message || "Erro ao solicitar"),
+      onError: (e: any) => {
+        toast.error(e.response?.data?.message || "Erro ao solicitar");
+      },
     },
   );
   const confirmarConsultaMutation = useMutation(
@@ -418,8 +390,9 @@ const PacienteDashboard: React.FC = () => {
         queryClient.invalidateQueries("paciente-consultas");
         toast.success("Consulta confirmada!");
       },
-      onError: (e: any) =>
-        toast.error(e.response?.data?.message || "Erro ao confirmar"),
+      onError: (e: any) => {
+        toast.error(e.response?.data?.message || "Erro ao confirmar");
+      },
     },
   );
   // ── Estados novos ────────────────────────────────────────────
@@ -491,8 +464,9 @@ const PacienteDashboard: React.FC = () => {
         queryClient.invalidateQueries("campanhas-ativas");
         toast.success("Inscrição realizada!");
       },
-      onError: (e: any) =>
-        toast.error(e.response?.data?.message || "Erro ao inscrever"),
+      onError: (e: any) => {
+        toast.error(e.response?.data?.message || "Erro ao inscrever");
+      },
     },
   );
 
@@ -571,6 +545,17 @@ const PacienteDashboard: React.FC = () => {
     atualizarPerfilMutation.mutate(perfilData);
   };
 
+  const handleCancelarConsulta = () => {
+    if (!motivoCancelamento.trim()) {
+      toast.warning("Informe o motivo do cancelamento.");
+      return;
+    }
+    cancelarConsultaMutation.mutate({
+      id: selectedItem.id,
+      motivo: motivoCancelamento.trim(),
+    });
+  };
+
   // ── Navegação ────────────────────────────────────────────────
   const navigation = [
     { name: "Início", key: "home", icon: Activity },
@@ -589,52 +574,6 @@ const PacienteDashboard: React.FC = () => {
       icon: History,
     },
   ];
-
-  // ── Reutilizável: cabeçalho de seção ────────────────────────
-  const SectionHeader = ({
-    icon: Icon,
-    title,
-    color = "teal",
-  }: {
-    icon: any;
-    title: string;
-    color?: string;
-  }) => (
-    <div className="mb-6 flex items-center gap-3">
-      <div
-        className={`flex h-9 w-9 items-center justify-center rounded-xl bg-${color}-50`}
-      >
-        <Icon className={`h-5 w-5 text-${color}-600`} />
-      </div>
-      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-    </div>
-  );
-
-  // ── Card vazio reutilizável ──────────────────────────────────
-  const EmptyState = ({
-    icon: Icon,
-    message,
-  }: {
-    icon: any;
-    message: string;
-  }) => (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-50">
-        <Icon className="h-8 w-8 text-slate-300" />
-      </div>
-      <p className="text-sm font-medium text-slate-400">{message}</p>
-    </div>
-  );
-
-  // ── Badge de status ──────────────────────────────────────────
-  const StatusBadge = ({ status }: { status: string }) => (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${getStatusColor(status)}`}
-    >
-      {getStatusIcon(status)}
-      <span className="capitalize">{status}</span>
-    </span>
-  );
 
   return (
     <div
@@ -905,153 +844,18 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── CONSULTAS ───────────────────────────────────── */}
           {activeTab === "consultas" && (
-            <>
-              <PacienteConsultasTab
-                consultas={consultas || []}
-                consultasFiltradas={consultasFiltradas || []}
-                filtroEspecialidade={filtroEspecialidade}
-                setFiltroEspecialidade={setFiltroEspecialidade}
-                especialidadesUnicas={especialidadesUnicas}
-                setShowConsultaModal={setShowConsultaModal}
-                openDetalhesModal={openDetalhesModal}
-                SectionHeader={SectionHeader}
-                StatusBadge={StatusBadge}
-                EmptyState={EmptyState}
-              />
-
-              {/* ── MODAL DE CANCELAMENTO ─────────────────────────────── */}
-              {showCancelarModal && selectedItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-                  <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden">
-                    {/* Cabeçalho */}
-                    <div className="bg-gradient-to-r from-rose-600 to-rose-500 px-6 py-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 border border-white/20">
-                            <X className="h-4.5 w-4.5 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="text-base font-bold text-white">
-                              Cancelar Consulta
-                            </h3>
-                            <p className="text-xs text-rose-200 mt-0.5">
-                              Esta ação não poderá ser desfeita
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            setShowCancelarModal(false);
-                            setSelectedItem(null);
-                            setMotivoCancelamento("");
-                          }}
-                          className="rounded-lg p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="p-6 space-y-5">
-                      {/* Resumo da consulta */}
-                      <div className="rounded-xl bg-slate-50 border border-gray-100 p-4 space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">
-                          Consulta selecionada
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Stethoscope className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                          <p className="text-sm font-bold text-gray-800">
-                            {selectedItem.especialidade}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                          <p className="text-xs text-gray-500">
-                            {selectedItem.ubs?.nome}
-                          </p>
-                        </div>
-                        {selectedItem.dataAgendada && (
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-                            <p className="text-xs text-gray-500">
-                              {format(
-                                new Date(selectedItem.dataAgendada),
-                                "dd/MM/yyyy 'às' HH:mm",
-                                { locale: ptBR },
-                              )}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Campo de motivo */}
-                      <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                          <FileText className="h-3 w-3 text-rose-400" />
-                          Motivo do Cancelamento
-                          <span className="text-rose-400">*</span>
-                        </label>
-                        <textarea
-                          value={motivoCancelamento}
-                          onChange={(e) =>
-                            setMotivoCancelamento(e.target.value)
-                          }
-                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 focus:outline-none transition-all resize-none"
-                          rows={3}
-                          placeholder="Descreva o motivo do cancelamento..."
-                          required
-                        />
-                        <p className="text-xs text-gray-400">
-                          O motivo será registrado no histórico da consulta.
-                        </p>
-                      </div>
-
-                      {/* Botões */}
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          onClick={() => {
-                            if (!motivoCancelamento.trim()) {
-                              toast.warning(
-                                "Informe o motivo do cancelamento.",
-                              );
-                              return;
-                            }
-                            cancelarConsultaMutation.mutate({
-                              id: selectedItem.id,
-                              motivo: motivoCancelamento.trim(),
-                            });
-                          }}
-                          disabled={
-                            cancelarConsultaMutation.isLoading ||
-                            !motivoCancelamento.trim()
-                          }
-                          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 hover:-translate-y-0.5 transition-all shadow-sm shadow-rose-100 disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
-                        >
-                          {cancelarConsultaMutation.isLoading ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          ) : (
-                            <>
-                              <X className="h-3.5 w-3.5" />
-                              Confirmar Cancelamento
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowCancelarModal(false);
-                            setSelectedItem(null);
-                            setMotivoCancelamento("");
-                          }}
-                          className="flex flex-1 items-center justify-center rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
-                        >
-                          Voltar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </>
+            <PacienteConsultasTab
+              consultas={consultas || []}
+              consultasFiltradas={consultasFiltradas || []}
+              filtroEspecialidade={filtroEspecialidade}
+              setFiltroEspecialidade={setFiltroEspecialidade}
+              especialidadesUnicas={especialidadesUnicas}
+              setShowConsultaModal={setShowConsultaModal}
+              openDetalhesModal={openDetalhesModal}
+              SectionHeader={SectionHeader}
+              StatusBadge={StatusBadge}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── HISTÓRICO MÉDICO ────────────────────────────── */}
@@ -1452,6 +1256,18 @@ const PacienteDashboard: React.FC = () => {
         setConfirmacaoObservacoes={setConfirmacaoObservacoes}
         handleConfirmarAgendamento={handleConfirmarAgendamento}
         isLoading={confirmarAgendamentoMutation.isLoading || confirmarAgendamentoHospitalarMutation.isLoading}
+      />
+
+      {/* Modal Cancelar Consulta */}
+      <PacienteCancelarConsultaModal
+        showCancelarModal={showCancelarModal}
+        setShowCancelarModal={setShowCancelarModal}
+        selectedItem={selectedItem}
+        setSelectedItem={setSelectedItem}
+        motivoCancelamento={motivoCancelamento}
+        setMotivoCancelamento={setMotivoCancelamento}
+        handleCancelarConsulta={handleCancelarConsulta}
+        isLoading={cancelarConsultaMutation.isLoading}
       />
     </div>
   );
