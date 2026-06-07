@@ -128,6 +128,9 @@ import { PacienteInternacoesTab } from "../../components/Paciente/PacienteIntern
 import { PacienteProcedimentosTab } from "../../components/Paciente/PacienteProcedimentosTab";
 import { PacienteHistoricoHospitalarTab } from "../../components/Paciente/PacienteHistoricoHospitalarTab";
 import { PacienteSolicitarConsultaModal } from "../../components/Paciente/PacienteSolicitarConsultaModal";
+import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEditarPerfilModal";
+import { PacienteDetalhesModal } from "../../components/Paciente/PacienteDetalhesModal";
+import { PacienteConfirmarAgendamentoModal } from "../../components/Paciente/PacienteConfirmarAgendamentoModal";
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -1420,314 +1423,36 @@ const PacienteDashboard: React.FC = () => {
       />
 
       {/* Modal Editar Perfil */}
-      {showEditarPerfilModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-50">
-                  <Edit className="h-4 w-4 text-teal-600" />
-                </div>
-                <h3 className="text-base font-bold text-gray-900">
-                  Editar Perfil
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowEditarPerfilModal(false)}
-                className="rounded-lg p-1.5 hover:bg-slate-100 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <form onSubmit={handleAtualizarPerfil} className="space-y-4">
-              {[
-                { label: "Endereço", key: "endereco", type: "text" },
-                { label: "Telefone", key: "telefone", type: "tel" },
-                { label: "Email", key: "email", type: "email" },
-              ].map(({ label, key, type }) => (
-                <div key={key} className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500">
-                    {label}
-                  </label>
-                  <input
-                    type={type}
-                    value={(perfilData as any)[key]}
-                    onChange={(e) =>
-                      setPerfilData({ ...perfilData, [key]: e.target.value })
-                    }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all"
-                  />
-                </div>
-              ))}
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={atualizarPerfilMutation.isLoading}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-2.5 text-sm font-bold text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
-                >
-                  <Save className="h-4 w-4" />{" "}
-                  {atualizarPerfilMutation.isLoading ? "Salvando..." : "Salvar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditarPerfilModal(false)}
-                  className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <PacienteEditarPerfilModal
+        showEditarPerfilModal={showEditarPerfilModal}
+        setShowEditarPerfilModal={setShowEditarPerfilModal}
+        perfilData={perfilData}
+        setPerfilData={setPerfilData}
+        handleAtualizarPerfil={handleAtualizarPerfil}
+        isLoading={atualizarPerfilMutation.isLoading}
+      />
 
       {/* Modal Detalhes */}
-      {showDetalhesModal && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
-            {/* Cabeçalho do modal */}
-            <div className="flex items-start justify-between mb-6">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-teal-50">
-                  {selectedItem.especialidade ? (
-                    <Stethoscope className="h-5 w-5 text-teal-600" />
-                  ) : (
-                    <Building2 className="h-5 w-5 text-teal-600" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    {selectedItem.especialidade ||
-                      selectedItem.titulo ||
-                      "Detalhes"}
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {selectedItem.ubs?.nome ||
-                      selectedItem.hospital?.nome ||
-                      "—"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowDetalhesModal(false)}
-                className="rounded-lg p-1.5 hover:bg-slate-100 text-gray-400 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Status badge */}
-            <div className="mb-6">
-              <StatusBadge status={selectedItem.status} />
-            </div>
-
-            {/* Grid de informações */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              {selectedItem.dataAgendada && (
-                <div className="rounded-xl bg-slate-50 border border-gray-100 p-4">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                    Data Agendada
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {format(
-                      new Date(selectedItem.dataAgendada),
-                      "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm",
-                      { locale: ptBR },
-                    )}
-                  </p>
-                </div>
-              )}
-
-              {selectedItem.ubs && (
-                <div className="rounded-xl bg-slate-50 border border-gray-100 p-4">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                    Unidade de Saúde
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedItem.ubs.nome}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {selectedItem.ubs.endereco}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                    <Phone className="h-3 w-3" /> {selectedItem.ubs.telefone}
-                  </p>
-                </div>
-              )}
-
-              {selectedItem.especialidade && (
-                <div className="rounded-xl bg-slate-50 border border-gray-100 p-4">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                    Especialidade
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedItem.especialidade}
-                  </p>
-                </div>
-              )}
-
-              {selectedItem.motivo && (
-                <div className="rounded-xl bg-slate-50 border border-gray-100 p-4">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                    Motivo
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedItem.motivo}
-                  </p>
-                </div>
-              )}
-
-              {selectedItem.funcionario && (
-                <div className="rounded-xl bg-slate-50 border border-gray-100 p-4 sm:col-span-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                    Profissional de Saúde
-                  </p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {selectedItem.funcionario.nome}
-                  </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    {selectedItem.funcionario.funcao}
-                  </p>
-                  {selectedItem.funcionario.crm && (
-                    <p className="text-xs text-gray-600">
-                      CRM: {selectedItem.funcionario.crm}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {selectedItem.observacoes && (
-                <div className="rounded-xl bg-slate-50 border border-gray-100 p-4 sm:col-span-2">
-                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
-                    Observações
-                  </p>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {selectedItem.observacoes}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Botões de ação */}
-            {selectedItem.status === "agendada" && (
-              <div className="flex gap-3 pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => {
-                    confirmarConsultaMutation.mutate(selectedItem.id);
-                    setShowDetalhesModal(false);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Confirmar Consulta
-                </button>
-                <button
-                  onClick={() => {
-                    setMotivoCancelamento("");
-                    setShowDetalhesModal(false);
-                    setShowCancelarModal(true);
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600 hover:bg-rose-100 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                  Cancelar Consulta
-                </button>
-              </div>
-            )}
-
-            {/* Botão fechar */}
-            {selectedItem.status !== "agendada" && (
-              <div className="flex justify-end pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => setShowDetalhesModal(false)}
-                  className="rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
-                >
-                  Fechar
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <PacienteDetalhesModal
+        showDetalhesModal={showDetalhesModal}
+        setShowDetalhesModal={setShowDetalhesModal}
+        selectedItem={selectedItem}
+        StatusBadge={StatusBadge}
+        confirmarConsultaMutation={confirmarConsultaMutation}
+        setMotivoCancelamento={setMotivoCancelamento}
+        setShowCancelarModal={setShowCancelarModal}
+      />
 
       {/* Modal Confirmar Agendamento */}
-      {showConfirmarModal && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50">
-                  <Check className="h-4 w-4 text-emerald-600" />
-                </div>
-                <h3 className="text-base font-bold text-gray-900">
-                  Confirmar Agendamento
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowConfirmarModal(false)}
-                className="rounded-lg p-1.5 hover:bg-slate-100 text-gray-400 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="rounded-xl bg-slate-50 border border-gray-100 p-3 mb-4 text-sm">
-              <p className="font-bold text-gray-800">
-                {selectedItem.hospital?.nome || "Hospital"}
-              </p>
-              <p className="text-gray-500 text-xs mt-1">
-                {selectedItem.dataAgendada &&
-                  format(new Date(selectedItem.dataAgendada), "dd/MM/yyyy", {
-                    locale: ptBR,
-                  })}
-                {selectedItem.dataAgendamento &&
-                  format(new Date(selectedItem.dataAgendamento), "dd/MM/yyyy", {
-                    locale: ptBR,
-                  })}
-                {(selectedItem.horaAgendada || selectedItem.horaAgendamento) &&
-                  ` às ${selectedItem.horaAgendada || selectedItem.horaAgendamento}`}
-              </p>
-            </div>
-            <div className="flex flex-col gap-1.5 mb-4">
-              <label
-                htmlFor="confirmacaoObservacoes"
-                className="text-xs font-bold uppercase tracking-widest text-gray-500"
-              >
-                Observações (opcional)
-              </label>
-              <textarea
-                id="confirmacaoObservacoes"
-                value={confirmacaoObservacoes}
-                onChange={(e) => setConfirmacaoObservacoes(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all resize-none"
-                rows={3}
-                placeholder="Alguma observação sobre a confirmação..."
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleConfirmarAgendamento}
-                disabled={
-                  confirmarAgendamentoMutation.isLoading ||
-                  confirmarAgendamentoHospitalarMutation.isLoading
-                }
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" />
-                {confirmarAgendamentoMutation.isLoading ||
-                confirmarAgendamentoHospitalarMutation.isLoading
-                  ? "Confirmando..."
-                  : "Confirmar"}
-              </button>
-              <button
-                onClick={() => setShowConfirmarModal(false)}
-                className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <PacienteConfirmarAgendamentoModal
+        showConfirmarModal={showConfirmarModal}
+        setShowConfirmarModal={setShowConfirmarModal}
+        selectedItem={selectedItem}
+        confirmacaoObservacoes={confirmacaoObservacoes}
+        setConfirmacaoObservacoes={setConfirmacaoObservacoes}
+        handleConfirmarAgendamento={handleConfirmarAgendamento}
+        isLoading={confirmarAgendamentoMutation.isLoading || confirmarAgendamentoHospitalarMutation.isLoading}
+      />
     </div>
   );
 };
