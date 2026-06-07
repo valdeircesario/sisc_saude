@@ -90,6 +90,8 @@ import { PacienteVacinasTab } from "../../components/Paciente/PacienteVacinasTab
 import { PacienteExamesTab } from "../../components/Paciente/PacienteExamesTab";
 import { PacienteInternacoesTab } from "../../components/Paciente/PacienteInternacoesTab";
 import { PacienteProcedimentosTab } from "../../components/Paciente/PacienteProcedimentosTab";
+import { PacienteMedicacoesTab } from "../../components/Paciente/PacienteMedicacoesTab";
+import { PacienteAgendamentosTab } from "../../components/Paciente/PacienteAgendamentosTab";
 import { PacienteHistoricoHospitalarTab } from "../../components/Paciente/PacienteHistoricoHospitalarTab";
 import { PacienteSolicitarConsultaModal } from "../../components/Paciente/PacienteSolicitarConsultaModal";
 import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEditarPerfilModal";
@@ -924,282 +926,28 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── MEDICAÇÕES ──────────────────────────────────── */}
           {activeTab === "medicacoes" && (
-            <div className="max-w-7xl xl:max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <SectionHeader icon={Pill} title="Medicações" />
-                  <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
-                    {[
-                      { value: "paciente", label: "Paciente" },
-                      { value: "administradas", label: "Internação" },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          setMedicacoesSource(
-                            option.value as "paciente" | "administradas",
-                          )
-                        }
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                          medicacoesSource === option.value
-                            ? "bg-teal-600 text-white"
-                            : "text-slate-600 hover:bg-slate-100"
-                        }`}
-                      >
-                        {option.label}
-                        <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-2 text-[11px] font-bold text-slate-600 shadow-sm">
-                          {option.value === "paciente"
-                            ? (medicacoesPaciente?.length ?? 0)
-                            : (medicacoesAdministradas?.length ?? 0)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {medicacoesSource === "paciente" ? (
-                  <>
-                    {medicacoesPacienteLoading ? (
-                      <div className="flex flex-col items-center py-16">
-                        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal-100 border-t-teal-600 mb-3" />
-                        <p className="text-sm text-gray-400">
-                          Carregando medicações do paciente...
-                        </p>
-                      </div>
-                    ) : medicacoesPaciente && medicacoesPaciente.length > 0 ? (
-                      <div className="overflow-x-auto rounded-xl border border-gray-100">
-                        <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
-                          <thead className="bg-slate-50">
-                            <tr>
-                              {[
-                                "Medicamento",
-                                "Quantidade",
-                                "Retirada",
-                                "Fornecido por",
-                                "UBS",
-                                "Funcionário",
-                                "Observações",
-                              ].map((h) => (
-                                <th
-                                  key={h}
-                                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
-                                >
-                                  {h}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50">
-                            {medicacoesPaciente.map((m: any) => (
-                              <tr
-                                key={m.id}
-                                className="hover:bg-slate-50 transition-colors"
-                              >
-                                <td className="px-4 py-3 font-semibold text-gray-800">
-                                  {m.medicamento?.nome || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.quantidade}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {format(
-                                    new Date(m.dataRetirada),
-                                    "dd/MM/yyyy",
-                                    {
-                                      locale: ptBR,
-                                    },
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.fornecidoPor || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.ubs?.nome || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.funcionario?.nome || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.observacoes || "—"}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <EmptyState
-                        icon={Pill}
-                        message="Nenhuma medicação de paciente encontrada"
-                      />
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {medicacoesAdministradasLoading ? (
-                      <div className="flex flex-col items-center py-16">
-                        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-teal-100 border-t-teal-600 mb-3" />
-                        <p className="text-sm text-gray-400">
-                          Carregando medicações administradas...
-                        </p>
-                      </div>
-                    ) : medicacoesAdministradas &&
-                      medicacoesAdministradas.length > 0 ? (
-                      <div className="overflow-x-auto rounded-xl border border-gray-100">
-                        <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
-                          <thead className="bg-slate-50">
-                            <tr>
-                              {[
-                                "Medicação",
-                                "Data/Hora",
-                                "Dosagem",
-                                "Via",
-                                "Administrado por",
-                                "Hospital",
-                              ].map((h) => (
-                                <th
-                                  key={h}
-                                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
-                                >
-                                  {h}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50">
-                            {medicacoesAdministradas.map((m) => (
-                              <tr
-                                key={m.id}
-                                className="hover:bg-slate-50 transition-colors"
-                              >
-                                <td className="px-4 py-3 font-semibold text-gray-800">
-                                  {m.nomeMedicacao}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {format(
-                                    new Date(m.dataHoraAdministracao),
-                                    "dd/MM/yyyy HH:mm",
-                                    { locale: ptBR },
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.dosagem || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.viaAdministracao || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.administradorNomeOuCrm || "—"}
-                                </td>
-                                <td className="px-4 py-3 text-gray-600">
-                                  {m.internacao?.hospital?.nome || "—"}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <EmptyState
-                        icon={Pill}
-                        message="Nenhuma medicação administrada encontrada"
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+            <PacienteMedicacoesTab
+              medicacoesSource={medicacoesSource}
+              setMedicacoesSource={setMedicacoesSource}
+              medicacoesPacienteLoading={medicacoesPacienteLoading}
+              medicacoesPaciente={medicacoesPaciente || []}
+              medicacoesAdministradasLoading={medicacoesAdministradasLoading}
+              medicacoesAdministradas={medicacoesAdministradas || []}
+              SectionHeader={SectionHeader}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── AGENDAMENTOS ────────────────────────────────── */}
           {activeTab === "agendamentos" && (
-            <div className="max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader
-                  icon={Calendar}
-                  title="Agendamentos Hospitalares"
-                />
-                {agendamentosHospitalares &&
-                agendamentosHospitalares.length > 0 ? (
-                  <div className="space-y-3">
-                    {agendamentosHospitalares.map((a: any) => (
-                      <div
-                        key={a.id}
-                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">
-                              {a.hospital.nome}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {format(
-                                new Date(a.dataAgendamento),
-                                "dd/MM/yyyy",
-                                { locale: ptBR },
-                              )}{" "}
-                              às {a.horaAgendamento}
-                            </p>
-                          </div>
-                          <StatusBadge status={a.status} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                          <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                              Tipo
-                            </p>
-                            <p className="text-gray-700">{a.tipo}</p>
-                          </div>
-                          {a.medico && (
-                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Médico
-                              </p>
-                              <p className="text-gray-700">{a.medico.nome}</p>
-                            </div>
-                          )}
-                          {a.solicitacaoInternacao && (
-                            <div className="rounded-lg bg-white border border-gray-100 p-2.5 col-span-2">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Relacionado à
-                              </p>
-                              <p className="text-gray-700">
-                                {a.solicitacaoInternacao.tipo} ·{" "}
-                                {a.solicitacaoInternacao.motivo}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => openDetalhesModal(a)}
-                            className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
-                          >
-                            <Eye className="h-3.5 w-3.5" /> Detalhes
-                          </button>
-                          {a.status === "agendado" && (
-                            <button
-                              onClick={() =>
-                                openConfirmarModal(a, "agendamento")
-                              }
-                              className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
-                            >
-                              <Check className="h-3.5 w-3.5" /> Confirmar
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Calendar}
-                    message="Nenhum agendamento hospitalar encontrado"
-                  />
-                )}
-              </div>
-            </div>
+            <PacienteAgendamentosTab
+              agendamentosHospitalares={agendamentosHospitalares || []}
+              openDetalhesModal={openDetalhesModal}
+              openConfirmarModal={openConfirmarModal}
+              SectionHeader={SectionHeader}
+              StatusBadge={StatusBadge}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── HISTÓRICO HOSPITALAR ────────────────────────── */}

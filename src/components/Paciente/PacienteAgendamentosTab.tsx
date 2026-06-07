@@ -12,7 +12,9 @@ interface PacienteAgendamentosTabProps {
   EmptyState: React.FC<{ icon: any; message: string }>;
 }
 
-export const PacienteAgendamentosTab: React.FC<PacienteAgendamentosTabProps> = ({
+export const PacienteAgendamentosTab: React.FC<
+  PacienteAgendamentosTabProps
+> = ({
   agendamentosHospitalares,
   openDetalhesModal,
   openConfirmarModal,
@@ -47,30 +49,43 @@ export const PacienteAgendamentosTab: React.FC<PacienteAgendamentosTabProps> = (
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                    <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">Tipo</p>
+                    <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                      Tipo
+                    </p>
                     <p className="text-gray-700">{a.tipo}</p>
                   </div>
                   {a.medico && (
                     <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                      <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">Médico</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                        Médico
+                      </p>
                       <p className="text-gray-700">{a.medico.nome}</p>
                     </div>
                   )}
                   {a.solicitacaoInternacao && (
                     <div className="rounded-lg bg-white border border-gray-100 p-2.5 col-span-2">
-                      <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">Relacionado à</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
+                        Relacionado à
+                      </p>
                       <p className="text-gray-700">
-                        {a.solicitacaoInternacao.tipo} · {a.solicitacaoInternacao.motivo}
+                        {a.solicitacaoInternacao.tipo} ·{" "}
+                        {a.solicitacaoInternacao.motivo}
                       </p>
                     </div>
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => openDetalhesModal(a)} className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors">
+                  <button
+                    onClick={() => openDetalhesModal(a)}
+                    className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
+                  >
                     <Eye className="h-3.5 w-3.5" /> Detalhes
                   </button>
                   {a.status === "agendado" && (
-                    <button onClick={() => openConfirmarModal(a, "agendamento")} className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors">
+                    <button
+                      onClick={() => openConfirmarModal(a, "agendamento")}
+                      className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
+                    >
                       <Check className="h-3.5 w-3.5" /> Confirmar
                     </button>
                   )}
@@ -79,7 +94,10 @@ export const PacienteAgendamentosTab: React.FC<PacienteAgendamentosTabProps> = (
             ))}
           </div>
         ) : (
-          <EmptyState icon={Calendar} message="Nenhum agendamento hospitalar encontrado" />
+          <EmptyState
+            icon={Calendar}
+            message="Nenhum agendamento hospitalar encontrado"
+          />
         )}
       </div>
     </div>
