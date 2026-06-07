@@ -122,6 +122,12 @@ import { PacienteHomeTab } from "../../components/Paciente/PacienteHomeTab";
 import { PacientePerfilTab } from "../../components/Paciente/PacientePerfilTab";
 import { PacienteConsultasTab } from "../../components/Paciente/PacienteConsultasTab";
 import { PacienteHistoricoTab } from "../../components/Paciente/PacienteHistoricoTab";
+import { PacienteVacinasTab } from "../../components/Paciente/PacienteVacinasTab";
+import { PacienteExamesTab } from "../../components/Paciente/PacienteExamesTab";
+import { PacienteInternacoesTab } from "../../components/Paciente/PacienteInternacoesTab";
+import { PacienteProcedimentosTab } from "../../components/Paciente/PacienteProcedimentosTab";
+import { PacienteHistoricoHospitalarTab } from "../../components/Paciente/PacienteHistoricoHospitalarTab";
+import { PacienteSolicitarConsultaModal } from "../../components/Paciente/PacienteSolicitarConsultaModal";
 
 const PacienteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -633,24 +639,243 @@ const PacienteDashboard: React.FC = () => {
       style={{ background: "#F0F4F8", fontFamily: "'DM Sans', sans-serif" }}
     >
       {/* ── SIDEBAR ─────────────────────────────────────────── */}
-      <PacienteSidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        user={user}
-        logout={logout}
-        navigation={navigation}
-      />
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-20 lg:hidden"
+          style={{ background: "rgba(10, 74, 74, 0.35)" }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 flex flex-col transition-transform duration-200 lg:static lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{
+          width: "240px",
+          background: "#ffffff",
+          borderRight: "0.5px solid #E2E8F0",
+        }}
+      >
+        {/* Logo da sidebar */}
+        <div
+          className="flex items-center gap-2.5"
+          style={{
+            height: "64px",
+            padding: "0 20px",
+            borderBottom: "0.5px solid #E2E8F0",
+          }}
+        >
+          <div
+            style={{
+              width: "32px",
+              height: "32px",
+              background: "linear-gradient(135deg, #0A6B6B, #0E9090)",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <Heart className="h-4 w-4 text-white" />
+          </div>
+          <span
+            style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "15px",
+              fontWeight: 500,
+              color: "#0A4A4A",
+              letterSpacing: "0.01em",
+            }}
+          >
+            SISC Saúde
+          </span>
+        </div>
+
+        {/* Avatar do paciente */}
+        <div
+          className="flex items-center gap-4"
+          style={{
+            padding: "18px 20px",
+            borderBottom: "1px solid #E2E8F0",
+          }}
+        >
+          <div
+            className="relative flex items-center justify-center flex-shrink-0"
+            style={{
+              width: "52px",
+              height: "52px",
+              borderRadius: "16px",
+              background: "linear-gradient(135deg, #0A6B6B 0%, #14B8A6 100%)",
+              boxShadow: "0 8px 20px rgba(10, 107, 107, 0.20)",
+            }}
+          >
+            {user?.nome ? (
+              <span
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: "16px",
+                  fontWeight: 700,
+                }}
+              >
+                {user.nome
+                  .split(" ")
+                  .slice(0, 2)
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
+              </span>
+            ) : (
+              <User className="h-6 w-6 text-white" />
+            )}
+
+            <div
+              style={{
+                position: "absolute",
+                bottom: "-2px",
+                right: "-2px",
+                width: "14px",
+                height: "14px",
+                borderRadius: "50%",
+                background: "#22C55E",
+                border: "2px solid white",
+              }}
+            />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p
+              className="truncate"
+              style={{
+                fontSize: "15px",
+                fontWeight: 600,
+                color: "#0F172A",
+              }}
+            >
+              {user?.nome || "Usuário"}
+            </p>
+
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#0A6B6B",
+                  background: "#E6FFFB",
+                  padding: "3px 8px",
+                  borderRadius: "999px",
+                  border: "1px solid #B2F5EA",
+                }}
+              >
+                PACIENTE
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Itens de navegação */}
+        <nav
+          className="flex-1 overflow-y-auto"
+          style={{
+            padding: "12px 10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "2px",
+          }}
+        >
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const active = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => {
+                  setActiveTab(item.key);
+                  setSidebarOpen(false);
+                }}
+                className="group w-full flex items-center gap-2.5 transition-all duration-150"
+                style={{
+                  padding: "9px 12px",
+                  borderRadius: "10px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: active ? 500 : 400,
+                  fontFamily: "'DM Sans', sans-serif",
+                  background: active ? "#0A6B6B" : "transparent",
+                  color: active ? "#ffffff" : "#4A6B6B",
+                }}
+              >
+                <Icon
+                  className="h-4 w-4 flex-shrink-0"
+                  style={{ opacity: active ? 1 : 0.65 }}
+                />
+                <span className="truncate">{item.name}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Botão sair */}
+        <div style={{ borderTop: "0.5px solid #E2E8F0", padding: "10px" }}>
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2.5 transition-all duration-150"
+            style={{
+              padding: "9px 12px",
+              borderRadius: "10px",
+              border: "none",
+              cursor: "pointer",
+              fontSize: "13px",
+              fontWeight: 400,
+              fontFamily: "'DM Sans', sans-serif",
+              background: "transparent",
+              color: "#7A9B9B",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#FFF0F0";
+              e.currentTarget.style.color = "#C0392B";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#7A9B9B";
+            }}
+          >
+            <LogOut className="h-4 w-4" />
+            Sair do sistema
+          </button>
+        </div>
+      </aside>
 
       {/* ── ÁREA PRINCIPAL ──────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Topbar */}
-        <PacienteHeader
-          setSidebarOpen={setSidebarOpen}
-          activeTab={activeTab}
-          navigation={navigation}
-        />
+        <header className="flex h-16 items-center justify-between border-b border-gray-100 bg-white px-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <button
+              className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5 text-gray-600" />
+            </button>
+            <div>
+              <h1 className="text-sm font-bold text-gray-900">
+                {navigation.find((n) => n.key === activeTab)?.name ??
+                  "Portal do Paciente"}
+              </h1>
+              <p className="text-xs text-gray-400 hidden sm:block">
+                {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-100">
+              <div className="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse" />
+              Online
+            </span>
+          </div>
+        </header>
 
         {/* Conteúdo scrollável */}
         <main className="flex-1 overflow-y-auto p-5 lg:p-7">
@@ -838,620 +1063,56 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── VACINAS ─────────────────────────────────────── */}
           {activeTab === "vacinas" && (
-            <div className="max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <SectionHeader
-                    icon={Shield}
-                    title="Cartão de Vacinas"
-                    color="violet"
-                  />
-                  {vacinas && vacinas.length > 0 && (
-                    <button
-                      onClick={() => generateVacinasPDF(vacinas, perfil)}
-                      className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-teal-700 hover:-translate-y-0.5 transition-all"
-                    >
-                      <Printer className="h-4 w-4" /> Imprimir PDF
-                    </button>
-                  )}
-                </div>
-                {vacinas && vacinas.length > 0 ? (
-                  <div className="overflow-x-auto rounded-xl border border-gray-100">
-                    <table className="min-w-full divide-y divide-gray-100 text-sm bg-white">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          {[
-                            "Vacina",
-                            "Aplicado por",
-                            "Data",
-                            "Lote",
-                            "Próxima Dose",
-                          ].map((h) => (
-                            <th
-                              key={h}
-                              className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-widest"
-                            >
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {vacinas.map((vacina: any) => (
-                          <tr
-                            key={vacina.id}
-                            className="hover:bg-slate-50 transition-colors"
-                          >
-                            <td className="px-4 py-3 font-semibold text-gray-800">
-                              {vacina.nome}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {vacina.funcionario
-                                ? `CRM: ${vacina.funcionario.crm || "N/A"}`
-                                : "—"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {format(new Date(vacina.dataApl), "dd/MM/yyyy", {
-                                locale: ptBR,
-                              })}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {vacina.lote}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">
-                              {vacina.proximaDose
-                                ? format(
-                                    new Date(vacina.proximaDose),
-                                    "dd/MM/yyyy",
-                                    { locale: ptBR },
-                                  )
-                                : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Shield}
-                    message="Nenhuma vacina registrada"
-                  />
-                )}
-              </div>
-            </div>
+            <PacienteVacinasTab
+              vacinas={vacinas || []}
+              perfil={perfil}
+              generateVacinasPDF={generateVacinasPDF}
+              SectionHeader={SectionHeader}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── EXAMES ──────────────────────────────────────── */}
           {activeTab === "exames" && (
-            <div className="max-w-6xl xl:max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <SectionHeader
-                    icon={FileText}
-                    title="Meus Exames"
-                    color="emerald"
-                  />
-                  <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 bg-slate-50 p-1">
-                    {[
-                      { value: "realizados", label: "Exames" },
-                      { value: "solicitados", label: "Solicitações" },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() =>
-                          setExamesSource(
-                            option.value as "realizados" | "solicitados",
-                          )
-                        }
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                          examesSource === option.value
-                            ? "bg-emerald-600 text-white"
-                            : "text-slate-600 hover:bg-slate-100"
-                        }`}
-                      >
-                        {option.label}
-                        <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-2 text-[11px] font-bold text-slate-600 shadow-sm">
-                          {option.value === "realizados"
-                            ? filteredExamesRealizados.length
-                            : filteredExamesSolicitados.length}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <div className="relative max-w-md">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      value={exameSearch ?? ""}
-                      onChange={(e) => setExameSearch(e.target.value)}
-                      placeholder="Buscar por nome do exame..."
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {examesSource === "realizados" ? (
-                  filteredExamesRealizados.length > 0 ? (
-                    <div className="space-y-3">
-                      {filteredExamesRealizados.map((item: any) => (
-                        <div
-                          key={item.id}
-                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-emerald-200 hover:shadow-sm transition-all"
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div>
-                              <p className="text-sm font-bold text-gray-900">
-                                {item.tipo || "Exame"}
-                              </p>
-                              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                <MapPin className="h-3 w-3" />{" "}
-                                {item.laboratorio?.nome || "—"}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Exame agendado
-                              </p>
-                            </div>
-                            <StatusBadge status={item.status} />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                            {item.dataAgendada && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Agendado
-                                </p>
-                                <p className="text-gray-700">
-                                  {format(
-                                    new Date(item.dataAgendada),
-                                    "dd/MM/yyyy HH:mm",
-                                    { locale: ptBR },
-                                  )}
-                                </p>
-                              </div>
-                            )}
-                            {item.dataRealizado && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Realizado
-                                </p>
-                                <p className="text-gray-700">
-                                  {format(
-                                    new Date(item.dataRealizado),
-                                    "dd/MM/yyyy",
-                                    { locale: ptBR },
-                                  )}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-
-                          {item.observacoes && (
-                            <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Observações
-                              </p>
-                              <p className="text-gray-700">
-                                {item.observacoes}
-                              </p>
-                            </div>
-                          )}
-
-                          {item.resultado && (
-                            <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Resultado
-                              </p>
-                              <p className="text-gray-700">{item.resultado}</p>
-                            </div>
-                          )}
-
-                          {item.arquivoPdf && (
-                            <a
-                              href={`http://localhost:3001/api/exames/download/${item.arquivoPdf}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
-                            >
-                              <Download className="h-3.5 w-3.5" /> Baixar Laudo
-                            </a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState
-                      icon={FileText}
-                      message="Nenhum exame encontrado"
-                    />
-                  )
-                ) : filteredExamesSolicitados.length > 0 ? (
-                  <div className="space-y-3">
-                    {filteredExamesSolicitados.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:border-emerald-200 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">
-                              {item.tipoExame}
-                            </p>
-                            <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3" />{" "}
-                              {item.laboratorio?.nome || "—"}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Solicitação de exame
-                            </p>
-                          </div>
-                          <StatusBadge status={item.status} />
-                        </div>
-
-                        <div className="text-xs text-gray-600 mb-3">
-                          Solicitado em:{" "}
-                          {item.createdAt
-                            ? format(new Date(item.createdAt), "dd/MM/yyyy", {
-                                locale: ptBR,
-                              })
-                            : "—"}
-                        </div>
-
-                        {item.observacoes && (
-                          <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
-                            <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                              Observações
-                            </p>
-                            <p className="text-gray-700">{item.observacoes}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={FileText}
-                    message="Nenhuma solicitação de exame encontrada"
-                  />
-                )}
-              </div>
-            </div>
+            <PacienteExamesTab
+              examesSource={examesSource}
+              setExamesSource={setExamesSource}
+              filteredExamesRealizados={filteredExamesRealizados}
+              filteredExamesSolicitados={filteredExamesSolicitados}
+              exameSearch={exameSearch}
+              setExameSearch={setExameSearch}
+              SectionHeader={SectionHeader}
+              StatusBadge={StatusBadge}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── INTERNAÇÕES ─────────────────────────────────── */}
           {activeTab === "internacoes" && (
-            <div className="max-w-7xl mx-auto space-y-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <SectionHeader icon={Building2} title="Internações" />
-                  <p className="text-sm text-gray-500">
-                    Filtre entre solicitações de internação e internações já
-                    registradas para o paciente.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <label
-                    htmlFor="internacoesFilter"
-                    className="text-sm font-semibold text-gray-600"
-                  >
-                    Mostrar
-                  </label>
-                  <select
-                    id="internacoesFilter"
-                    value={internacoesFilter}
-                    onChange={(e) =>
-                      setInternacoesFilter(
-                        e.target.value as
-                          | "all"
-                          | "solicitacoes"
-                          | "internacoes",
-                      )
-                    }
-                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-sky-500 focus:outline-none"
-                  >
-                    <option value="all">Todas</option>
-                    <option value="solicitacoes">Solicitações</option>
-                    <option value="internacoes">Internações</option>
-                  </select>
-                </div>
-              </div>
-
-              {perfil && (
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                        Paciente
-                      </p>
-                      <p className="text-lg font-semibold text-slate-900">
-                        {perfil.nome}
-                      </p>
-                      <p className="text-sm text-slate-600">{perfil.email}</p>
-                    </div>
-                    <div className="grid gap-2">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                        Documento
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        CPF: {perfil.cpf}
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        CNS: {perfil.cns}
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                        Contato
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        Telefone: {perfil.telefone}
-                      </p>
-                      <p className="text-sm text-slate-700">
-                        Endereço: {perfil.endereco}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {internacoesFilter !== "internacoes" && (
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                  <SectionHeader
-                    icon={Building2}
-                    title="Solicitações de Internação"
-                  />
-                  {filteredSolicitacoesInternacao &&
-                  filteredSolicitacoesInternacao.length > 0 ? (
-                    <div className="space-y-3">
-                      {filteredSolicitacoesInternacao.map((s: any) => (
-                        <div
-                          key={s.id}
-                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div>
-                              <p className="text-sm font-bold text-gray-900">
-                                {s.hospital?.nome || "—"}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {format(
-                                  new Date(s.createdAt),
-                                  "dd/MM/yyyy HH:mm",
-                                  { locale: ptBR },
-                                )}
-                              </p>
-                            </div>
-                            <div className="flex gap-1.5 flex-wrap justify-end">
-                              <StatusBadge status={s.status} />
-                              <span
-                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${getPrioridadeColor(s.prioridade)}`}
-                              >
-                                {s.prioridade}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mb-3">
-                            {[
-                              ["Tipo", s.tipo],
-                              ["Motivo", s.motivo],
-                              ["Médico", s.funcionario?.nome || "—"],
-                              ["UBS", s.ubs?.nome || "—"],
-                            ].map(([l, v]) => (
-                              <div
-                                key={l}
-                                className="rounded-lg bg-white border border-gray-100 p-2.5"
-                              >
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  {l}
-                                </p>
-                                <p className="text-gray-700 font-medium">{v}</p>
-                              </div>
-                            ))}
-                          </div>
-                          {s.dataAgendada && (
-                            <div className="rounded-lg bg-sky-50 border border-sky-100 p-3 text-xs mb-3">
-                              <p className="font-bold text-sky-600 mb-1">
-                                Agendado para
-                              </p>
-                              <p className="text-sky-700">
-                                {format(
-                                  new Date(s.dataAgendada),
-                                  "dd/MM/yyyy",
-                                  {
-                                    locale: ptBR,
-                                  },
-                                )}
-                                {s.horaAgendada && ` às ${s.horaAgendada}`}
-                              </p>
-                              {s.local && (
-                                <p className="text-sky-700 mt-0.5">
-                                  Local: {s.local}
-                                </p>
-                              )}
-                              {s.recomendacoes && (
-                                <p className="text-sky-700 mt-0.5">
-                                  {s.recomendacoes}
-                                </p>
-                              )}
-                            </div>
-                          )}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => openDetalhesModal(s)}
-                              className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
-                            >
-                              <Eye className="h-3.5 w-3.5" /> Ver Detalhes
-                            </button>
-                            {s.status === "agendado" && (
-                              <button
-                                onClick={() =>
-                                  openConfirmarModal(s, "internacao")
-                                }
-                                className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 transition-colors"
-                              >
-                                <Check className="h-3.5 w-3.5" /> Confirmar
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState
-                      icon={Building2}
-                      message="Nenhuma solicitação encontrada"
-                    />
-                  )}
-                </div>
-              )}
-
-              {internacoesFilter !== "solicitacoes" && (
-                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                  <SectionHeader
-                    icon={Building2}
-                    title="Internações Realizadas"
-                  />
-                  {filteredInternacoes && filteredInternacoes.length > 0 ? (
-                    <div className="space-y-3">
-                      {filteredInternacoes.map((i: any) => (
-                        <div
-                          key={i.id}
-                          className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
-                        >
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div>
-                              <p className="text-sm font-bold text-gray-900">
-                                {i.hospital?.nome || "—"}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                Entrada:{" "}
-                                {format(new Date(i.dataEntrada), "dd/MM/yyyy", {
-                                  locale: ptBR,
-                                })}
-                                {i.dataSaida &&
-                                  ` · Saída: ${format(new Date(i.dataSaida), "dd/MM/yyyy", { locale: ptBR })}`}
-                              </p>
-                            </div>
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${i.dataSaida ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-sky-50 text-sky-700 ring-1 ring-sky-200"}`}
-                            >
-                              {i.dataSaida ? "Finalizada" : "Em andamento"}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
-                            <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                              <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                Motivo
-                              </p>
-                              <p className="text-gray-700">{i.motivo}</p>
-                            </div>
-                            {(i.medicoResponsavel ||
-                              i.medicoResponsavelNome) && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-2.5">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Médico Responsável
-                                </p>
-                                <p className="text-gray-700">
-                                  {i.medicoResponsavel?.nome ||
-                                    i.medicoResponsavelNome}
-                                </p>
-                              </div>
-                            )}
-                            {i.diagnostico && (
-                              <div className="rounded-lg bg-white border border-gray-100 p-2.5 sm:col-span-2">
-                                <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                                  Diagnóstico
-                                </p>
-                                <p className="text-gray-700">{i.diagnostico}</p>
-                              </div>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => openDetalhesModal(i)}
-                            className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
-                          >
-                            <Eye className="h-3.5 w-3.5" /> Ver Detalhes
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState
-                      icon={Building2}
-                      message="Nenhuma internação encontrada"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
+            <PacienteInternacoesTab
+              internacoesFilter={internacoesFilter}
+              setInternacoesFilter={setInternacoesFilter}
+              perfil={perfil}
+              filteredSolicitacoesInternacao={filteredSolicitacoesInternacao}
+              filteredInternacoes={filteredInternacoes}
+              openDetalhesModal={openDetalhesModal}
+              openConfirmarModal={openConfirmarModal}
+              getPrioridadeColor={getPrioridadeColor}
+              SectionHeader={SectionHeader}
+              StatusBadge={StatusBadge}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── PROCEDIMENTOS ───────────────────────────────── */}
           {activeTab === "procedimentos" && (
-            <div className="max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader
-                  icon={Activity}
-                  title="Procedimentos Hospitalares"
-                />
-                {procedimentosHospitalares &&
-                procedimentosHospitalares.length > 0 ? (
-                  <div className="space-y-3">
-                    {procedimentosHospitalares.map((p: any) => (
-                      <div
-                        key={p.id}
-                        className="rounded-xl border border-gray-100 bg-slate-50 p-4 hover:shadow-sm transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-3">
-                          <div>
-                            <p className="text-sm font-bold text-gray-900">
-                              {p.tipo}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {format(
-                                new Date(p.dataRealizacao),
-                                "dd/MM/yyyy",
-                                { locale: ptBR },
-                              )}{" "}
-                              · {p.hospital.nome}
-                            </p>
-                          </div>
-                          <StatusBadge status={p.status} />
-                        </div>
-                        <div className="rounded-lg bg-white border border-gray-100 p-3 text-xs mb-3">
-                          <p className="font-bold text-gray-400 uppercase tracking-wide mb-1">
-                            Descrição
-                          </p>
-                          <p className="text-gray-700">{p.descricao}</p>
-                        </div>
-                        {p.medicoRealizou && (
-                          <p className="text-xs text-gray-500 mb-3">
-                            {p.medicoRealizou.nome} · {p.medicoRealizou.funcao}
-                          </p>
-                        )}
-                        <button
-                          onClick={() => openDetalhesModal(p)}
-                          className="flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-gray-300 transition-colors"
-                        >
-                          <Eye className="h-3.5 w-3.5" /> Ver Detalhes
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState
-                    icon={Activity}
-                    message="Nenhum procedimento encontrado"
-                  />
-                )}
-              </div>
-            </div>
+            <PacienteProcedimentosTab
+              procedimentosHospitalares={procedimentosHospitalares || []}
+              openDetalhesModal={openDetalhesModal}
+              SectionHeader={SectionHeader}
+              StatusBadge={StatusBadge}
+              EmptyState={EmptyState}
+            />
           )}
 
           {/* ── MEDICAÇÕES ──────────────────────────────────── */}
@@ -1736,119 +1397,11 @@ const PacienteDashboard: React.FC = () => {
 
           {/* ── HISTÓRICO HOSPITALAR ────────────────────────── */}
           {activeTab === "historico-hospitalar" && (
-            <div className="max-w-7xl mx-auto">
-              <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                <SectionHeader icon={History} title="Histórico Hospitalar" />
-                {historicoHospitalar && (
-                  <>
-                    {/* Resumo */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
-                      {[
-                        {
-                          label: "Solicitações",
-                          val: historicoHospitalar.resumo?.totalSolicitacoes,
-                          color: "sky",
-                        },
-                        {
-                          label: "Internações",
-                          val: historicoHospitalar.resumo?.totalInternacoes,
-                          color: "emerald",
-                        },
-                        {
-                          label: "Procedimentos",
-                          val: historicoHospitalar.resumo?.totalProcedimentos,
-                          color: "violet",
-                        },
-                        {
-                          label: "Medicações",
-                          val: historicoHospitalar.resumo?.totalMedicacoes,
-                          color: "amber",
-                        },
-                        {
-                          label: "Agendamentos",
-                          val: historicoHospitalar.resumo?.totalAgendamentos,
-                          color: "rose",
-                        },
-                      ].map(({ label, val, color }) => (
-                        <div
-                          key={label}
-                          className={`rounded-xl bg-${color}-50 border border-${color}-100 p-3 text-center`}
-                        >
-                          <p className={`text-2xl font-bold text-${color}-600`}>
-                            {val || 0}
-                          </p>
-                          <p
-                            className={`text-xs font-medium text-${color}-500 mt-0.5`}
-                          >
-                            {label}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Timeline */}
-                    {historicoHospitalar.historico &&
-                    historicoHospitalar.historico.length > 0 ? (
-                      <div className="space-y-3">
-                        <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
-                          Linha do Tempo
-                        </p>
-                        {historicoHospitalar.historico.map((item: any) => (
-                          <div
-                            key={`${item.tipo}-${item.id}`}
-                            className="flex gap-3"
-                          >
-                            <div className="flex flex-col items-center">
-                              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-teal-50 border border-teal-100">
-                                <div className="h-2 w-2 rounded-full bg-teal-500" />
-                              </div>
-                              <div className="mt-1 w-px flex-1 bg-gray-100" />
-                            </div>
-                            <div className="flex-1 rounded-xl border border-gray-100 bg-slate-50 p-3 mb-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs font-bold text-gray-800 capitalize">
-                                  {item.tipo === "solicitacao" &&
-                                    "Solicitação de Internação"}
-                                  {item.tipo === "internacao" && "Internação"}
-                                  {item.tipo === "procedimento" &&
-                                    "Procedimento"}
-                                  {item.tipo === "medicacao" && "Medicação"}
-                                  {item.tipo === "agendamento" && "Agendamento"}
-                                </p>
-                                <span className="text-xs text-gray-400">
-                                  {format(
-                                    new Date(item.data),
-                                    "dd/MM/yyyy HH:mm",
-                                    { locale: ptBR },
-                                  )}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                {item.tipo === "solicitacao" &&
-                                  `${item.hospital?.nome} — ${item.motivo}`}
-                                {item.tipo === "internacao" &&
-                                  `${item.hospital?.nome} — ${item.motivo}`}
-                                {item.tipo === "procedimento" &&
-                                  `${item.hospital?.nome} — ${item.descricao}`}
-                                {item.tipo === "medicacao" &&
-                                  `${item.nomeMedicacao} — ${item.dosagem || "Dosagem não informada"}`}
-                                {item.tipo === "agendamento" &&
-                                  `${item.hospital?.nome} — ${item.tipo}`}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState
-                        icon={History}
-                        message="Nenhum histórico hospitalar encontrado"
-                      />
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+            <PacienteHistoricoHospitalarTab
+              historicoHospitalar={historicoHospitalar}
+              SectionHeader={SectionHeader}
+              EmptyState={EmptyState}
+            />
           )}
         </main>
       </div>
@@ -1856,226 +1409,15 @@ const PacienteDashboard: React.FC = () => {
       {/* ── MODAIS ──────────────────────────────────────────── */}
 
       {/* Modal Solicitar Consulta */}
-      {showConsultaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden">
-            {/* Cabeçalho com gradiente */}
-            <div className="bg-gradient-to-r from-teal-700 to-teal-600 px-6 py-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 border border-white/20">
-                    <Calendar className="h-4.5 w-4.5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">
-                      Solicitar Consulta
-                    </h3>
-                    <p className="text-xs text-teal-200 mt-0.5">
-                      Preencha os dados para agendamento
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowConsultaModal(false)}
-                  className="rounded-lg p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Corpo do formulário */}
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
-              <form onSubmit={handleConsultaSubmit} className="space-y-5">
-                {/* UBS */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <MapPin className="h-3 w-3 text-teal-500" />
-                    Unidade de Saúde (UBS)
-                  </label>
-                  <select
-                    value={consultaData.ubsId}
-                    onChange={(e) =>
-                      setConsultaData({
-                        ...consultaData,
-                        ubsId: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all"
-                    required
-                  >
-                    <option value="">Selecione uma UBS</option>
-                    {ubsList?.map((ubs: any) => (
-                      <option key={ubs.id} value={ubs.id}>
-                        {ubs.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Especialidade — grid de pills clicáveis */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <Stethoscope className="h-3 w-3 text-teal-500" />
-                    Especialidade
-                  </label>
-
-                  {/* Pills de seleção rápida */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[
-                      { label: "Clínico Geral", icon: "🩺" },
-                      { label: "Cardiologia", icon: "❤️" },
-                      { label: "Pediatria", icon: "👶" },
-                      { label: "Ginecologia", icon: "🌸" },
-                      { label: "Ortopedia", icon: "🦴" },
-                      { label: "Dermatologia", icon: "🔬" },
-                      { label: "Neurologia", icon: "🧠" },
-                      { label: "Oftalmologia", icon: "👁️" },
-                      { label: "Odontologia", icon: "🦷" },
-                      { label: "Psicologia", icon: "💬" },
-                      { label: "Endocrinologia", icon: "⚗️" },
-                      { label: "Outra", icon: "➕" },
-                    ].map(({ label, icon }) => {
-                      const selected = consultaData.especialidade === label;
-                      return (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() =>
-                            setConsultaData({
-                              ...consultaData,
-                              especialidade: label === "Outra" ? "" : label,
-                            })
-                          }
-                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold text-left transition-all duration-150 hover:-translate-y-0.5 ${
-                            selected
-                              ? "border-teal-400 bg-teal-50 text-teal-700 shadow-sm shadow-teal-100"
-                              : "border-gray-200 bg-gray-50 text-gray-600 hover:border-teal-200 hover:bg-teal-50/50 hover:text-teal-700"
-                          }`}
-                        >
-                          <span className="text-sm">{icon}</span>
-                          <span className="truncate">{label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Campo livre para "Outra" ou confirmação do selecionado */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={consultaData.especialidade}
-                      onChange={(e) =>
-                        setConsultaData({
-                          ...consultaData,
-                          especialidade: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all"
-                      placeholder="Ou digite outra especialidade..."
-                      required
-                    />
-                    {consultaData.especialidade && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setConsultaData({
-                            ...consultaData,
-                            especialidade: "",
-                          })
-                        }
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Motivo */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-                    <FileText className="h-3 w-3 text-teal-500" />
-                    Motivo da Consulta
-                  </label>
-                  <textarea
-                    value={consultaData.motivo}
-                    onChange={(e) =>
-                      setConsultaData({
-                        ...consultaData,
-                        motivo: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 focus:outline-none transition-all resize-none"
-                    rows={3}
-                    placeholder="Descreva brevemente o motivo da consulta, sintomas ou queixa principal..."
-                    required
-                  />
-                  <p className="text-xs text-gray-400">
-                    Seja específico para facilitar o atendimento
-                  </p>
-                </div>
-
-                {/* Resumo da seleção */}
-                {(consultaData.ubsId || consultaData.especialidade) && (
-                  <div className="rounded-xl bg-teal-50 border border-teal-100 p-3">
-                    <p className="text-xs font-bold text-teal-700 uppercase tracking-widest mb-2">
-                      Resumo
-                    </p>
-                    <div className="space-y-1">
-                      {consultaData.ubsId && (
-                        <p className="text-xs text-teal-600 flex items-center gap-1.5">
-                          <MapPin className="h-3 w-3 flex-shrink-0" />
-                          <span className="font-medium">
-                            {
-                              ubsList?.find(
-                                (u: any) => u.id === consultaData.ubsId,
-                              )?.nome
-                            }
-                          </span>
-                        </p>
-                      )}
-                      {consultaData.especialidade && (
-                        <p className="text-xs text-teal-600 flex items-center gap-1.5">
-                          <Stethoscope className="h-3 w-3 flex-shrink-0" />
-                          <span className="font-medium">
-                            {consultaData.especialidade}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Botões */}
-                <div className="flex gap-3 pt-1">
-                  <button
-                    type="submit"
-                    disabled={solicitarConsultaMutation.isLoading}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white hover:bg-teal-700 hover:-translate-y-0.5 transition-all shadow-sm shadow-teal-200 disabled:opacity-50 disabled:hover:translate-y-0"
-                  >
-                    {solicitarConsultaMutation.isLoading ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    ) : (
-                      <>
-                        <Calendar className="h-4 w-4" />
-                        Solicitar Consulta
-                      </>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowConsultaModal(false)}
-                    className="flex-1 rounded-xl bg-slate-100 py-3 text-sm font-semibold text-gray-600 hover:bg-slate-200 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+      <PacienteSolicitarConsultaModal
+        showConsultaModal={showConsultaModal}
+        setShowConsultaModal={setShowConsultaModal}
+        consultaData={consultaData}
+        setConsultaData={setConsultaData}
+        ubsList={ubsList || []}
+        handleConsultaSubmit={handleConsultaSubmit}
+        isLoading={solicitarConsultaMutation.isLoading}
+      />
 
       {/* Modal Editar Perfil */}
       {showEditarPerfilModal && (
