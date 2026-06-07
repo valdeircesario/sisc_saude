@@ -27,6 +27,7 @@ import {
   Download,
   Menu,
   Search,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "react-query";
@@ -60,6 +61,7 @@ import { PacienteCancelarConsultaModal } from "../../components/Paciente/Pacient
 import { EmptyState } from "../../components/UI/EmptyState";
 import { StatusBadge } from "../../components/UI/StatusBadge";
 import { SectionHeader } from "../../components/UI/SectionHeader";
+import MinhasCampanhas from "../../components/Paciente/MinhasCampanhas";
 
 type InternacaoRef = {
   id?: string;
@@ -564,6 +566,7 @@ const PacienteDashboard: React.FC = () => {
     { name: "Início", key: "home", icon: Activity },
     { name: "Meu Perfil", key: "perfil", icon: User },
     { name: "Consultas", key: "consultas", icon: Stethoscope },
+    { name: "Minhas Campanhas", key: "campanhas", icon: Megaphone },
     { name: "Vacinas", key: "vacinas", icon: Shield },
     { name: "Exames", key: "exames", icon: FileText },
     { name: "Internações", key: "internacoes", icon: Building2 },
@@ -950,6 +953,7 @@ const PacienteDashboard: React.FC = () => {
               EmptyState={EmptyState}
             />
           )}
+          {activeTab === "campanhas" && <MinhasCampanhas />}
 
           {/* ── HISTÓRICO HOSPITALAR ────────────────────────── */}
           {activeTab === "historico-hospitalar" && (
@@ -1004,7 +1008,10 @@ const PacienteDashboard: React.FC = () => {
         confirmacaoObservacoes={confirmacaoObservacoes}
         setConfirmacaoObservacoes={setConfirmacaoObservacoes}
         handleConfirmarAgendamento={handleConfirmarAgendamento}
-        isLoading={confirmarAgendamentoMutation.isLoading || confirmarAgendamentoHospitalarMutation.isLoading}
+        isLoading={
+          confirmarAgendamentoMutation.isLoading ||
+          confirmarAgendamentoHospitalarMutation.isLoading
+        }
       />
 
       {/* Modal Cancelar Consulta */}

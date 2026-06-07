@@ -40,6 +40,17 @@ router.put("/consultas/:id/cancelar", pacienteController.cancelarConsulta);
 // Listar UBS disponíveis
 router.get("/ubs", pacienteController.listarUbs);
 
+// ==================== FUNCIONALIDADES DE CAMPANHA ====================
+
+// Listar campanhas em que o paciente está inscrito
+router.get("/campanhas", pacienteController.listarCampanhasInscritas);
+
+// Confirmar agendamento de campanha
+router.put("/agendamentos-campanha/:id/confirmar", pacienteController.confirmarAgendamentoCampanha);
+
+// Cancelar agendamento de campanha
+router.put("/agendamentos-campanha/:id/cancelar", pacienteController.cancelarAgendamentoCampanha);
+
 // ==================== FUNCIONALIDADES DE INTERNAÇÃO ====================
 
 // Listar solicitações de internação do paciente
