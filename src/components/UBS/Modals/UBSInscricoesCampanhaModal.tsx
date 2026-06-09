@@ -40,9 +40,9 @@ export const UBSInscricoesCampanhaModal: React.FC<{
   inscricoesCampanha,
   openAgendamentoCampanhaModal,
 }) => {
-  const [filter, setFilter] = useState<"todos" | "inscrito" | "agendado">(
-    "todos",
-  );
+  const [filter, setFilter] = useState<
+    "todos" | "inscrito" | "agendado" | "confirmado" | "cancelado" | "realizado"
+  >("todos");
 
   const queryClient = useQueryClient();
   const [actionState, setActionState] = useState<{ tipo: "cancelar" | "realizar", inscricao: any } | null>(null);
@@ -100,7 +100,19 @@ export const UBSInscricoesCampanhaModal: React.FC<{
 
   const inscricoesFiltradas = inscricoesCampanha?.filter((inscricao: any) => {
     if (filter === "todos") return true;
-    return inscricao.status?.toLowerCase() === filter;
+    const status = inscricao.status?.toLowerCase() || "";
+    
+    if (filter === "confirmado") {
+      return status === "confirmado" || status === "confirmada";
+    }
+    if (filter === "cancelado") {
+      return status === "cancelado" || status === "cancelada";
+    }
+    if (filter === "realizado") {
+      return status === "realizado" || status === "realizada";
+    }
+    
+    return status === filter;
   });
 
   const getStatusBadge = (status: string) => {
@@ -208,6 +220,24 @@ export const UBSInscricoesCampanhaModal: React.FC<{
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "agendado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Agendadas
+              </button>
+              <button
+                onClick={() => setFilter("confirmado")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "confirmado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Confirmadas
+              </button>
+              <button
+                onClick={() => setFilter("realizado")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "realizado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Realizadas
+              </button>
+              <button
+                onClick={() => setFilter("cancelado")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "cancelado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Canceladas
               </button>
             </div>
             <div className="text-sm text-gray-500 whitespace-nowrap px-1">

@@ -28,9 +28,9 @@ const MinhasCampanhas = () => {
   const [showModal, setShowModal] = useState(false);
   const [justificativa, setJustificativa] = useState("");
   const [isCanceling, setIsCanceling] = useState(false);
-  const [filter, setFilter] = useState<"todas" | "agendamentos" | "inscricoes">(
-    "todas",
-  );
+  const [filter, setFilter] = useState<
+    "todas" | "agendamentos" | "inscricoes" | "canceladas" | "realizadas"
+  >("todas");
 
   // Busca os agendamentos das campanhas
   const { data: agendamentos, isLoading } = useQuery("paciente-campanhas", () =>
@@ -128,6 +128,8 @@ const MinhasCampanhas = () => {
     if (filter === "todas") return true;
     if (filter === "agendamentos") return item.tipo === "agendamento";
     if (filter === "inscricoes") return item.tipo === "inscricao";
+    if (filter === "canceladas") return item.status === "cancelada";
+    if (filter === "realizadas") return item.status === "realizada";
     return true;
   });
 
@@ -141,24 +143,36 @@ const MinhasCampanhas = () => {
             saúde.
           </p>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="flex bg-gray-100 p-1 rounded-xl overflow-x-auto">
           <button
             onClick={() => setFilter("todas")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === "todas" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "todas" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
           >
             Todas
           </button>
           <button
             onClick={() => setFilter("agendamentos")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === "agendamentos" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "agendamentos" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
           >
             Agendadas
           </button>
           <button
             onClick={() => setFilter("inscricoes")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${filter === "inscricoes" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "inscricoes" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
           >
             Pendentes
+          </button>
+          <button
+            onClick={() => setFilter("canceladas")}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "canceladas" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Canceladas
+          </button>
+          <button
+            onClick={() => setFilter("realizadas")}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "realizadas" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Realizadas
           </button>
         </div>
       </div>
@@ -218,8 +232,8 @@ const MinhasCampanhas = () => {
                     {agendamento.status}
                   </span>
 
-                  {/* Botão disponível apenas se o status for "agendado" */}
-                  {agendamento.status === "agendado" && (
+                  {/* Botão disponível para status "agendado", "cancelada" ou "realizada" */}
+                  {["agendado", "cancelada", "realizada"].includes(agendamento.status) && (
                     <button
                       onClick={() => openDetalhes(agendamento)}
                       className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 rounded-xl transition-colors font-semibold shadow-sm"
@@ -305,12 +319,22 @@ const MinhasCampanhas = () => {
                   </p>
                 </div>
 
+                {selectedAgendamento.justificativa && (
+                  <div className="pt-2">
+                    <p className="text-sm text-gray-500 font-medium mb-1">
+                      Motivo / Justificativa
+                    </p>
+                    <p className="text-gray-800 bg-white p-3 rounded-xl border border-gray-200 text-sm whitespace-pre-wrap">
+                      {selectedAgendamento.justificativa}
+                    </p>
+                  </div>
+                )}
                 {selectedAgendamento.observacoes && (
                   <div className="pt-2">
                     <p className="text-sm text-gray-500 font-medium mb-1">
                       Observações da Unidade
                     </p>
-                    <p className="text-gray-800 bg-white p-3 rounded-xl border border-gray-200 text-sm">
+                    <p className="text-gray-800 bg-white p-3 rounded-xl border border-gray-200 text-sm whitespace-pre-wrap">
                       {selectedAgendamento.observacoes}
                     </p>
                   </div>
@@ -320,29 +344,31 @@ const MinhasCampanhas = () => {
               {/* Botões de Ação Condicionais */}
               {!isCanceling ? (
                 <div className="flex flex-col gap-3">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={() => setIsCanceling(true)}
-                      className="flex-1 py-3 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
-                    >
-                      <XCircle className="w-5 h-5" /> Cancelar
-                    </button>
-                    <button
-                      onClick={handleConfirmar}
-                      disabled={confirmarMutation.isLoading}
-                      className="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-md"
-                    >
-                      <CheckCircle className="w-5 h-5" />
-                      {confirmarMutation.isLoading
-                        ? "Confirmando..."
-                        : "Confirmar Presença"}
-                    </button>
-                  </div>
+                  {selectedAgendamento.status === "agendado" && (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={() => setIsCanceling(true)}
+                        className="flex-1 py-3 px-4 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl font-bold transition-colors flex items-center justify-center gap-2"
+                      >
+                        <XCircle className="w-5 h-5" /> Cancelar
+                      </button>
+                      <button
+                        onClick={handleConfirmar}
+                        disabled={confirmarMutation.isLoading}
+                        className="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-70 shadow-md"
+                      >
+                        <CheckCircle className="w-5 h-5" />
+                        {confirmarMutation.isLoading
+                          ? "Confirmando..."
+                          : "Confirmar Presença"}
+                      </button>
+                    </div>
+                  )}
                   <button
                     onClick={() => setShowModal(false)}
                     className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-colors"
                   >
-                    Fechar e decidir depois
+                    {selectedAgendamento.status === "agendado" ? "Fechar e decidir depois" : "Fechar"}
                   </button>
                 </div>
               ) : (
