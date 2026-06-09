@@ -90,6 +90,12 @@ export const confirmarAgendamentoCampanha = async (req, res) => {
       data: { status: "confirmada" },
     });
 
+    // Sincroniza o status na inscrição
+    await prisma.inscricaoCampanha.update({
+      where: { id: agendamento.inscricaoId },
+      data: { status: "confirmada" },
+    });
+
     res.json({
       message: "Agendamento confirmado com sucesso!",
       agendamento: atualizado,
@@ -140,6 +146,15 @@ export const cancelarAgendamentoCampanha = async (req, res) => {
       data: {
         status: "cancelada",
         justificativa,
+      },
+    });
+
+    // Sincroniza o status e a justificativa na inscrição para a UBS visualizar
+    await prisma.inscricaoCampanha.update({
+      where: { id: agendamento.inscricaoId },
+      data: {
+        status: "cancelada",
+        observacoes: `Cancelado pelo Paciente: ${justificativa}`,
       },
     });
 

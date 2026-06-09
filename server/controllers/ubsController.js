@@ -188,6 +188,15 @@ export const cancelarAgendamentoCampanha = async (req, res) => {
   }
 };
 
+export const realizarAgendamentoCampanha = async (req, res) => {
+  try {
+    const agendamento = await ubsService.realizarAgendamentoCampanha(req.params.id, req.user.id, req.body.observacoes);
+    res.json({ message: "Agendamento marcado como realizado com sucesso", agendamento });
+  } catch (error) {
+    handleError(res, error, "Erro ao realizar agendamento de campanha:");
+  }
+};
+
 export const listarConsultas = async (req, res) => {
   try {
     const consultas = await ubsService.listarConsultas(req.user.id);

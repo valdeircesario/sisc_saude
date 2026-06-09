@@ -377,6 +377,7 @@ export const listarInscricoesCampanha = async (campanhaId, ubsId) => {
 
   return await prisma.inscricaoCampanha.findMany({
     where: { campanhaId },
+    include: { agendamento: true },
     orderBy: [{ pontuacao: "desc" }, { createdAt: "asc" }],
   });
 };
@@ -448,6 +449,31 @@ export const cancelarAgendamentoCampanha = async (id, ubsId, justificativa) => {
   await prisma.inscricaoCampanha.update({
     where: { id: agendamento.inscricaoId },
     data: { status: "cancelada", observacoes: justificativa },
+  });
+
+  return updatedAgendamento;
+};
+
+export const realizarAgendamentoCampanha = async (id, ubsId, observacoes) => {
+  const agendamento = await prisma.agendamentoCampanha.findFirst({
+    where: { id, ubsId },
+  });
+
+  if (!agendamento) {
+    throw { status: 404, data: { message: "Agendamento não encontrado" } };
+  }
+
+  const updatedAgendamento = await prisma.agendamentoCampanha.update({
+    where: { id },
+    data: {
+      status: "realizada",
+      observacoes: observacoes ? `${agendamento.observacoes ? agendamento.observacoes + '\n' : ''}Realizado: ${observacoes}` : agendamento.observacoes,
+    },
+  });
+
+  await prisma.inscricaoCampanha.update({
+    where: { id: agendamento.inscricaoId },
+    data: { status: "realizada", observacoes: observacoes ? `${agendamento.observacoes ? agendamento.observacoes + '\n' : ''}Realizado: ${observacoes}` : agendamento.observacoes },
   });
 
   return updatedAgendamento;
