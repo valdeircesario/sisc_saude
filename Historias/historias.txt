@@ -11,3 +11,15 @@ quero que relacione a dispensaçãoreceita com oa ubs, quero que o funcionario t
 
 
 otimo um sucesso na funcionalidade implementada, agora vamos corrijir a funcionalidade de dispensar receita para a farmacia, ela ja existe mas era outra forma, quero que implemente as mesmas funções de dispensar receita, de consultar registro da receita, de dispensar para pendentes, de ver detalhes quando a receita estiver todas dispensada, implemente a mesma logica para o usuario da farmacia, acesando o farmaciadashbords.tsx e farmacia.js desde o back ao front. corrijindo os modais aplicando mesmo conceito do funcionario da ubs
+
+
+
+
+//////////////////
+
+O módulo de medicamentos.js foi completamente refatorado seguindo nossa arquitetura em três camadas!
+
+server/services/medicamentosService.js criado: A complexa lógica de verificação de permissões do funcionário (se pertence à UBS que possui o medicamento), validações de data de validade, cálculos de estoque e as transactions seguras do Prisma para baixar o estoque e registrar o fornecimento de uma só vez, foram todas movidas para cá.
+server/controllers/medicamentosController.js criado: Intercepta as requisições, pega as validações feitas pelo serviço e monta os retornos padronizados de status HTTP (200, 201, ou erro via handleError).
+server/routes/medicamentos.js refatorado: Ficou extremamente limpo, conectando apenas verbos HTTP, Middlewares (authenticateToken, authorizeRole) e as funções do Controller.
+Agora quero que faça a refatoração do próximo grande módulo  (receitasAtestado.js), seguindo a mesma arquitetura.

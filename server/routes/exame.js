@@ -1,25 +1,11 @@
-import express from 'express';
-import path from 'path';
-import { prisma } from '../config/database.js';
+import express from "express";
+import { authenticateToken } from "../middleware/auth.js";
+import * as exameController from "../controllers/exameController.js";
 
 const router = express.Router();
 
-// Download de arquivo de exame
-router.get('/download/:filename', async (req, res) => {
-  try {
-    const { filename } = req.params;
-    const filePath = path.join(process.cwd(), 'uploads', 'exames', filename);
-    
-    res.download(filePath, (err) => {
-      if (err) {
-        console.error('Erro ao fazer download:', err);
-        res.status(404).json({ message: 'Arquivo não encontrado' });
-      }
-    });
-  } catch (error) {
-    console.error('Erro ao fazer download:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+// ✅ SEGURANÇA: Download de arquivo de exame com autenticação e sanitização
+// Requer token JWT válido e sanitiza o filename para prevenir path traversal
+router.get("/download/:filename", authenticateToken, exameController.downloadExame);
 
 export default router;

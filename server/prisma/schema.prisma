@@ -41,6 +41,7 @@ model UBS {
   receitasMedicas        ReceitaMedica[]
   atestadosMedicos       AtestadoMedico[]
   dispensacoes           DispensacaoReceita[]
+  agendamentosCampanha   AgendamentoCampanha[]
 
   @@map("ubs")
 }
@@ -325,6 +326,7 @@ model DispensacaoReceita {
   receitaMedicamentoId    String?
   ubsId                   String?
   funcionarioId           String?
+  atendente               String?
   statusDispensacao       String   @default("completa") // "completa" | "parcial"
   observacoesDispensacao  String?  // ex: "Amoxicilina indisponível, apenas Dipirona fornecida"
   medicamentoFornecido    String?  // pode diferir do prescrito (genérico, etc.)
@@ -622,6 +624,7 @@ model Campanha {
 
   ubs        UBS                 @relation(fields: [ubsId], references: [id])
   inscricoes InscricaoCampanha[]
+  agendamentos AgendamentoCampanha[]
 
   @@map("campanhas")
 }
@@ -649,6 +652,7 @@ model InscricaoCampanha {
   updatedAt        DateTime  @updatedAt
 
   campanha Campanha @relation(fields: [campanhaId], references: [id])
+  agendamento AgendamentoCampanha?
 
   @@map("inscricoes_campanhas")
 }
@@ -812,5 +816,26 @@ model MedicacaoPaciente {
   ubs            UBS         @relation(fields: [ubsId], references: [id])
 
   @@map("medicacoes_paciente")
+}
+
+model AgendamentoCampanha {
+  id               String    @id @default(cuid())
+  campanhaId       String
+  ubsId            String
+  inscricaoId      String    @unique
+  dataAgendada     DateTime
+  horaAgendada     String
+  localAtendimento String
+  status           String    @default("agendado") // agendado, confirmada, cancelada, realizada
+  justificativa    String?
+  observacoes      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  campanha         Campanha          @relation(fields: [campanhaId], references: [id])
+  ubs              UBS               @relation(fields: [ubsId], references: [id])
+  inscricao        InscricaoCampanha @relation(fields: [inscricaoId], references: [id])
+
+  @@map("agendamentos_campanhas")
 }
 

@@ -1,8 +1,8 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { prisma } from '../config/database.js';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
+import * as laboratorioController from '../controllers/laboratorioController.js';
 
 const router = express.Router();
 
@@ -36,140 +36,15 @@ router.use(authenticateToken);
 router.use(authorizeRole(['laboratorio']));
 
 // Listar solicitações de exame
-router.get('/solicitacoes', async (req, res) => {
-  try {
-    const solicitacoes = await prisma.solicitacaoExame.findMany({
-      where: { laboratorioId: req.user.id },
-      include: {
-        paciente: {
-          select: {
-            id: true,
-            nome: true,
-            cpf: true,
-            telefone: true,
-            email: true,
-            nascimento: true
-          }
-        },
-        funcionario: {
-          select: {
-            nome: true,
-            funcao: true,
-            ubs: {
-              select: {
-                nome: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json(solicitacoes);
-  } catch (error) {
-    console.error('Erro ao listar solicitações:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+router.get('/solicitacoes', laboratorioController.listarSolicitacoes);
 
 // Agendar exame
-router.put('/solicitacoes/:id/agendar', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { dataAgendada } = req.body;
-
-    // Atualizar solicitação
-    const solicitacaoAtualizada = await prisma.solicitacaoExame.update({
-      where: { 
-        id,
-        laboratorioId: req.user.id
-      },
-      data: {
-        status: 'agendado'
-      }
-    });
-
-    // Criar registro de exame
-    const novoExame = await prisma.exame.create({
-      data: {
-        pacienteId: solicitacaoAtualizada.pacienteId,
-        laboratorioId: req.user.id,
-        tipo: solicitacaoAtualizada.tipoExame,
-        dataAgendada: new Date(dataAgendada),
-        status: 'agendado'
-      }
-    });
-
-    res.json({ solicitacao: solicitacaoAtualizada, exame: novoExame });
-  } catch (error) {
-    console.error('Erro ao agendar exame:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+router.put('/solicitacoes/:id/agendar', laboratorioController.agendarExame);
 
 // Registrar resultado do exame
-router.put('/exames/:id/resultado', upload.single('arquivo'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { resultado } = req.body;
-    const arquivoPdf = req.file ? req.file.filename : null;
-
-    const exameAtualizado = await prisma.exame.update({
-      where: { 
-        id,
-        laboratorioId: req.user.id
-      },
-      data: {
-        resultado,
-        arquivoPdf,
-        dataRealizado: new Date(),
-        status: 'realizado'
-      }
-    });
-
-    // Atualizar solicitação correspondente
-    await prisma.solicitacaoExame.updateMany({
-      where: {
-        pacienteId: exameAtualizado.pacienteId,
-        laboratorioId: req.user.id,
-        tipoExame: exameAtualizado.tipo,
-        status: 'agendado'
-      },
-      data: {
-        status: 'realizado'
-      }
-    });
-
-    res.json(exameAtualizado);
-  } catch (error) {
-    console.error('Erro ao registrar resultado:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+router.put('/exames/:id/resultado', upload.single('arquivo'), laboratorioController.registrarResultado);
 
 // Listar exames do laboratório
-router.get('/exames', async (req, res) => {
-  try {
-    const exames = await prisma.exame.findMany({
-      where: { laboratorioId: req.user.id },
-      include: {
-        paciente: {
-          select: {
-            nome: true,
-            cpf: true,
-            telefone: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json(exames);
-  } catch (error) {
-    console.error('Erro ao listar exames:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
-  }
-});
+router.get('/exames', laboratorioController.listarExames);
 
 export default router;

@@ -104,11 +104,15 @@ const DetailItem: React.FC<DetailItemProps> = ({ disp, index }) => (
           <strong>Quantidade:</strong> {disp.quantidadeDispensada}
         </div>
       )}
-      {disp.farmaciaResponsavel && (
+      {disp.atendente ? (
+        <div>
+          <strong>Atendente:</strong> {disp.atendente}
+        </div>
+      ) : disp.farmaciaResponsavel ? (
         <div>
           <strong>Atendente:</strong> {disp.farmaciaResponsavel}
         </div>
-      )}
+      ) : null}
       {disp.observacoesDispensacao && (
         <div>
           <strong>Observações:</strong> {disp.observacoesDispensacao}

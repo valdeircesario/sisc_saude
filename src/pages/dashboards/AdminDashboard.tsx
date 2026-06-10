@@ -1,25 +1,17 @@
 import React, { useState } from "react";
-import { Routes, Route, Link, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
-  Settings,
-  Building2,
-  FlaskConical,
-  Users,
-  LogOut,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-} from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { api } from "../../services/api";
 import { toast } from "react-toastify";
 
+import { AdminHeader } from "../../components/Admin/AdminHeader";
+import { AdminTabs } from "../../components/Admin/AdminTabs";
+import { AdminTable } from "../../components/Admin/AdminTable";
+import { AdminModal } from "../../components/Admin/AdminModal";
+
 const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("ubs");
@@ -41,277 +33,72 @@ const AdminDashboard: React.FC = () => {
     { enabled: activeTab === "ubs" },
   );
 
-  // Removida declaração duplicada do useQuery para 'upas'
-  // (a declaração única permanece mais adiante junto às mutações de UPA)
-
-  //FARMACIAS
-
-  const createFARMACIAMutation = useMutation(
-    (data: any) => api.post("/admin/farmacias", data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-farmacias"]);
-        toast.success("Farmácia cadastrada com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao cadastrar Farmácia",
-        );
-      },
-    },
-  );
-
-  const updateFARMACIAMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) =>
-      api.put(`/admin/farmacias/${id}`, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-farmacias"]);
-        toast.success("Farmácia atualizada com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao atualizar Farmácia",
-        );
-      },
-    },
-  );
-  const deleteFARMACIAMutation = useMutation(
-    (id: string) => api.delete(`/admin/farmacias/${id}`),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-farmacias"]);
-        toast.success("Farmácia deletada com sucesso!");
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao deletar Farmácia",
-        );
-      },
-    },
-  );
-
   const { data: farmacias, isLoading: loadingFarmacias } = useQuery(
     ["admin-farmacias"],
     () => api.get("/admin/farmacias").then((res) => res.data),
     { enabled: activeTab === "farmacias" },
   );
 
-  // Removida declaração duplicada do useQuery para 'farmacias'
-  // (já existe: `const { data: farmacias, isLoading: loadingFarmacias }`)
-
-  // Hospital mutations
-
   const { data: hospitais, isLoading: loadingHospitais } = useQuery(
     ["admin-hospitais"],
     () => api.get("/admin/hospitais").then((res) => res.data),
     { enabled: activeTab === "hospitais" },
   );
-  const createHOSPITALMutation = useMutation(
-    (data: any) => api.post("/admin/hospitais", data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-hospitais"]);
-        toast.success("Hospital cadastrado com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao cadastrar hospital",
-        );
-      },
-    },
-  );
 
-  const updateHOSPITALMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) =>
-      api.put(`/admin/hospitais/${id}`, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-hospitais"]);
-        toast.success("Hospital atualizado com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao atualizar hospital",
-        );
-      },
-    },
-  );
-
-  const deleteHOSPITALMutation = useMutation(
-    (id: string) => api.delete(`/admin/hospitais/${id}`),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-hospitais"]);
-        toast.success("Hospital deletado com sucesso!");
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao deletar hospital",
-        );
-      },
-    },
-  );
-
-  // UBS mutations
-  const createUBSMutation = useMutation(
-    (data: any) => api.post("/admin/ubs", data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-ubs"]);
-        toast.success("UBS cadastrada com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao cadastrar UBS");
-      },
-    },
-  );
-
-  const updateUBSMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) =>
-      api.put(`/admin/ubs/${id}`, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-ubs"]);
-        toast.success("UBS atualizada com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao atualizar UBS");
-      },
-    },
-  );
-
-  const deleteUBSMutation = useMutation(
-    (id: string) => api.delete(`/admin/ubs/${id}`),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-ubs"]);
-        toast.success("UBS deletada com sucesso!");
-      },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao deletar UBS");
-      },
-    },
-  );
-
-  // CRIAÇÃO DE LABORATORIO
   const { data: laboratorios, isLoading: loadingLabs } = useQuery(
     ["admin-laboratorios"],
     () => api.get("/admin/laboratorios").then((res) => res.data),
     { enabled: activeTab === "laboratorios" },
   );
 
-  const createLabMutation = useMutation(
-    (data: any) => api.post("/admin/laboratorios", data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-laboratorios"]);
-        toast.success("Laboratório cadastrado com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao cadastrar laboratório",
-        );
-      },
-    },
-  );
-
-  const updateLabMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) =>
-      api.put(`/admin/laboratorios/${id}`, data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-laboratorios"]);
-        toast.success("Laboratório atualizado com sucesso!");
-        setShowModal(false);
-        resetForm();
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao atualizar laboratório",
-        );
-      },
-    },
-  );
-
-  const deleteLabMutation = useMutation(
-    (id: string) => api.delete(`/admin/laboratorios/${id}`),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-laboratorios"]);
-        toast.success("Laboratório deletado com sucesso!");
-      },
-      onError: (error: any) => {
-        toast.error(
-          error.response?.data?.message || "Erro ao deletar laboratório",
-        );
-      },
-    },
-  );
-
-  // CRIAÇÃO DA UPA
   const { data: upas, isLoading: loadingUpas } = useQuery(
     ["admin-upas"],
     () => api.get("/admin/upas").then((res) => res.data),
     { enabled: activeTab === "upas" },
   );
 
-  const createUpaMutation = useMutation(
-    (data: any) => api.post("/admin/upas", data),
+  // Mutations
+  const createMutation = useMutation(
+    ({ endpoint, data }: { endpoint: string; data: any }) => api.post(`/admin/${endpoint}`, data),
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-upas"]);
-        toast.success("UPA cadastrada com sucesso!");
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries([`admin-${variables.endpoint}`]);
+        toast.success("Cadastro realizado com sucesso!");
         setShowModal(false);
         resetForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao cadastrar UPA");
+        toast.error(error.response?.data?.message || "Erro ao cadastrar");
       },
-    },
+    }
   );
 
-  const updateUpaMutation = useMutation(
-    ({ id, data }: { id: string; data: any }) =>
-      api.put(`/admin/upas/${id}`, data),
+  const updateMutation = useMutation(
+    ({ endpoint, id, data }: { endpoint: string; id: string; data: any }) => api.put(`/admin/${endpoint}/${id}`, data),
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-upas"]);
-        toast.success("UPA atualizada com sucesso!");
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries([`admin-${variables.endpoint}`]);
+        toast.success("Atualização realizada com sucesso!");
         setShowModal(false);
         resetForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao atualizar UPA");
+        toast.error(error.response?.data?.message || "Erro ao atualizar");
       },
-    },
+    }
   );
 
-  const deleteUpaMutation = useMutation(
-    (id: string) => api.delete(`/admin/upas/${id}`),
+  const deleteMutation = useMutation(
+    ({ endpoint, id }: { endpoint: string; id: string }) => api.delete(`/admin/${endpoint}/${id}`),
     {
-      onSuccess: () => {
-        queryClient.invalidateQueries(["admin-upas"]);
-        toast.success("UPA deletada com sucesso!");
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries([`admin-${variables.endpoint}`]);
+        toast.success("Registro deletado com sucesso!");
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao deletar UPA");
+        toast.error(error.response?.data?.message || "Erro ao deletar");
       },
-    },
+    }
   );
 
   const resetForm = () => {
@@ -326,39 +113,17 @@ const AdminDashboard: React.FC = () => {
     setEditingItem(null);
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (activeTab === "ubs") {
-      if (editingItem) {
-        updateUBSMutation.mutate({ id: editingItem.id, data: formData });
-      } else {
-        createUBSMutation.mutate(formData);
-      }
-    } else if (activeTab === "laboratorios") {
-      if (editingItem) {
-        updateLabMutation.mutate({ id: editingItem.id, data: formData });
-      } else {
-        createLabMutation.mutate(formData);
-      }
-    } else if (activeTab === "hospitais") {
-      if (editingItem) {
-        updateHOSPITALMutation.mutate({ id: editingItem.id, data: formData });
-      } else {
-        createHOSPITALMutation.mutate(formData);
-      }
-    } else if (activeTab === "upas") {
-      if (editingItem) {
-        updateUpaMutation.mutate({ id: editingItem.id, data: formData });
-      } else {
-        createUpaMutation.mutate(formData);
-      }
-    } else if (activeTab === "farmacias") {
-      if (editingItem) {
-        updateFARMACIAMutation.mutate({ id: editingItem.id, data: formData });
-      } else {
-        createFARMACIAMutation.mutate(formData);
-      }
+    if (editingItem) {
+      updateMutation.mutate({ endpoint: activeTab, id: editingItem.id, data: formData });
+    } else {
+      createMutation.mutate({ endpoint: activeTab, data: formData });
     }
   };
 
@@ -377,17 +142,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleDelete = (id: string) => {
     if (window.confirm("Tem certeza que deseja deletar este item?")) {
-      if (activeTab === "ubs") {
-        deleteUBSMutation.mutate(id);
-      } else if (activeTab === "laboratorios") {
-        deleteLabMutation.mutate(id);
-      } else if (activeTab === "hospitais") {
-        deleteHOSPITALMutation.mutate(id);
-      } else if (activeTab === "upas") {
-        deleteUpaMutation.mutate(id);
-      } else if (activeTab === "farmacias") {
-        deleteFARMACIAMutation.mutate(id);
-      }
+      deleteMutation.mutate({ endpoint: activeTab, id });
     }
   };
 
@@ -396,495 +151,80 @@ const AdminDashboard: React.FC = () => {
     setShowModal(true);
   };
 
+  const getActiveData = () => {
+    switch (activeTab) {
+      case "ubs": return ubsList;
+      case "laboratorios": return laboratorios;
+      case "hospitais": return hospitais;
+      case "farmacias": return farmacias;
+      case "upas": return upas;
+      default: return [];
+    }
+  };
+
+  const getActiveLoading = () => {
+    switch (activeTab) {
+      case "ubs": return loadingUBS;
+      case "laboratorios": return loadingLabs;
+      case "hospitais": return loadingHospitais;
+      case "farmacias": return loadingFarmacias;
+      case "upas": return loadingUpas;
+      default: return false;
+    }
+  };
+
+  const tabNames: Record<string, string> = {
+    ubs: "Unidades de Saúde",
+    laboratorios: "Laboratórios",
+    hospitais: "Hospitais",
+    farmacias: "Farmácias",
+    upas: "UPAs",
+  };
+
+  const entityName = tabNames[activeTab] || "Item";
+  const items = getActiveData();
+  const isLoading = getActiveLoading();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      {/* Header */}
-      <header className="bg-white shadow-lg border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <Settings className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  Painel Administrativo
-                </h1>
-                <p className="text-sm text-gray-600">Bem-vindo, {user?.nome}</p>
-              </div>
-            </div>
-
-            <button
-              onClick={logout}
-              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sair</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      <AdminHeader userNome={user?.nome} onLogout={logout} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Tabs */}
-        <div className="mb-8">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab("ubs")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "ubs"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Building2 className="h-5 w-5 inline mr-2" />
-                Unidades de Saúde
-              </button>
-              <button
-                onClick={() => setActiveTab("laboratorios")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "laboratorios"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <FlaskConical className="h-5 w-5 inline mr-2" />
-                Laboratórios
-              </button>
-              <button
-                onClick={() => setActiveTab("hospitais")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "hospitais"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Building2 className="h-5 w-5 inline mr-2" />
-                Hospitais
-              </button>
-              <button
-                onClick={() => setActiveTab("upas")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "upas"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Building2 className="h-5 w-5 inline mr-2" />
-                UPAs
-              </button>
-              <button
-                onClick={() => setActiveTab("farmacias")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "farmacias"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                <Building2 className="h-5 w-5 inline mr-2" />
-                Farmácias
-              </button>
-            </nav>
-          </div>
-        </div>
+        <AdminTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
         {/* Content */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {activeTab === "ubs"
-                ? "Unidades de Saúde"
-                : activeTab === "laboratorios"
-                  ? "Laboratórios"
-                  : activeTab === "hospitais"
-                    ? "Hospitais"
-                    : activeTab === "farmacias"
-                      ? "Farmácias"
-                      : "UPAs"}
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">{entityName}</h2>
             <button
               onClick={openCreateModal}
               className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4" />
               <span>
-                Adicionar{" "}
-                {activeTab === "ubs"
-                  ? "UBS"
-                  : activeTab === "laboratorios"
-                    ? "Laboratório"
-                    : activeTab === "hospitais"
-                      ? "Hospital"
-                      : activeTab === "farmacias"
-                        ? "Farmácia"
-                        : "UPA"}
+                Adicionar {activeTab === "ubs" ? "UBS" : activeTab === "upas" ? "UPA" : entityName.slice(0, -1)}
               </span>
             </button>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nome
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Endereço
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contato
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CNPJ
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {activeTab === "ubs" &&
-                  ubsList?.map((ubs: any) => (
-                    <tr key={ubs.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {ubs.nome}
-                        </div>
-                        <div className="text-sm text-gray-500">{ubs.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ubs.endereco}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ubs.telefone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {ubs.cnpj}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(ubs)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(ubs.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                {activeTab === "laboratorios" &&
-                  laboratorios?.map((lab: any) => (
-                    <tr key={lab.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {lab.nome}
-                        </div>
-                        <div className="text-sm text-gray-500">{lab.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lab.endereco}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lab.telefone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lab.cnpj}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(lab)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(lab.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                {activeTab === "upas" &&
-                  upas?.map((u: any) => (
-                    <tr key={u.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {u.nome}
-                        </div>
-                        <div className="text-sm text-gray-500">{u.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {u.endereco}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {u.telefone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {u.cnpj}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(u)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(u.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                {activeTab === "farmacias" &&
-                  farmacias?.map((f: any) => (
-                    <tr key={f.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {f.nome}
-                        </div>
-                        <div className="text-sm text-gray-500">{f.email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {f.endereco}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {f.telefone}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {f.cnpj}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handleEdit(f)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(f.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                {activeTab === "hospitais" && (
-                  <>
-                    {hospitais?.map((hospital: any) => (
-                      <tr key={hospital.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {hospital.nome}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {hospital.email}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {hospital.endereco}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {hospital.telefone}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {hospital.cnpj}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEdit(hospital)}
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(hospital.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {(!hospitais || hospitais.length === 0) &&
-                      !loadingHospitais && (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="px-6 py-4 text-center text-gray-500"
-                          >
-                            Nenhum hospital encontrado
-                          </td>
-                        </tr>
-                      )}
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {((activeTab === "ubs" && loadingUBS) ||
-            (activeTab === "laboratorios" && loadingLabs) ||
-            (activeTab === "farmacias" && loadingFarmacias) ||
-            (activeTab === "hospitais" && loadingHospitais) ||
-            (activeTab === "upas" && loadingUpas)) && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mx-auto"></div>
-              <p className="mt-2 text-gray-600">Carregando...</p>
-            </div>
-          )}
+          <AdminTable
+            items={items}
+            isLoading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {editingItem ? "Editar" : "Adicionar"}{" "}
-              {activeTab === "ubs"
-                ? "UBS"
-                : activeTab === "laboratorios"
-                  ? "Laboratório"
-                  : activeTab === "hospitais"
-                    ? "Hospital"
-                    : activeTab === "farmacias"
-                      ? "Farmácia"
-                      : "UPA"}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome
-                </label>
-                <input
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nome: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Endereço
-                </label>
-                <input
-                  type="text"
-                  value={formData.endereco}
-                  onChange={(e) =>
-                    setFormData({ ...formData, endereco: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone
-                </label>
-                <input
-                  type="text"
-                  value={formData.telefone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, telefone: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CNPJ
-                </label>
-                <input
-                  type="text"
-                  value={formData.cnpj}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cnpj: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Senha {editingItem && "(deixe em branco para manter a atual)"}
-                </label>
-                <input
-                  type="password"
-                  value={formData.senha}
-                  onChange={(e) =>
-                    setFormData({ ...formData, senha: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required={!editingItem}
-                />
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  {editingItem ? "Atualizar" : "Cadastrar"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AdminModal
+        isOpen={showModal}
+        activeTab={activeTab}
+        editingItem={editingItem}
+        formData={formData}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        onClose={() => setShowModal(false)}
+      />
     </div>
   );
 };
