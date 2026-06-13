@@ -3,11 +3,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { api } from "../../services/api";
 import useDispensacao from "../../hooks/useDispensacao";
+
+// Import de componentes
 import { FarmaciaHeader } from "../../components/Farmacia/FarmaciaHeader";
 import { FarmaciaSidebar } from "../../components/Farmacia/FarmaciaSidebar";
 import { FarmaciaConsultaTab } from "../../components/Farmacia/FarmaciaConsultaTab";
 import { FarmaciaDispensacaoModalNovo, MedicamentoPendente } from "../../components/Farmacia/FarmaciaDispensacaoModalNovo";
-import { ReceitaPayload, DispensacaoPayload, } from "../../components/Farmacia/FarmaciaResultCard";
+import {
+  ReceitaPayload,
+  DispensacaoPayload,
+} from "../../components/Farmacia/FarmaciaResultCard";
+
+// Import de componentes existentes
 import DispensacoesLista from "../../components/DispensacoesLista";
 import FarmaciaDashboardHome from "../../components/FarmaciaDashboardHome";
 import FarmaciaInformacoes from "../../components/FarmaciaInformacoes";
@@ -78,7 +85,6 @@ const FarmaciaDashboard: React.FC = () => {
           medicamentoFornecido: med.medicamentoFornecido,
           quantidadeDispensada: med.quantidadeDispensada,
           observacoes: med.observacoes,
-          atendente: med.atendente,
         })),
       };
 
@@ -91,7 +97,7 @@ const FarmaciaDashboard: React.FC = () => {
         );
         const itensAtualizados = receita.itens.map((item) =>
           itensPendentesIds.has(item.id)
-            ? { ...item, status: "dispensado", dispensado: true }
+            ? { ...item, status: "dispensado" }
             : item
         );
         setReceita({ ...receita, itens: itensAtualizados });
@@ -125,7 +131,7 @@ const FarmaciaDashboard: React.FC = () => {
   const ultimaDispensacao = getUltimaDispensacao(receita?.dispensacoes);
   const validacaoDispensacao =
     receita && receita.dispensacoes
-      ? dispensacao.podeDispensar(receita.dispensacoes, receita.itens)
+      ? dispensacao.podeDispensar(receita.dispensacoes)
       : { pode: false, motivo: null };
   const contagem =
     receita && receita.dispensacoes
@@ -196,7 +202,7 @@ const FarmaciaDashboard: React.FC = () => {
                 contagem={contagem}
                 ultimaDispensacao={ultimaDispensacao}
                 validacaoDispensacao={validacaoDispensacao}
-                onDispensarClick={() => openDispensacaoModal()}
+                onDispensarClick={() => openDispensacaoModal(false)}
                 formatarDataDispensacao={
                   dispensacao.formatarDataDispensacao
                     ? dispensacao.formatarDataDispensacao

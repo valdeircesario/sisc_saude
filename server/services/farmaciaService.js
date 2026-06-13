@@ -29,27 +29,32 @@ export const buscarReceitaPorRegistro = async (registro) => {
     throw { status: 404, data: { message: "Receita não encontrada" } };
   }
 
+  // Adiciona informações úteis sobre dispensações
+  const temCompleta =
+    receita.dispensacoes?.some((d) => d.statusDispensacao === "completa") ||
+    false;
+
+  const temParcial =
+    receita.dispensacoes?.some((d) => d.statusDispensacao === "parcial") ||
+    false;
+
+  const validacao = podeDispensar(receita.dispensacoes || []);
+
   // Calcula o status de cada medicamento
   const medicamentosComStatus = (receita.itens || []).map((item) => ({
     ...item,
     dispensado: receita.dispensacoes?.some((d) => d.receitaMedicamentoId === item.id),
   }));
 
-  const todosDispensados = medicamentosComStatus.length > 0 && medicamentosComStatus.every((i) => i.dispensado);
-  const algumDispensado = medicamentosComStatus.some((i) => i.dispensado);
-
-  const podeDispensar = !todosDispensados;
-  const motivo = todosDispensados ? "Esta receita já foi completamente dispensada." : null;
-
   return {
     ...receita,
     itens: medicamentosComStatus,
     dispensacaoInfo: {
       total: receita.dispensacoes?.length || 0,
-      temCompleta: todosDispensados,
-      temParcial: algumDispensado && !todosDispensados,
-      podeDispensar: podeDispensar,
-      motivoNaoPode: motivo,
+      temCompleta,
+      temParcial,
+      podeDispensar: validacao.pode,
+      motivoNaoPode: validacao.motivo,
     },
   };
 };
@@ -72,7 +77,7 @@ export const dispensarMedicamentosFarmacia = async (farmacia, data) => {
   const atualizacoesMedicamentos = [];
 
   for (const med of medicamentos) {
-    const { receitaMedicamentoId, medicamentoFornecido, quantidadeDispensada, observacoes, atendente } = med;
+    const { receitaMedicamentoId, medicamentoFornecido, quantidadeDispensada, observacoes } = med;
     if (!receitaMedicamentoId) throw { status: 400, data: { message: "receitaMedicamentoId é obrigatório para cada medicamento" } };
 
     const item = receita.itens.find((i) => i.id === receitaMedicamentoId);
@@ -87,7 +92,6 @@ export const dispensarMedicamentosFarmacia = async (farmacia, data) => {
       medicamentoFornecido: medicamentoFornecido || item.medicamento,
       quantidadeDispensada: quantidadeDispensada || item.quantidade,
       farmaciaResponsavel: farmacia.nome,
-      atendente: atendente || null,
       observacoesDispensacao: observacoes || null,
     });
 
@@ -316,21 +320,13 @@ export const deletarDispensacaoParcial = async (dispensacaoId) => {
   return { message: "Dispensação deletada com sucesso", dispensacaoId };
 };
 
-export const listarTodasDispensacoes = async (farmaciaId) => {
+export const listarTodasDispensacoes = async () => {
   const receitas = await prisma.receitaMedica.findMany({
-    where: {
-      dispensacoes: {
-        some: {
-          farmaciaId: farmaciaId
-        }
-      }
-    },
     include: {
       paciente: { select: { id: true, nome: true } },
       funcionario: { select: { id: true, nome: true } },
       ubs: { select: { id: true, nome: true } },
       dispensacoes: {
-        where: { farmaciaId: farmaciaId },
         include: { farmacia: true },
         orderBy: { dataDispensacao: "desc" },
       },
@@ -359,7 +355,6 @@ export const listarTodasDispensacoes = async (farmaciaId) => {
         statusDispensacao: disp.statusDispensacao,
         medicamentoFornecido: disp.medicamentoFornecido,
         farmaciaResponsavel: disp.farmaciaResponsavel,
-        atendente: disp.atendente,
         observacoesDispensacao: disp.observacoesDispensacao,
         quantidadeDispensada: disp.quantidadeDispensada,
         farmacia: disp.farmacia?.nome || null,
@@ -379,39 +374,30 @@ export const listarTodasDispensacoes = async (farmaciaId) => {
   };
 };
 
-export const obterEstatisticas = async (farmaciaId) => {
-  const dispensacoesRegistradas = await prisma.dispensacaoReceita.count({
-    where: { farmaciaId },
+export const obterEstatisticas = async () => {
+  const receitasDisponiveis = await prisma.receitaMedica.count({
+    where: { status: "ativo" },
   });
 
+  const dispensacoesRegistradas = await prisma.dispensacaoReceita.count();
+
   const dispensacoesCompletas = await prisma.dispensacaoReceita.count({
-    where: { farmaciaId, statusDispensacao: "completa" },
+    where: { statusDispensacao: "completa" },
   });
 
   const dispensacoesParciais = await prisma.dispensacaoReceita.count({
-    where: { farmaciaId, statusDispensacao: "parcial" },
+    where: { statusDispensacao: "parcial" },
   });
 
   const pacientesAtendidosRaw = await prisma.dispensacaoReceita.findMany({
-    where: { farmaciaId },
     select: { receita: { select: { pacienteId: true } } },
   });
-  
   const pacientesAtendidos = new Set(
     pacientesAtendidosRaw.map((d) => d.receita?.pacienteId).filter((id) => id)
   ).size;
 
-  const totalMedicamentosDispensadosResult = await prisma.dispensacaoReceita.aggregate({
-    where: { farmaciaId },
-    _sum: {
-      quantidadeDispensada: true
-    }
-  });
-  
-  const totalMedicamentosDispensados = totalMedicamentosDispensadosResult._sum.quantidadeDispensada || 0;
-
   const ultimaDispensacao = await prisma.dispensacaoReceita.findFirst({
-    where: { farmaciaId },
+    where: {},
     orderBy: { dataDispensacao: "desc" },
     include: {
       receita: {
@@ -426,15 +412,15 @@ export const obterEstatisticas = async (farmaciaId) => {
         paciente: ultimaDispensacao.receita?.paciente?.nome || "N/A",
         medicamento: ultimaDispensacao.medicamentoFornecido || "N/A",
         status: ultimaDispensacao.statusDispensacao,
-        atendente: ultimaDispensacao.atendente || ultimaDispensacao.farmaciaResponsavel || "N/A",
+        atendente: ultimaDispensacao.farmaciaResponsavel || "N/A",
         quantidadeDispensada: ultimaDispensacao.quantidadeDispensada,
       }
     : null;
 
   return {
-    totalMedicamentosDispensados,
+    receitasDisponiveis,
     dispensacoesRegistradas,
-    pacientesAtendidos,
+    pacientesAtendidos: pacientesAtendidos,
     dispensacoesCompletas,
     dispensacoesParciais,
     ultimaDispensacao: ultimaDispensacaoFormatada,
