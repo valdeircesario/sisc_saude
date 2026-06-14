@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal } from "./UBSModalBase";
+import { User, CreditCard, Phone, Mail, Briefcase, Shield, Key, Plus, Save } from "lucide-react";
 
 export const UBSFuncionarioModal: React.FC<{
   isOpen: boolean;
@@ -13,162 +14,175 @@ export const UBSFuncionarioModal: React.FC<{
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editingItem ? "Editar Funcionário" : "Novo Funcionário"}
+      title={editingItem ? "Ajustar Cadastro de Equipe" : "Credenciamento de Funcionário"}
       size="lg"
     >
-      <form onSubmit={onSubmit} className="flex flex-col gap-4">
-        {/* Seção: Dados pessoais */}
-        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-          Dados pessoais
-        </p>
+      <form onSubmit={onSubmit} className="space-y-10">
+        {/* Seção: Dados Pessoais */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
+              <User className="h-4.5 w-4.5 text-teal-600" />
+            </div>
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+              Identificação Civil
+            </h4>
+          </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-600">
-              Nome completo <span className="text-red-500">*</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                Nome Completo <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={funcData.nome}
+                onChange={(e) => setFuncData({ ...funcData, nome: e.target.value })}
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
+                placeholder="Ex: João Silva"
+                required
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                CPF <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={funcData.cpf}
+                onChange={(e) => setFuncData({ ...funcData, cpf: e.target.value })}
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
+                placeholder="000.000.000-00"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                Telefone <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={funcData.telefone}
+                onChange={(e) => setFuncData({ ...funcData, telefone: e.target.value })}
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
+                placeholder="(00) 00000-0000"
+                required
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                E-mail <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={funcData.email}
+                onChange={(e) => setFuncData({ ...funcData, email: e.target.value })}
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
+                placeholder="nome@exemplo.com"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Seção: Dados Profissionais */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
+              <Briefcase className="h-4.5 w-4.5 text-teal-600" />
+            </div>
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+              Atribuições Clínicas
+            </h4>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              Função Técnica <span className="text-rose-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["Médico", "Enfermeiro", "Farmacêutico"].map((opcao) => (
+                <button
+                  key={opcao}
+                  type="button"
+                  onClick={() => setFuncData({ ...funcData, funcao: opcao })}
+                  className={`
+                    px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all
+                    ${funcData.funcao === opcao
+                      ? "bg-teal-600 text-white shadow-lg shadow-teal-100 scale-105"
+                      : "bg-white border border-slate-200 text-slate-400 hover:border-teal-500 hover:text-teal-600"
+                    }
+                  `}
+                >
+                  {opcao}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 sm:w-1/2">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+              <Shield className="h-3.5 w-3.5 text-teal-500" /> Registro Profissional (CRM/COREM/CRF) <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
-              value={funcData.nome}
-              onChange={(e) => setFuncData({ ...funcData, nome: e.target.value })}
-              placeholder="Ex.: João Silva"
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              value={funcData.crm}
+              onChange={(e) => setFuncData({ ...funcData, crm: e.target.value })}
+              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
+              placeholder="Ex.: CRM/SP 123456"
               required
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-600">
-              CPF <span className="text-red-500">*</span>
+        </div>
+
+        {/* Seção: Acesso */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center border border-teal-100">
+              <Key className="h-4.5 w-4.5 text-teal-600" />
+            </div>
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+              Credenciais de Acesso
+            </h4>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              Senha de Segurança {editingItem ? (
+                <span className="text-[10px] font-bold text-slate-400 normal-case ml-2">(Opcional se mantiver atual)</span>
+              ) : (
+                <span className="text-rose-500">*</span>
+              )}
             </label>
             <input
-              type="text"
-              value={funcData.cpf}
-              onChange={(e) => setFuncData({ ...funcData, cpf: e.target.value })}
-              placeholder="000.000.000-00"
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              required
+              type="password"
+              value={funcData.senha}
+              onChange={(e) => setFuncData({ ...funcData, senha: e.target.value })}
+              className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all"
+              placeholder="••••••••"
+              required={!editingItem}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-600">
-              Telefone <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={funcData.telefone}
-              onChange={(e) => setFuncData({ ...funcData, telefone: e.target.value })}
-              placeholder="(00) 00000-0000"
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              required
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-600">
-              E-mail <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={funcData.email}
-              onChange={(e) => setFuncData({ ...funcData, email: e.target.value })}
-              placeholder="nome@exemplo.com"
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              required
-            />
-          </div>
-        </div>
-
-        <hr className="border-gray-100" />
-
-        {/* Seção: Dados profissionais */}
-        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-          Dados profissionais
-        </p>
-
-        <div className="flex flex-col gap-2">
-          <label className="text-xs font-medium text-gray-600">
-            Função <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-2">
-            {["Médico", "Enfermeiro", "Farmacêutico"].map((opcao) => (
-              <button
-                key={opcao}
-                type="button"
-                onClick={() => setFuncData({ ...funcData, funcao: opcao })}
-                className={`px-4 py-1.5 rounded-full text-xs border transition-colors ${
-                  funcData.funcao === opcao
-                    ? "bg-green-100 border-green-600 text-green-800 font-medium"
-                    : "bg-white border-gray-200 text-gray-500 hover:border-green-400 hover:text-green-700 hover:bg-green-50"
-                }`}
-              >
-                {opcao}
-              </button>
-            ))}
-          </div>
-          <input type="hidden" value={funcData.funcao} required />
-        </div>
-
-        <div className="flex flex-col gap-1.5 w-1/2">
-          <label className="text-xs font-medium text-gray-600">
-            CRM <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={funcData.crm}
-            onChange={(e) => setFuncData({ ...funcData, crm: e.target.value })}
-            placeholder="Ex.: CRM/SP 123456"
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            required
-          />
-        </div>
-
-        <hr className="border-gray-100" />
-
-        {/* Seção: Acesso ao sistema */}
-        <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
-          Acesso ao sistema
-        </p>
-
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-gray-600">
-            Senha{" "}
-            {editingItem ? (
-              <span className="text-gray-400 font-normal">
-                (deixe em branco para manter a atual)
-              </span>
-            ) : (
-              <span className="text-red-500">*</span>
-            )}
-          </label>
-          <input
-            type="password"
-            value={funcData.senha}
-            onChange={(e) => setFuncData({ ...funcData, senha: e.target.value })}
-            placeholder="Mínimo 8 caracteres"
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            required={!editingItem}
-          />
-          <span className="text-xs text-gray-400">
-            Use letras, números e símbolos para uma senha forte.
-          </span>
-        </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row justify-end items-center gap-3 pt-6 border-t border-slate-50">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto px-8 py-3.5 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-green-700 rounded-lg hover:bg-green-800 transition-colors"
+            className="w-full sm:w-auto px-12 py-4 bg-teal-600 text-white rounded-[18px] text-xs font-black uppercase tracking-widest hover:bg-teal-700 hover:shadow-xl hover:shadow-teal-100 transition-all active:scale-95 shadow-lg shadow-teal-900/10 flex items-center justify-center gap-2"
           >
-            {editingItem ? "Atualizar" : "Cadastrar"}
+            {editingItem ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {editingItem ? "Atualizar Cadastro" : "Efetivar Credenciamento"}
           </button>
         </div>
       </form>

@@ -15,6 +15,9 @@ import {
   Clock,
   XCircle,
   Users,
+  Megaphone,
+  CreditCard,
+  ClipboardList,
 } from "lucide-react";
 import { Modal } from "./UBSModalBase";
 import { useMutation, useQueryClient } from "react-query";
@@ -119,33 +122,33 @@ export const UBSInscricoesCampanhaModal: React.FC<{
     switch (status?.toLowerCase()) {
       case "agendado":
         return (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-            <Calendar className="w-3.5 h-3.5" /> Agendado
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 border border-blue-100">
+            <Calendar className="w-3 h-3" /> Agendado
           </span>
         );
       case "confirmada":
       case "confirmado":
         return (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle className="w-3.5 h-3.5" /> Confirmado
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <CheckCircle className="w-3 h-3" /> Confirmado
           </span>
         );
       case "cancelada":
       case "cancelado":
         return (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-            <XCircle className="w-3.5 h-3.5" /> Cancelado
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-rose-50 text-rose-700 border border-rose-100">
+            <XCircle className="w-3 h-3" /> Cancelado
           </span>
         );
       case "inscrito":
         return (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock className="w-3.5 h-3.5" /> Aguardando
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-100">
+            <Clock className="w-3 h-3" /> Aguardando
           </span>
         );
       default:
         return (
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200 capitalize">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-700 border border-slate-200">
             {status}
           </span>
         );
@@ -156,27 +159,27 @@ export const UBSInscricoesCampanhaModal: React.FC<{
     switch (prioridade?.toLowerCase()) {
       case "alta":
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-red-100 text-red-800 uppercase tracking-wider">
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-rose-100 text-rose-800 uppercase tracking-tight">
             <AlertTriangle className="w-3 h-3" /> Alta Prioridade
           </span>
         );
       case "media":
       case "média":
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-orange-100 text-orange-800 uppercase tracking-wider">
-            <AlertCircle className="w-3 h-3" /> Média
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-100 text-amber-800 uppercase tracking-tight">
+            <AlertCircle className="w-3 h-3" /> Prioridade Média
           </span>
         );
       case "baixa":
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-green-100 text-green-800 uppercase tracking-wider">
-            Baixa
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-100 text-emerald-800 uppercase tracking-tight">
+            Prioridade Baixa
           </span>
         );
       default:
         if (!prioridade) return null;
         return (
-          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-black bg-gray-100 text-gray-800 uppercase tracking-wider">
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-slate-100 text-slate-800 uppercase tracking-tight">
             {prioridade}
           </span>
         );
@@ -187,276 +190,261 @@ export const UBSInscricoesCampanhaModal: React.FC<{
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        <div className="flex flex-col">
-          <span className="text-2xl font-bold text-gray-900">
-            Inscrições da Campanha
-          </span>
-          <span className="text-base font-normal text-gray-500 mt-1">
-            {selectedCampanha?.titulo}
-          </span>
-        </div>
-      }
+      title="Gestão de Inscrições"
       size="xl"
     >
-      {inscricoesCampanha && inscricoesCampanha.length > 0 ? (
-        <>
-          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex bg-gray-100 p-1 rounded-xl overflow-x-auto max-w-full">
-              <button
-                onClick={() => setFilter("todos")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "todos" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Todas
-              </button>
-              <button
-                onClick={() => setFilter("inscrito")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "inscrito" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Aguardando
-              </button>
-              <button
-                onClick={() => setFilter("agendado")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "agendado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Agendadas
-              </button>
-              <button
-                onClick={() => setFilter("confirmado")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "confirmado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Confirmadas
-              </button>
-              <button
-                onClick={() => setFilter("realizado")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "realizado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Realizadas
-              </button>
-              <button
-                onClick={() => setFilter("cancelado")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${filter === "cancelado" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                Canceladas
-              </button>
+      <div className="space-y-8">
+        {/* Campaign Brief Header */}
+        <div className="p-6 bg-slate-50 border border-slate-100 rounded-[24px]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg shadow-teal-100 flex-shrink-0">
+              <Megaphone className="h-6 w-6 text-white" />
             </div>
-            <div className="text-sm text-gray-500 whitespace-nowrap px-1">
-              <span className="font-bold text-gray-900">
-                {inscricoesFiltradas?.length || 0}
-              </span>{" "}
-              inscrições
+            <div className="min-w-0">
+              <p className="text-[10px] font-black text-teal-600 uppercase tracking-widest leading-none">Campanha Ativa</p>
+              <h4 className="text-lg font-black text-slate-900 mt-1 truncate">
+                {selectedCampanha?.titulo}
+              </h4>
             </div>
           </div>
+        </div>
 
-          {inscricoesFiltradas && inscricoesFiltradas.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {inscricoesFiltradas.map((inscricao: any) => (
-                <div
-                  key={inscricao.id}
-                  className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
-                >
-                  <div className="flex justify-between items-start mb-4 pb-4 border-b border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600">
-                        <User className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                          {inscricao.nome}
-                        </h4>
-                        <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                          <FileText className="w-3.5 h-3.5" /> {inscricao.cpf}
-                          {inscricao.idade && (
-                            <>
-                              <span className="text-gray-300">•</span>
-                              {inscricao.idade} anos
-                            </>
-                          )}
+        {inscricoesCampanha && inscricoesCampanha.length > 0 ? (
+          <>
+            {/* Filter Bar */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6">
+              <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar max-w-full">
+                {["todos", "inscrito", "agendado", "confirmado", "realizado", "cancelado"].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f as any)}
+                    className={`
+                      px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap
+                      ${filter === f 
+                        ? "bg-teal-600 text-white shadow-md shadow-teal-100" 
+                        : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                      }
+                    `}
+                  >
+                    {f === "inscrito" ? "Aguardando" : f === "todos" ? "Todas" : f + "s"}
+                  </button>
+                ))}
+              </div>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 py-2 bg-slate-50 rounded-full border border-slate-100">
+                Total Localizado: <span className="text-teal-600">{inscricoesFiltradas?.length || 0}</span>
+              </div>
+            </div>
+
+            {inscricoesFiltradas && inscricoesFiltradas.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {inscricoesFiltradas.map((inscricao: any) => (
+                  <div
+                    key={inscricao.id}
+                    className="group relative bg-white border border-slate-100 rounded-[24px] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden"
+                  >
+                    {/* Header: Identity & Status */}
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shadow-inner group-hover:bg-teal-600 transition-colors duration-300">
+                          <User className="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" />
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0 ml-2">
-                      {getStatusBadge(inscricao.status)}
-                      {getPrioridadeBadge(inscricao.prioridade)}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-4">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span>{inscricao.telefone || "Não informado"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                        <span className="truncate" title={inscricao.email}>
-                          {inscricao.email || "Não informado"}
-                        </span>
-                      </div>
-                      {inscricao.condicoesSaude && (
-                        <div className="flex items-start gap-2 text-gray-700 mt-3 bg-rose-50 p-2.5 rounded-lg border border-rose-100">
-                          <Activity className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />
-                          <span className="text-rose-900 text-xs">
-                            <span className="font-bold block mb-0.5">
-                              Condições:
+                        <div className="min-w-0">
+                          <h4 className="font-black text-slate-900 text-base leading-tight group-hover:text-teal-700 transition-colors">
+                            {inscricao.nome}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                              <CreditCard className="w-3 h-3" /> {inscricao.cpf}
                             </span>
-                            {inscricao.condicoesSaude}
-                          </span>
+                            {inscricao.idade && (
+                              <span className="px-2 py-0.5 rounded-md bg-slate-50 text-[10px] font-black text-slate-500 uppercase">
+                                {inscricao.idade} Anos
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      )}
+                      </div>
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        {getStatusBadge(inscricao.status)}
+                        {getPrioridadeBadge(inscricao.prioridade)}
+                      </div>
                     </div>
 
-                    <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 h-full flex flex-col justify-center">
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-                        Dados do Agendamento
-                      </p>
-                      {inscricao.dataAgendada ? (
-                        <div className="space-y-2">
-                          <div className="flex items-start gap-2 text-gray-900 font-medium">
-                            <Calendar className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                            <span className="leading-tight">
-                              {format(
-                                ajustarData(inscricao.dataAgendada),
-                                "dd 'de' MMMM, yyyy",
-                                { locale: ptBR },
-                              )}
-                              <br />
-                              <span className="text-blue-600 font-bold">
-                                {inscricao.horaAgendada &&
-                                  `às ${inscricao.horaAgendada}`}
-                              </span>
+                    {/* Content Grid */}
+                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contato</p>
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                          <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          {inscricao.telefone || "Não informado"}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                          <div className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100">
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          </div>
+                          <span className="truncate" title={inscricao.email}>{inscricao.email || "—"}</span>
+                        </div>
+                        
+                        {inscricao.condicoesSaude && (
+                          <div className="mt-4 p-3 bg-rose-50/50 rounded-xl border border-rose-100">
+                            <div className="flex items-center gap-1.5 text-[10px] font-black text-rose-600 uppercase mb-1">
+                              <Activity className="w-3 h-3" /> Condições de Saúde
+                            </div>
+                            <p className="text-[11px] text-rose-900 leading-tight font-medium italic">"{inscricao.condicoesSaude}"</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="bg-slate-50/80 p-4 rounded-[20px] border border-slate-100 flex flex-col">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Programação</p>
+                        {inscricao.dataAgendada ? (
+                          <div className="space-y-3">
+                            <div className="flex items-start gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-slate-200 shadow-sm flex-shrink-0">
+                                <Calendar className="w-4 h-4 text-teal-600" />
+                              </div>
+                              <div>
+                                <p className="text-[11px] font-black text-slate-900 leading-none mt-1">
+                                  {format(ajustarData(inscricao.dataAgendada), "dd 'de' MMM, yyyy", { locale: ptBR })}
+                                </p>
+                                <p className="text-[10px] font-bold text-teal-600 uppercase tracking-tighter mt-1">
+                                  {inscricao.horaAgendada ? `Horário: ${inscricao.horaAgendada}` : "Horário Pendente"}
+                                </p>
+                              </div>
+                            </div>
+                            {inscricao.localAtendimento && (
+                              <div className="flex items-start gap-2 text-[10px] font-medium text-slate-500 bg-white/50 p-2 rounded-lg border border-slate-100">
+                                <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                                <span>{inscricao.localAtendimento}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 py-4">
+                            <div className="w-10 h-10 rounded-full bg-white border border-slate-100 flex items-center justify-center">
+                              <Clock className="w-5 h-5 text-slate-200" />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Aguardando Triagem</span>
+                          </div>
+                        )}
+
+                        {inscricao.pontuacao !== undefined && (
+                          <div className="mt-auto pt-3 border-t border-slate-200/50 flex justify-between items-center">
+                            <span className="text-[9px] font-black text-slate-400 uppercase">Escore de Risco:</span>
+                            <span className="text-[11px] font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-100">
+                              {inscricao.pontuacao} pts
                             </span>
                           </div>
-                          {inscricao.localAtendimento && (
-                            <div className="flex items-start gap-2 text-gray-600 text-xs mt-2">
-                              <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0 mt-0.5" />
-                              <span className="leading-tight">
-                                {inscricao.localAtendimento}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center text-center gap-1.5 text-gray-400 italic py-2">
-                          <Clock className="w-5 h-5 text-gray-300" />
-                          <span className="text-xs">Aguardando definição</span>
-                        </div>
-                      )}
-
-                      {inscricao.pontuacao !== undefined && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center text-xs">
-                          <span className="text-gray-500 font-medium">
-                            Pontuação de risco:
-                          </span>
-                          <span className="font-black text-gray-900 bg-gray-200 px-2 py-0.5 rounded-md">
-                            {inscricao.pontuacao} pts
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {inscricao.observacoes && (
-                    <div className="mb-4 text-xs text-gray-600 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50">
-                      <span className="font-bold text-amber-800">Obs: </span>
-                      <span className="whitespace-pre-wrap">{inscricao.observacoes}</span>
-                    </div>
-                  )}
-
-                  {actionState?.inscricao.id === inscricao.id ? (
-                    <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-3">
-                      <label className="text-sm font-bold text-gray-700">
-                        {actionState.tipo === "cancelar" ? "Motivo do Cancelamento *" : "Observações (Opcional)"}
-                      </label>
-                      <textarea
-                        value={observacaoText}
-                        onChange={(e) => setObservacaoText(e.target.value)}
-                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        rows={2}
-                        placeholder={actionState.tipo === "cancelar" ? "Ex: Paciente não compareceu..." : "Ex: Vacinado com sucesso..."}
-                      />
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() => setActionState(null)}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl text-sm font-bold transition-colors"
-                        >
-                          Voltar
-                        </button>
-                        <button
-                          onClick={handleConfirmAction}
-                          disabled={cancelarMutation.isLoading || realizarMutation.isLoading || (actionState.tipo === "cancelar" && !observacaoText.trim())}
-                          className={`px-4 py-2 text-white rounded-xl text-sm font-bold transition-colors shadow-sm ${
-                            actionState.tipo === "cancelar"
-                              ? "bg-red-600 hover:bg-red-700"
-                              : "bg-emerald-600 hover:bg-emerald-700"
-                          }`}
-                        >
-                          {cancelarMutation.isLoading || realizarMutation.isLoading ? "Salvando..." : "Confirmar"}
-                        </button>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end gap-2 flex-wrap">
-                      {inscricao.status === "inscrito" && (
-                        <button
-                          onClick={() => openAgendamentoCampanhaModal(inscricao)}
-                          className="flex items-center px-5 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm w-full sm:w-auto justify-center"
-                        >
-                          <Calendar className="w-4 h-4 mr-2" /> Agendar Paciente
-                        </button>
-                      )}
-                      {(inscricao.status === "agendado" || inscricao.status === "confirmada" || inscricao.status === "confirmado") && (
-                        <>
+
+                    {/* Observações Alert */}
+                    {inscricao.observacoes && (
+                      <div className="mb-6 text-[11px] text-slate-600 bg-amber-50/50 p-3 rounded-xl border border-amber-100/50 leading-relaxed">
+                        <span className="font-black text-amber-800 uppercase text-[9px] tracking-widest block mb-1">Nota da Recepção:</span>
+                        <span className="font-medium italic">"{inscricao.observacoes}"</span>
+                      </div>
+                    )}
+
+                    {/* Footer Actions / Inline Action Form */}
+                    {actionState?.inscricao.id === inscricao.id ? (
+                      <div className="mt-auto pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                            {actionState.tipo === "cancelar" ? "Justificativa do Cancelamento *" : "Observações do Procedimento"}
+                          </label>
+                          <textarea
+                            value={observacaoText}
+                            onChange={(e) => setObservacaoText(e.target.value)}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-[18px] focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 text-sm font-medium placeholder:text-slate-300 min-h-[80px] resize-none"
+                            placeholder={actionState.tipo === "cancelar" ? "Informe o motivo técnico ou ausência..." : "Registre detalhes da realização..."}
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => setActionState(null)}
+                              className="px-6 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                            >
+                              Voltar
+                            </button>
+                            <button
+                              onClick={handleConfirmAction}
+                              disabled={cancelarMutation.isLoading || realizarMutation.isLoading || (actionState.tipo === "cancelar" && !observacaoText.trim())}
+                              className={`
+                                px-8 py-3 text-[10px] font-black text-white uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-95
+                                ${actionState.tipo === "cancelar"
+                                  ? "bg-rose-600 hover:bg-rose-700 shadow-rose-900/10"
+                                  : "bg-teal-600 hover:bg-teal-700 shadow-teal-900/10"
+                                }
+                              `}
+                            >
+                              {cancelarMutation.isLoading || realizarMutation.isLoading ? "Processando..." : "Efetivar Ação"}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-auto pt-6 border-t border-slate-100 flex justify-end gap-2 flex-wrap">
+                        {inscricao.status === "inscrito" && (
                           <button
-                            onClick={() => {
-                              setActionState({ tipo: "cancelar", inscricao });
-                              setObservacaoText("");
-                            }}
-                            className="flex flex-1 items-center px-4 py-2 bg-red-50 text-red-700 hover:bg-red-100 text-sm font-bold rounded-xl transition-colors sm:flex-none justify-center"
+                            onClick={() => openAgendamentoCampanhaModal(inscricao)}
+                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-teal-600 text-white text-[10px] font-black uppercase tracking-widest rounded-[18px] hover:bg-teal-700 hover:shadow-xl hover:shadow-teal-100 transition-all active:scale-95 sm:flex-none sm:px-10"
                           >
-                            <XCircle className="w-4 h-4 mr-2" /> Cancelar
+                            <Calendar className="w-3.5 h-3.5" /> Realizar Agendamento
                           </button>
-                          <button
-                            onClick={() => {
-                              setActionState({ tipo: "realizar", inscricao });
-                              setObservacaoText("");
-                            }}
-                            className="flex flex-1 items-center px-4 py-2 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-sm font-bold rounded-xl transition-colors sm:flex-none justify-center"
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" /> Realizada
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  )}
+                        )}
+                        {(inscricao.status === "agendado" || inscricao.status === "confirmada" || inscricao.status === "confirmado") && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setActionState({ tipo: "cancelar", inscricao });
+                                setObservacaoText("");
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-widest rounded-[18px] border border-rose-100 hover:bg-rose-600 hover:text-white transition-all active:scale-95"
+                            >
+                              <XCircle className="w-3.5 h-3.5" /> Cancelar
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActionState({ tipo: "realizar", inscricao });
+                                setObservacaoText("");
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-teal-50 text-teal-700 text-[10px] font-black uppercase tracking-widest rounded-[18px] border border-teal-100 hover:bg-teal-600 hover:text-white transition-all active:scale-95"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" /> Realizada
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
+                <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mb-4">
+                  <ClipboardList className="h-8 w-8 text-slate-200" />
                 </div>
-              ))}
+                <p className="text-sm font-black text-slate-400 uppercase tracking-widest text-center px-6">
+                  Nenhum registro localizado para este filtro
+                </p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[32px] border border-dashed border-slate-200">
+            <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mb-6">
+              <Users className="h-10 w-10 text-slate-100" />
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 px-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-              <p className="text-gray-900 font-bold text-lg">
-                Nenhuma inscrição encontrada
-              </p>
-              <p className="text-gray-500 text-center max-w-sm mt-1">
-                Não há pacientes com o status selecionado neste filtro.
-              </p>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-16 px-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <div className="bg-gray-100 p-4 rounded-full mb-4">
-            <Users className="w-8 h-8 text-gray-400" />
+            <h5 className="text-base font-black text-slate-900 uppercase tracking-tight mb-2">Sem Inscrições Ativas</h5>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center max-w-sm px-6">
+              Ainda não há pacientes aguardando triagem para esta campanha.
+            </p>
           </div>
-          <p className="text-gray-900 font-bold text-lg">
-            Nenhuma inscrição encontrada
-          </p>
-          <p className="text-gray-500 text-center max-w-sm mt-1">
-            Ainda não há pacientes inscritos para participar desta campanha no
-            momento.
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </Modal>
   );
 };
