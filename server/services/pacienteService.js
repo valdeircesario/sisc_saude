@@ -404,3 +404,40 @@ export const obterHistoricoHospitalar = async (pacienteId) => {
     },
   };
 };
+
+export const obterReceitasEAtestados = async (pacienteId) => {
+  const [receitas, atestados] = await Promise.all([
+    prisma.receitaMedica.findMany({
+      where: { pacienteId },
+      include: {
+        funcionario: {
+          select: { id: true, nome: true, crm: true, funcao: true },
+        },
+        ubs: {
+          select: { id: true, nome: true, endereco: true },
+        },
+        itens: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { dataEmissao: "desc" },
+    }),
+    prisma.atestadoMedico.findMany({
+      where: { pacienteId },
+      include: {
+        funcionario: {
+          select: { id: true, nome: true, crm: true, funcao: true },
+        },
+        ubs: {
+          select: { id: true, nome: true, endereco: true },
+        },
+      },
+      orderBy: { dataEmissao: "desc" },
+    }),
+  ]);
+
+  return {
+    receitas: receitas.map(r => ({ ...r, tipoDocumento: "receita" })),
+    atestados: atestados.map(a => ({ ...a, tipoDocumento: "atestado" }))
+  };
+};

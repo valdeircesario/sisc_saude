@@ -87,4 +87,7 @@ router.put("/agendamentos-hospitalares/:id/confirmar", pacienteController.confir
 // Obter histórico completo hospitalar do paciente
 router.get("/historico-hospitalar", pacienteController.obterHistoricoHospitalar);
 
+// Obter receitas e atestados do paciente
+router.get("/receitas-atestados", pacienteController.obterReceitasEAtestados);
+
 export default router;

@@ -425,3 +425,12 @@ export const obterHistoricoHospitalar = async (req, res) => {
     handleError(res, error, "Erro ao obter histórico hospitalar:");
   }
 };
+
+export const obterReceitasEAtestados = async (req, res) => {
+  try {
+    const documentos = await pacienteService.obterReceitasEAtestados(req.user.id);
+    res.json(documentos);
+  } catch (error) {
+    handleError(res, error, "Erro ao obter receitas e atestados:");
+  }
+};

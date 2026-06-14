@@ -30,6 +30,7 @@ import { PacienteProcedimentosTab } from "../../components/Paciente/PacienteProc
 import { PacienteMedicacoesTab } from "../../components/Paciente/PacienteMedicacoesTab";
 import { PacienteAgendamentosTab } from "../../components/Paciente/PacienteAgendamentosTab";
 import { PacienteHistoricoHospitalarTab } from "../../components/Paciente/PacienteHistoricoHospitalarTab";
+import { PacienteReceitasAtestadoTab } from "../../components/Paciente/PacienteReceitasAtestadoTab";
 import { PacienteSolicitarConsultaModal } from "../../components/Paciente/PacienteSolicitarConsultaModal";
 import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEditarPerfilModal";
 import { PacienteDetalhesModal } from "../../components/Paciente/PacienteDetalhesModal";
@@ -100,6 +101,7 @@ const PacienteDashboard: React.FC = () => {
     medicacoesPacienteLoading,
     agendamentosHospitalares,
     historicoHospitalar,
+    receitasEAtestados,
     
     // Mutations loading states
     isConfirmandoAgendamento,
@@ -503,6 +505,17 @@ const PacienteDashboard: React.FC = () => {
           {activeTab === "historico-hospitalar" && (
             <PacienteHistoricoHospitalarTab
               historicoHospitalar={historicoHospitalar}
+              SectionHeader={SectionHeader}
+              EmptyState={EmptyState}
+            />
+          )}
+
+          {/* ── RECEITAS E ATESTADOS ────────────────────────── */}
+          {activeTab === "receitas-atestados" && (
+            <PacienteReceitasAtestadoTab
+              receitas={receitasEAtestados?.receitas || []}
+              atestados={receitasEAtestados?.atestados || []}
+              perfil={perfil}
               SectionHeader={SectionHeader}
               EmptyState={EmptyState}
             />

@@ -198,6 +198,12 @@ export const usePacienteDashboard = () => {
     { enabled: activeTab === "historico-hospitalar" },
   );
 
+  const { data: receitasEAtestados } = useQuery(
+    "paciente-receitas-atestados",
+    () => api.get("/paciente/receitas-atestados").then((r) => r.data),
+    { enabled: activeTab === "receitas-atestados" },
+  );
+
   // ── Memos ───────────────────────────
   const mergedExames = useMemo(() => {
     const examesMap = new Map<string, any>();
@@ -545,9 +551,14 @@ export const usePacienteDashboard = () => {
     { name: "Agendamentos", key: "agendamentos", icon: Calendar },
     { name: "Histórico Médico", key: "historico", icon: Heart },
     {
-      name: "Receitas / Atestados",
+      name: "Histórico Hospitalar",
       key: "historico-hospitalar",
       icon: History,
+    },
+    {
+      name: "Receitas / Atestados",
+      key: "receitas-atestados",
+      icon: FileText,
     },
   ];
 
@@ -614,6 +625,7 @@ export const usePacienteDashboard = () => {
     medicacoesPacienteLoading,
     agendamentosHospitalares,
     historicoHospitalar,
+    receitasEAtestados,
     
     // Mutations loading states
     isConfirmandoAgendamento: confirmarAgendamentoMutation.isLoading || confirmarAgendamentoHospitalarMutation.isLoading,
