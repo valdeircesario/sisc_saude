@@ -235,12 +235,21 @@ export const generateReceitaPDF = (
 ): void => {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
 
+  // ── Cabeçalho
   let y = addHeader(pdf, "Receita Médica", logoBase64, logoMime);
   y += 2;
 
-  y = addPatientBlock(pdf, paciente, receita, medico, ubs, y);
-  y = sectionTitle(pdf, "Prescrição Médica", y);
+  // Borda decorativa lateral discreta (mesmo estilo do atestado)
+  pdf.setFillColor(DARK[0], DARK[1], DARK[2]);
+  pdf.rect(ML - 10, 0, 1.5, pdf.internal.pageSize.getHeight(), "F");
 
+  // ── Bloco do paciente (compacto, uma linha)
+  y = addPatientBlock(pdf, paciente, receita, medico, ubs, y);
+
+  // ── Prescrição (centro vertical da folha)
+  y = sectionTitle(pdf, "Prescrição Médica e Orientações", y);
+
+  // Medicamentos
   const itens: MedicamentoItem[] =
     Array.isArray(receita.itens) && receita.itens.length
       ? receita.itens
@@ -252,16 +261,21 @@ export const generateReceitaPDF = (
     y = medicamentoBlock(pdf, idx + 1, item, y);
   });
 
+  // Status discreto
   if (receita.status && receita.status !== "Ativo") {
     pdf.setFont("helvetica", "italic");
     pdf.setFontSize(7.5);
     pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
-    safeText(pdf, `Status: ${norm(receita.status)}`, ML, y + 4);
+    safeText(pdf, `Status da Prescrição: ${norm(receita.status)}`, ML, y + 4);
     y += 10;
   }
 
+  // ── Assinatura digital (se houver)
   drawSignature(pdf, assinatura);
+
+  // ── Rodapé
   addFooter(pdf);
 
+  // ── Salva
   pdf.save(`receita-${slug(paciente.nome)}.pdf`);
 };

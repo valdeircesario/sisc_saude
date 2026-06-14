@@ -124,56 +124,65 @@ export const generateAtestadoPDF = (
 
   addHeader(pdf, "Atestado Médico");
 
-  let y = 60;
+  let y = 62;
+
+  // Borda decorativa lateral discreta
+  pdf.setFillColor(DARK[0], DARK[1], DARK[2]);
+  pdf.rect(ML - 10, 0, 1.5, pdf.internal.pageSize.getHeight(), "F");
 
   // ── Paciente
-  y = sectionTitle(pdf, "Dados do Paciente", y);
-  y = fieldUnderline(pdf, "Nome completo", norm(paciente?.nome), 32, y, colFull) + 4;
+  y = sectionTitle(pdf, "Identificação do Paciente", y);
+  y = fieldUnderline(pdf, "Nome do Paciente", norm(paciente?.nome), ML, y, colFull) + 5;
   y = twoColumns(
     pdf,
-    { label: "CPF", value: norm(paciente?.cpf) },
+    { label: "CPF / Documento", value: norm(paciente?.cpf) },
     { label: "CNS", value: norm(paciente?.cns) },
     y,
   );
 
-  y += 4;
+  y += 6;
 
   // ── Atendimento
-  y = sectionTitle(pdf, "Dados do Atendimento", y);
+  y = sectionTitle(pdf, "Dados do Atendimento Médico", y);
   y = twoColumns(
     pdf,
-    { label: "Médico responsável", value: norm(medico?.nome) },
-    { label: "UBS", value: norm(ubs?.nome || medico?.ubs?.nome) },
+    { label: "Profissional Responsável", value: norm(medico?.nome) },
+    { label: "Unidade de Saúde", value: norm(ubs?.nome || medico?.ubs?.nome) },
     y,
   );
   y = twoColumns(
     pdf,
     {
-      label: "Data de emissão",
+      label: "Data da Emissão",
       value: formatDate(atestado?.dataEmissao),
     },
-    { label: "CID", value: norm(atestado?.cid) },
+    { label: "CID-10", value: norm(atestado?.cid) },
     y,
   );
 
-  y += 4;
+  y += 6;
 
   // ── Afastamento
-  y = sectionTitle(pdf, "Afastamento", y);
+  y = sectionTitle(pdf, "Dispensa e Recomendações", y);
   y = highlightBlock(
     pdf,
-    "Período de repouso",
-    `${atestado?.diasRepouso ?? 0} dias`,
-    `A contar da data de emissão`,
+    "Período de Afastamento Concedido",
+    `${atestado?.diasRepouso ?? 0} dia(s) de repouso`,
+    `Válido a partir desta data`,
     y,
   );
-  y = textBlock(pdf, "Descrição", norm(atestado?.descricao), y);
-  y = textBlock(
-    pdf,
-    "Observações",
-    norm(atestado?.observacoes || "Nenhuma"),
-    y,
-  );
+  
+  y += 2;
+  y = textBlock(pdf, "Finalidade / Justificativa", norm(atestado?.descricao), y);
+  
+  if (atestado?.observacoes) {
+    y = textBlock(
+      pdf,
+      "Observações Adicionais",
+      norm(atestado?.observacoes),
+      y,
+    );
+  }
 
   drawSignature(pdf, assinatura);
   addFooter(pdf);

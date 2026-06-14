@@ -103,43 +103,55 @@ export const addHeader = (
   const CX = W / 2;
 
   let logoBottom = 14;
+if (logoBase64) {
+  const logoW = 36;
+  const logoH = 14;
+  pdf.addImage(logoBase64, logoMime, CX - logoW / 2, 10, logoW, logoH);
+  logoBottom = 10 + logoH + 2;
+} else {
+  // Logo SISC em destaque
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(22);
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+  safeText(pdf, "SISC", CX, 18, { align: "center" });
 
-  if (logoBase64) {
-    const logoW = 36;
-    const logoH = 14;
-    pdf.addImage(logoBase64, logoMime, CX - logoW / 2, 10, logoW, logoH);
-    logoBottom = 10 + logoH + 2;
-  } else {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(13);
-    pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
-    safeText(pdf, "SaúdeDigital", CX, 21, { align: "center" });
-    logoBottom = 25;
-  }
-
+  pdf.setFontSize(10);
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(7);
-  pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
-  safeText(
-    pdf,
-    "Sistema Individual de Saúde do Cidadão  ·  Documento oficial",
-    CX,
-    logoBottom + 4,
-    { align: "center" },
-  );
+  pdf.setCharSpace(1);
+  safeText(pdf, "SAÚDE DIGITAL", CX, 23, { align: "center" });
+  pdf.setCharSpace(0);
+  logoBottom = 26;
+}
+
+// Subtítulo do sistema
+pdf.setFont("helvetica", "italic");
+pdf.setFontSize(8);
+pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
+safeText(
+  pdf,
+  "sistema individual de saude do cidadão",
+  CX,
+  logoBottom + 3,
+  { align: "center" },
+);
 
   const sepY = logoBottom + 8;
   hLine(pdf, sepY, 1.0, DARK);
   hLine(pdf, sepY + 2.5, 0.3, [140, 140, 140]);
 
+  // Título do documento — centralizado, com letter-spacing
+  const docTitleY = sepY + 14;
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(16);
   pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
-  pdf.setCharSpace(3);
-  safeText(pdf, docTitle.toUpperCase(), CX, sepY + 14, { align: "center" });
+
+  // Garantir centralização absoluta usando a largura total / 2
+  pdf.setCharSpace(1); // Ajustado para evitar que o espaçamento empurre o texto para fora do centro
+  safeText(pdf, docTitle.toUpperCase(), W / 2.2, docTitleY, { align: "center" });
   pdf.setCharSpace(0);
 
-  return sepY + 22;
+  return sepY + 22; // y inicial para o conteúdo
+
 };
 
 export const addFooter = (pdf: jsPDF) => {
