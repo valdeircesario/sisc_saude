@@ -1,7 +1,8 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { downloadExamePDF } from "../../utils/downloadFile";
 
 interface HistoricoModalsProps {
   showBuscaHistoricoModal: boolean;
@@ -237,6 +238,23 @@ const FuncionarioHistoricoModals: React.FC<HistoricoModalsProps> = ({
                         </p>
                       </article>
                     ))}
+                    
+                    {registroHistoricoDetalhe.detalhes?.arquivoPdf && (
+                      <article className="rounded-2xl border border-sky-100 bg-sky-50 p-4 shadow-sm md:col-span-2">
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-sky-600 font-black">
+                          Documentação
+                        </p>
+                        <div className="mt-3 flex items-center justify-between">
+                          <p className="text-sm font-semibold text-sky-900">Laudo técnico em PDF disponível</p>
+                          <button
+                            onClick={() => downloadExamePDF(registroHistoricoDetalhe.detalhes.arquivoPdf)}
+                            className="flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-sky-200 hover:bg-sky-700 transition-all"
+                          >
+                            <Download className="h-3.5 w-3.5" /> Baixar Laudo
+                          </button>
+                        </div>
+                      </article>
+                    )}
                   </>
                 )}
 

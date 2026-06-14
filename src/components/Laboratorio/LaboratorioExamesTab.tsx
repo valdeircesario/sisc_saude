@@ -2,6 +2,7 @@ import React from "react";
 import { Download, FileText, Calendar, Clock, FlaskConical, Search } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { downloadExamePDF } from "../../utils/downloadFile";
 
 interface ExamesTabProps {
   loading: boolean;
@@ -123,7 +124,7 @@ export const LaboratorioExamesTab: React.FC<ExamesTabProps> = ({
                   )}
 
                   <div className="grid grid-cols-1 gap-2 mt-auto">
-                    {exame.status === 'agendado' && (
+                    {exame.status === 'agendado' ? (
                       <button
                         onClick={() => onOpenResultado(exame)}
                         className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all flex items-center justify-center gap-2"
@@ -131,18 +132,24 @@ export const LaboratorioExamesTab: React.FC<ExamesTabProps> = ({
                         <FileText className="h-3.5 w-3.5" />
                         Registrar Laudo
                       </button>
+                    ) : (
+                      <button
+                        onClick={() => onOpenResultado(exame)}
+                        className="w-full px-4 py-2.5 bg-amber-500 text-white rounded-xl font-bold text-xs shadow-lg shadow-amber-100 hover:bg-amber-600 transition-all flex items-center justify-center gap-2"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        {exame.arquivoPdf ? 'Atualizar Laudo' : 'Importar PDF'}
+                      </button>
                     )}
                     
                     {exame.arquivoPdf && (
-                      <a
-                        href={`http://localhost:3001/api/exames/download/${exame.arquivoPdf}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => downloadExamePDF(exame.arquivoPdf)}
                         className="w-full px-4 py-2.5 bg-sky-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-sky-100 hover:bg-sky-700 transition-all flex items-center justify-center gap-2"
                       >
                         <Download className="h-3.5 w-3.5" />
                         Baixar Laudo PDF
-                      </a>
+                      </button>
                     )}
                   </div>
                 </div>

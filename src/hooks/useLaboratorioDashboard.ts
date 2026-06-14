@@ -128,6 +128,10 @@ export const useLaboratorioDashboard = () => {
 
   const openResultadoModal = (exame: any) => {
     setSelectedExame(exame);
+    setResultadoData({
+      resultado: exame.resultado || "",
+      arquivo: null,
+    });
     setShowResultadoModal(true);
   };
 

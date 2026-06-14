@@ -552,9 +552,7 @@ export const usePacienteDashboard = () => {
     { name: "Vacinas", key: "vacinas", icon: Shield },
     { name: "Exames", key: "exames", icon: FileText },
     { name: "Internações", key: "internacoes", icon: Building2 },
-    { name: "Procedimentos", key: "procedimentos", icon: Activity },
     { name: "Medicações", key: "medicacoes", icon: Pill },
-    { name: "Agendamentos", key: "agendamentos", icon: Calendar },
     { name: "Histórico Médico", key: "historico", icon: Heart },
     {
       name: "Histórico Hospitalar",

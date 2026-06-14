@@ -112,7 +112,7 @@ export const LaboratorioModals: React.FC<LaboratorioModalsProps> = ({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Registrar Resultado
+              {selectedExame.status === 'realizado' ? (selectedExame.arquivoPdf ? 'Atualizar Laudo' : 'Importar PDF') : 'Registrar Resultado'}
             </h3>
 
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">

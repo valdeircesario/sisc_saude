@@ -51,17 +51,29 @@ export const agendarExame = async (solicitacaoId, laboratorioId, dataAgendada) =
 };
 
 export const registrarResultado = async (exameId, laboratorioId, resultado, arquivoPdf) => {
+  const exameAtual = await prisma.exame.findUnique({
+    where: { id: exameId }
+  });
+
+  const data = {
+    resultado,
+    status: 'realizado'
+  };
+
+  if (arquivoPdf) {
+    data.arquivoPdf = arquivoPdf;
+  }
+
+  if (!exameAtual.dataRealizado) {
+    data.dataRealizado = new Date();
+  }
+
   const exameAtualizado = await prisma.exame.update({
     where: { 
       id: exameId,
       laboratorioId
     },
-    data: {
-      resultado,
-      arquivoPdf,
-      dataRealizado: new Date(),
-      status: 'realizado'
-    }
+    data
   });
 
   await prisma.solicitacaoExame.updateMany({
