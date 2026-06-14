@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { FileText, Download, Search, X, Plus, Trash2 } from "lucide-react";
+import { FileText, Download, Search, X, Plus, Trash2, ShieldCheck, Pill } from "lucide-react";
 import { api } from "../services/api";
 import { generateAtestadoPDF, generateReceitaPDF } from "../utils/pdfGenerator";
 import { toast } from "react-toastify";
@@ -274,6 +274,14 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
         setDocumentoSalvo({ ...res.data, tipoDocumento: "receita" });
         await carregarDocumentos();
         toast.success("Receita salva com sucesso!");
+        
+        // Resetar apenas os campos do formulário para nova entrada
+        setForm({
+          ...estadoInicial,
+          dataEmissao: new Date().toISOString().slice(0, 10),
+        });
+        setCpfBusca("");
+        setPaciente(null);
       } else {
         const res = await api.post("/funcionario/atestados", {
           pacienteId: paciente.id,
@@ -286,6 +294,14 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
         setDocumentoSalvo({ ...res.data, tipoDocumento: "atestado" });
         await carregarDocumentos();
         toast.success("Atestado salvo com sucesso!");
+
+        // Resetar apenas os campos do formulário para nova entrada
+        setForm({
+          ...estadoInicial,
+          dataEmissao: new Date().toISOString().slice(0, 10),
+        });
+        setCpfBusca("");
+        setPaciente(null);
       }
     } catch (error: any) {
       toast.error(
@@ -669,7 +685,9 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
               Paciente: {paciente?.nome || "Aguardando busca"}
             </p>
             <p className="text-[#5C7A9B]">
-              Data: {form.dataEmissao ? new Date(form.dataEmissao).toLocaleDateString("pt-BR"): " "
+              Data: {form.dataEmissao 
+                ? new Date(form.dataEmissao + 'T12:00:00').toLocaleDateString("pt-BR")
+                : " "
               }
             </p>
             <p className="text-[#5C7A9B]">CID: {form.cid || " "}</p>
@@ -724,20 +742,26 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
                   ? "Documento assinado com sucesso."
                   : "Documento aguardando assinatura digital."}
               </p>
-              <p className="text-[#5C7A9B]">ID: {documentoSalvo.id}</p>
+              
               {documentoSalvo.assinaturaConcluida && (
-                <p className="text-[#5C7A9B]">
-                  Registro: {documentoSalvo.registroAssinatura}
+                <p className="text-[#5C7A9B] text-xs mt-1">
+                  Registro: <span className="font-mono font-bold text-[#1A3F72]">{documentoSalvo.registroAssinatura}</span>
                 </p>
               )}
               {documentoSalvo.tipoDocumento === "receita" && documentoSalvo.itens && documentoSalvo.itens.length > 0 && (
-                <div className="mt-3 space-y-1.5 rounded-lg bg-white p-2 border border-[#D9E4F0]">
-                  <p className="text-xs font-semibold text-[#0F2242]">Medicamentos prescritos:</p>
+                <div className="mt-3 space-y-1.5 rounded-xl bg-white p-3 border border-[#D9E4F0] shadow-sm">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-[#8FA8C4] mb-2 flex items-center gap-1.5">
+                    <Pill className="h-3 w-3" /> Itens Prescritos
+                  </p>
                   {documentoSalvo.itens.map((med: any, idx: number) => (
-                    <p key={idx} className="text-xs text-[#5C7A9B]">
-                      • {med.medicamento} - {med.dosagem} (Qtd: {med.quantidade})
-                      {med.posologia && ` - ${med.posologia}`}
-                    </p>
+                    <div key={idx} className="flex flex-col border-b border-[#F4F8FC] last:border-0 pb-1.5 last:pb-0">
+                      <p className="text-xs font-bold text-[#1A3F72]">
+                        {med.medicamento}
+                      </p>
+                      <p className="text-[10px] text-[#5C7A9B] font-medium">
+                        {med.dosagem} • Qtd: {med.quantidade} {med.posologia && ` • ${med.posologia}`}
+                      </p>
+                    </div>
                   ))}
                 </div>
               )}
@@ -746,18 +770,19 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
                   <button
                     type="button"
                     onClick={() => abrirModalAssinatura(documentoSalvo)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#1A3F72] px-3 py-2 text-sm font-semibold text-white"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1A3F72] px-4 py-2.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-sky-100 hover:scale-[1.02] active:scale-[0.98] transition-all"
                   >
+                    <ShieldCheck className="h-4 w-4" />
                     Assinar documento
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={() => baixarDocumento(documentoSalvo)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-[#C8D9ED] bg-white px-3 py-2 text-sm font-semibold text-[#1A3F72]"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#C8D9ED] bg-white px-4 py-2.5 text-xs font-bold text-[#1A3F72] hover:bg-[#F8FAFD] transition-all"
                   >
                     <Download className="h-4 w-4" />
-                    Baixar PDF
+                    Baixar PDF assinado
                   </button>
                 )}
               </div>
@@ -829,7 +854,7 @@ const ReceitasAtestado: React.FC<ReceitasAtestadoProps> = ({ onClose }) => {
                       <p>
                         <span className="font-semibold">Data:</span>{" "}
                         {item.dataEmissao
-                          ? new Date(item.dataEmissao).toLocaleDateString(
+                          ? new Date(item.dataEmissao.split('T')[0] + 'T12:00:00').toLocaleDateString(
                               "pt-BR",
                             )
                           : "—"}
