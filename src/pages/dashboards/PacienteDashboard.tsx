@@ -13,6 +13,7 @@ import {
   History,
   Menu,
   Megaphone,
+  Info,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -60,6 +61,9 @@ const PacienteDashboard: React.FC = () => {
     setShowCancelarModal,
     showEditarPerfilModal,
     setShowEditarPerfilModal,
+    showConfirmarInscricaoModal,
+    setShowConfirmarInscricaoModal,
+    campanhaParaInscricao,
     selectedItem,
     setSelectedItem,
     internacoesFilter,
@@ -115,10 +119,14 @@ const PacienteDashboard: React.FC = () => {
     openConfirmarModal,
     openEditarPerfilModal,
     handleInscreverCampanha,
+    handleConfirmarInscricao,
     handleConfirmarAgendamento,
     handleAtualizarPerfil,
     handleCancelarConsulta,
     confirmarConsultaMutation,
+    
+    // Mutations loading
+    isInscrevendoCampanha,
     
     // Navigation
     navigation,
@@ -579,6 +587,46 @@ const PacienteDashboard: React.FC = () => {
         handleCancelarConsulta={handleCancelarConsulta}
         isLoading={isCancelandoConsulta}
       />
+
+      {/* Modal Confirmação de Inscrição em Campanha */}
+      {showConfirmarInscricaoModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowConfirmarInscricaoModal(false)} />
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+            <div className="bg-teal-600 px-6 py-4">
+               <div className="flex items-center gap-3 text-white">
+                 <Info className="h-6 w-6" />
+                 <h3 className="text-lg font-bold">Confirmar Inscrição</h3>
+               </div>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-slate-600 leading-relaxed">
+                Deseja confirmar sua inscrição na campanha:
+              </p>
+              <p className="mt-2 text-lg font-bold text-slate-900">
+                "{campanhaParaInscricao?.titulo || "Campanha Selecionada"}"
+              </p>
+              
+              <div className="mt-8 flex items-center gap-3">
+                <button
+                  onClick={() => setShowConfirmarInscricaoModal(false)}
+                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-slate-100 active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmarInscricao}
+                  disabled={isInscrevendoCampanha}
+                  className="flex-1 rounded-xl bg-teal-600 py-3 text-sm font-bold text-white shadow-lg shadow-teal-100 transition-all hover:bg-teal-700 active:scale-95 disabled:opacity-50"
+                >
+                  {isInscrevendoCampanha ? "Processando..." : "Confirmar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

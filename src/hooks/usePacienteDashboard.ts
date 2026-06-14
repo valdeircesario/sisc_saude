@@ -79,6 +79,9 @@ export const usePacienteDashboard = () => {
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [filtroEspecialidade, setFiltroEspecialidade] = useState("");
 
+  const [showConfirmarInscricaoModal, setShowConfirmarInscricaoModal] = useState(false);
+  const [campanhaParaInscricao, setCampanhaParaInscricao] = useState<any>(null);
+
   // ── Queries ─────────────────────────
   const { data: perfil } = useQuery("paciente-perfil", () =>
     api.get("/paciente/perfil").then((r) => r.data),
@@ -484,16 +487,16 @@ export const usePacienteDashboard = () => {
       toast.error("Perfil não carregado.");
       return;
     }
-    if (
-      !window.confirm(
-        `Confirmar inscrição em "${campanhaTitulo ?? "campanha selecionada"}"?`,
-      )
-    ) {
-      toast.info("Inscrição cancelada.");
-      return;
-    }
+    
+    setCampanhaParaInscricao({ id: campanhaId, titulo: campanhaTitulo });
+    setShowConfirmarInscricaoModal(true);
+  };
+
+  const handleConfirmarInscricao = () => {
+    if (!campanhaParaInscricao || !perfil) return;
+
     inscreverCampanhaMutation.mutate({
-      campanhaId,
+      campanhaId: campanhaParaInscricao.id,
       data: {
         nome: perfil.nome || "",
         cpf: perfil.cpf || "",
@@ -505,6 +508,9 @@ export const usePacienteDashboard = () => {
         observacoes: "",
       },
     });
+    
+    setShowConfirmarInscricaoModal(false);
+    setCampanhaParaInscricao(null);
   };
 
   const handleConfirmarAgendamento = () => {
@@ -579,6 +585,9 @@ export const usePacienteDashboard = () => {
     setShowCancelarModal,
     showEditarPerfilModal,
     setShowEditarPerfilModal,
+    showConfirmarInscricaoModal,
+    setShowConfirmarInscricaoModal,
+    campanhaParaInscricao,
     selectedItem,
     setSelectedItem,
     internacoesFilter,
@@ -640,6 +649,7 @@ export const usePacienteDashboard = () => {
     openConfirmarModal,
     openEditarPerfilModal,
     handleInscreverCampanha,
+    handleConfirmarInscricao,
     handleConfirmarAgendamento,
     handleAtualizarPerfil,
     handleCancelarConsulta,
