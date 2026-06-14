@@ -49,6 +49,37 @@ export const useFuncionarioDashboard = () => {
     dataRetirada: new Date().toISOString().slice(0, 16),
     observacoes: "",
   });
+  const [cnsBuscaTerm, setCnsBuscaTerm] = useState("");
+  const [isBuscandoPacienteCns, setIsBuscandoPacienteCns] = useState(false);
+
+  const buscarPacientePorCns = async () => {
+    if (!cnsBuscaTerm.trim()) {
+      toast.error("Informe o CNS ou CPF do paciente.");
+      return;
+    }
+    setIsBuscandoPacienteCns(true);
+    try {
+      const res = await api.get("/funcionario/pacientes", {
+        params: { busca: cnsBuscaTerm.trim() },
+      });
+      
+      const paciente = res.data?.find((p: any) => 
+        p.cns === cnsBuscaTerm.trim() || p.cpf === cnsBuscaTerm.trim()
+      );
+
+      if (paciente) {
+        setSelectedAdminPaciente(paciente);
+        setAdministracaoData(prev => ({ ...prev, pacienteCns: paciente.cns }));
+        toast.success(`Paciente ${paciente.nome} localizado!`);
+      } else {
+        toast.error("Paciente não localizado com os dados informados.");
+      }
+    } catch (error) {
+      toast.error("Erro ao buscar paciente.");
+    } finally {
+      setIsBuscandoPacienteCns(false);
+    }
+  };
 
   const [historicoData, setHistoricoData] = useState({
     laudo: "",
@@ -889,6 +920,10 @@ export const useFuncionarioDashboard = () => {
     setAdministracaoData,
     handleAdministrarSubmit,
     isAdministrandoMed: administrarMedicamentoMutation.isLoading,
+    cnsBuscaTerm,
+    setCnsBuscaTerm,
+    isBuscandoPacienteCns,
+    buscarPacientePorCns,
     
     // Histórico
     historicoBuscaResultado,
