@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, Pill, Package, Save, CheckCircle, Search, User, ClipboardList } from "lucide-react";
 
 interface MedicationModalsProps {
   showAdministradorMedicamentoModal: boolean;
@@ -44,169 +44,108 @@ const FuncionarioMedicationModals: React.FC<MedicationModalsProps> = ({
   handleAdministrarSubmit,
   isAdministrandoMed,
 }) => {
+  const ModalHeader = ({ title, subtitle, icon: Icon, colorClass, onClose }: any) => (
+    <div className="flex items-center justify-between px-6 py-4 border-b border-[#EEF2F7]">
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${colorClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-[#0F2242] leading-tight">{title}</h3>
+          <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#8FA8C4] mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+      <button
+        onClick={onClose}
+        className="p-2 rounded-full hover:bg-[#F8FAFD] text-[#8FA8C4] hover:text-[#1A3F72] transition-all"
+      >
+        <X className="h-5 w-5" />
+      </button>
+    </div>
+  );
+
   return (
     <>
       {showAdministradorMedicamentoModal && selectedAdminPaciente && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            background: "rgba(10,25,47,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            className="w-full max-w-4xl overflow-hidden rounded-2xl bg-white"
-            style={{
-              border: "1px solid #D9E4F0",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
-            }}
-          >
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: "1px solid #EEF2F7" }}
-            >
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
-                  Selecionar medicamento
-                </p>
-                <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
-                  Administrar para {selectedAdminPaciente.nome}
-                </h3>
-                <p className="text-xs text-[#8FA8C4] mt-0.5">
-                  CNS: {selectedAdminPaciente.cns}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={resetAdministracaoForm}
-                className="rounded-full p-2 transition-all"
-                style={{ background: "#F0F4F8", color: "#5C7A9B" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#D9E4F0")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#F0F4F8")
-                }
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                  Buscar medicamento
-                </p>
-                <div className="w-full max-w-md">
-                  <label htmlFor="med-search" className="sr-only">
-                    Buscar medicamento
-                  </label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A192F]/60 backdrop-blur-sm">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl flex flex-col">
+            <ModalHeader 
+              title="Administração de Medicamentos" 
+              subtitle="Seleção de Item" 
+              icon={Pill} 
+              colorClass="bg-[#F0EDFB] text-[#4C3799] border-[#DED7F7]"
+              onClose={resetAdministracaoForm}
+            />
+            
+            <div className="p-6 bg-[#F8FAFD] border-b border-[#E4EDF7]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-white border border-[#C8D9ED] flex items-center justify-center shadow-sm">
+                    <User className="h-6 w-6 text-[#1A3F72]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-[#0F2242]">{selectedAdminPaciente.nome}</p>
+                    <p className="text-[10px] font-bold text-[#3A5B82] uppercase tracking-widest">CNS: {selectedAdminPaciente.cns}</p>
+                  </div>
+                </div>
+                <div className="relative w-full max-w-xs">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-3.5 w-3.5 text-[#8FA8C4]" />
+                  </div>
                   <input
-                    id="med-search"
                     type="text"
                     value={medSearchTerm}
                     onChange={(e) => setMedSearchTerm(e.target.value)}
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] placeholder-[#8FA8C4] outline-none transition-all"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#1A3F72";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
-                    placeholder="Pesquisar por nome de medicamento"
+                    placeholder="Buscar medicação..."
+                    className="block w-full pl-9 pr-3 py-2 text-xs bg-white border border-[#C8D9ED] rounded-xl outline-none focus:border-[#1A3F72] transition-all"
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
               {loadingMedicamentos ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-7 w-7 border-2 border-[#C8D9ED] border-t-[#1A3F72] mx-auto"></div>
-                  <p className="mt-3 text-sm text-[#8FA8C4]">
-                    Carregando medicamentos...
-                  </p>
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#C8D9ED] border-t-[#1A3F72]"></div>
+                  <p className="mt-4 text-xs font-bold text-[#8FA8C4] uppercase tracking-widest">Sincronizando estoque...</p>
                 </div>
-              ) : filteredMedicamentos && filteredMedicamentos.length > 0 ? (
-                <div className="space-y-3">
+              ) : filteredMedicamentos?.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredMedicamentos.map((med: any) => (
                     <div
                       key={med.id}
-                      className="rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                      style={{
-                        border: "1px solid #E4EDF7",
-                        background: "#FAFCFF",
-                      }}
+                      className="p-4 rounded-2xl border border-[#E4EDF7] bg-[#FAFCFF] flex flex-col justify-between gap-4 group hover:border-[#A8C4E0] hover:bg-white transition-all"
                     >
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap gap-2 items-center">
-                          <p className="text-xs text-[#8FA8C4]">{med.nome}</p>
-                          <span
-                            className="px-2 py-0.5 text-xs rounded-full font-medium"
-                            style={{
-                              background: "#EBF2FB",
-                              color: "#1A3F72",
-                            }}
-                          >
-                            UBS: {med.ubs?.nome || "Não informada"}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="px-2 py-0.5 rounded-lg bg-[#EBF2FB] text-[10px] font-black uppercase text-[#1A3F72] border border-[#C8D9ED]">
+                            {med.nome}
+                          </span>
+                          <span className="text-[10px] font-bold text-[#8FA8C4]">Lote: {med.lote}</span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#0F2242]">{med.descricao}</h4>
+                        <div className="flex items-center gap-2">
+                          <Package className="h-3.5 w-3.5 text-[#8FA8C4]" />
+                          <span className={`text-xs font-bold ${!Number(med.quantidade) ? 'text-rose-600' : 'text-[#3A5B82]'}`}>
+                            {med.quantidade} unidades disponíveis
                           </span>
                         </div>
-                        <h3 className="text-sm font-bold text-[#0F2242]">
-                          {med.descricao}
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs text-[#5C7A9B]">
-                          <p>
-                            <span className="font-semibold text-[#3A5B82]">
-                              Lote:
-                            </span>{" "}
-                            {med.lote}
-                          </p>
-                          <p>
-                            <span className="font-semibold text-[#3A5B82]">
-                              Quantidade:
-                            </span>{" "}
-                            {med.quantidade}
-                          </p>
-                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {Number(med.quantidade) > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => openAdministrarMed(med)}
-                            className="px-3 py-2 text-xs font-semibold rounded-lg text-white transition-all"
-                            style={{ background: "#145C35" }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.background = "#0E4226")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.background = "#145C35")
-                            }
-                          >
-                            Administrar
-                          </button>
-                        ) : (
-                          <span
-                            className="px-3 py-2 rounded-lg text-xs font-medium"
-                            style={{
-                              border: "1px solid #F0C0C0",
-                              background: "#FEF0F0",
-                              color: "#8B1F1F",
-                            }}
-                          >
-                            Sem estoque
-                          </span>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => openAdministrarMed(med)}
+                        disabled={!Number(med.quantidade)}
+                        className="w-full py-2 rounded-xl bg-[#1A3F72] text-white text-[11px] font-bold shadow-md shadow-sky-100 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                      >
+                        Selecionar para Administração
+                      </button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#8FA8C4]">
-                  Nenhum medicamento encontrado para sua UBS.
-                </p>
+                <div className="text-center py-20 bg-[#F8FAFD] rounded-2xl border border-dashed border-[#C8D9ED]">
+                  <Pill className="h-10 w-10 text-[#C8D9ED] mx-auto mb-3" />
+                  <p className="text-xs font-bold text-[#8FA8C4] uppercase">Nenhum medicamento disponível</p>
+                </div>
               )}
             </div>
           </div>
@@ -214,171 +153,54 @@ const FuncionarioMedicationModals: React.FC<MedicationModalsProps> = ({
       )}
 
       {editingMed && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            background: "rgba(10,25,47,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
-            style={{
-              border: "1px solid #D9E4F0",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: "1px solid #EEF2F7" }}
-            >
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
-                  Editar medicação
-                </p>
-                <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
-                  {editingMed.descricao}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={resetMedForm}
-                className="rounded-full p-2 transition-all"
-                style={{ background: "#F0F4F8", color: "#5C7A9B" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#D9E4F0")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#F0F4F8")
-                }
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <form onSubmit={handleMedSubmit} className="space-y-5 px-6 py-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                    Quantidade
-                  </span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A192F]/60 backdrop-blur-sm">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <ModalHeader 
+              title="Ajuste de Estoque" 
+              subtitle={editingMed.descricao} 
+              icon={Package} 
+              colorClass="bg-[#EBF2FB] text-[#1A3F72] border-[#C8D9ED]"
+              onClose={resetMedForm}
+            />
+            <form onSubmit={handleMedSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black uppercase text-[#8FA8C4] ml-1">Quantidade em Unidades</label>
                   <input
                     type="number"
                     min="0"
                     value={medData.quantidade}
-                    onChange={(e) =>
-                      setMedData({
-                        ...medData,
-                        quantidade: e.target.value,
-                      })
-                    }
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#1A3F72";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
-                    placeholder="Ex: 100"
+                    onChange={(e) => setMedData({ ...medData, quantidade: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#F8FAFD] border border-[#C8D9ED] rounded-xl text-sm font-medium outline-none focus:border-[#1A3F72] transition-all"
                   />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                    Data de validade
-                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black uppercase text-[#8FA8C4] ml-1">Data de Validade</label>
                   <input
                     type="date"
                     value={medData.dataValidade}
-                    onChange={(e) =>
-                      setMedData({
-                        ...medData,
-                        dataValidade: e.target.value,
-                      })
-                    }
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#1A3F72";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
+                    onChange={(e) => setMedData({ ...medData, dataValidade: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-[#F8FAFD] border border-[#C8D9ED] rounded-xl text-sm font-medium outline-none focus:border-[#1A3F72] transition-all"
                   />
-                </label>
+                </div>
               </div>
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                  Observações
-                </span>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase text-[#8FA8C4] ml-1">Observações de Estoque</label>
                 <textarea
                   value={medData.observacoes}
-                  onChange={(e) =>
-                    setMedData({
-                      ...medData,
-                      observacoes: e.target.value,
-                    })
-                  }
-                  className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
-                  style={{
-                    border: "1px solid #C8D9ED",
-                    background: "#F4F8FC",
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#1A3F72";
-                    e.target.style.background = "#fff";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "#C8D9ED";
-                    e.target.style.background = "#F4F8FC";
-                  }}
+                  onChange={(e) => setMedData({ ...medData, observacoes: e.target.value })}
                   rows={4}
-                  placeholder="Observações sobre o medicamento"
+                  className="w-full px-4 py-2.5 bg-[#F8FAFD] border border-[#C8D9ED] rounded-xl text-sm font-medium outline-none focus:border-[#1A3F72] transition-all resize-none"
                 />
-              </label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={resetMedForm}
-                  className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all"
-                  style={{
-                    border: "1px solid #C8D9ED",
-                    color: "#5C7A9B",
-                    background: "transparent",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#F0F4F8")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  Cancelar
-                </button>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={resetMedForm} className="px-6 py-2.5 text-xs font-bold text-[#5C7A9B] hover:bg-[#F8FAFD] rounded-xl">Cancelar</button>
                 <button
                   type="submit"
                   disabled={isUpdatingMed}
-                  className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
-                  style={{ background: "#1A3F72" }}
-                  onMouseEnter={(e) =>
-                    !isUpdatingMed &&
-                    (e.currentTarget.style.background = "#0F2A52")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#1A3F72")
-                  }
+                  className="px-8 py-2.5 bg-[#1A3F72] text-white rounded-xl text-xs font-bold shadow-lg shadow-sky-100 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
                 >
-                  {isUpdatingMed ? "Salvando..." : "Salvar alterações"}
+                  {isUpdatingMed ? "Salvando..." : "Confirmar Alterações"}
                 </button>
               </div>
             </form>
@@ -387,215 +209,72 @@ const FuncionarioMedicationModals: React.FC<MedicationModalsProps> = ({
       )}
 
       {selectedMed && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{
-            background: "rgba(10,25,47,0.55)",
-            backdropFilter: "blur(4px)",
-          }}
-        >
-          <div
-            className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
-            style={{
-              border: "1px solid #D9E4F0",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.18)",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: "1px solid #EEF2F7" }}
-            >
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#8FA8C4]">
-                  Ministrar ao paciente
-                </p>
-                <h3 className="mt-1.5 text-lg font-bold text-[#0F2242]">
-                  {selectedMed.nome}
-                </h3>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-[#0A192F]/60 backdrop-blur-sm">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <ModalHeader 
+              title="Registrar Administração" 
+              subtitle={selectedMed.descricao} 
+              icon={ClipboardList} 
+              colorClass="bg-[#EAF5EF] text-[#145C35] border-[#C8EBD9]"
+              onClose={resetAdministracaoForm}
+            />
+            <div className="p-6 bg-[#F8FAFD] border-b border-[#E4EDF7]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-[#8FA8C4] uppercase">Paciente Selecionado</p>
+                  <p className="text-sm font-black text-[#0F2242]">{selectedAdminPaciente?.nome}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-[#8FA8C4] uppercase">Item / Lote</p>
+                  <p className="text-sm font-bold text-[#3A5B82]">{selectedMed.nome} • {selectedMed.lote}</p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={resetAdministracaoForm}
-                className="rounded-full p-2 transition-all"
-                style={{ background: "#F0F4F8", color: "#5C7A9B" }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "#D9E4F0")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#F0F4F8")
-                }
-              >
-                <X className="h-4 w-4" />
-              </button>
             </div>
-            <form
-              onSubmit={handleAdministrarSubmit}
-              className="space-y-5 px-6 py-5"
-            >
-              <p className="text-xs text-[#8FA8C4]">
-                Lote: {selectedMed.lote} · Disponível:{" "}
-                <span className="font-semibold text-[#145C35]">
-                  {selectedMed.quantidade} unidades
-                </span>
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="block md:col-span-2">
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                    CNS do paciente *
-                  </span>
-                  <input
-                    type="text"
-                    value={administracaoData.pacienteCns}
-                    onChange={(e) =>
-                      setAdministracaoData({
-                        ...administracaoData,
-                        pacienteCns: e.target.value,
-                      })
-                    }
-                    required
-                    placeholder="Informe o CNS do paciente"
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#145C35";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                    Quantidade *
-                  </span>
+            <form onSubmit={handleAdministrarSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black uppercase text-[#8FA8C4] ml-1">Quantidade a Ministrar *</label>
                   <input
                     type="number"
                     min="1"
                     max={selectedMed.quantidade}
                     value={administracaoData.quantidade}
-                    onChange={(e) =>
-                      setAdministracaoData({
-                        ...administracaoData,
-                        quantidade: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setAdministracaoData({ ...administracaoData, quantidade: e.target.value })}
                     required
+                    className="w-full px-4 py-2.5 bg-white border border-[#C8D9ED] rounded-xl text-sm font-medium outline-none focus:border-[#1A3F72] transition-all"
                     placeholder={`Máx: ${selectedMed.quantidade}`}
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#145C35";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
                   />
-                </label>
-                <label className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                    Data e Hora *
-                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black uppercase text-[#8FA8C4] ml-1">Data e Hora do Procedimento *</label>
                   <input
                     type="datetime-local"
                     value={administracaoData.dataRetirada}
-                    onChange={(e) =>
-                      setAdministracaoData({
-                        ...administracaoData,
-                        dataRetirada: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setAdministracaoData({ ...administracaoData, dataRetirada: e.target.value })}
                     required
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#145C35";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
+                    className="w-full px-4 py-2.5 bg-white border border-[#C8D9ED] rounded-xl text-sm font-medium outline-none focus:border-[#1A3F72] transition-all"
                   />
-                </label>
-                <label className="block md:col-span-2">
-                  <span className="text-xs font-bold uppercase tracking-[0.08em] text-[#8FA8C4] block mb-1.5">
-                    Observações
-                  </span>
-                  <textarea
-                    value={administracaoData.observacoes}
-                    onChange={(e) =>
-                      setAdministracaoData({
-                        ...administracaoData,
-                        observacoes: e.target.value,
-                      })
-                    }
-                    rows={4}
-                    placeholder="Observações sobre a administração (opcional)"
-                    className="block w-full rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all resize-none"
-                    style={{
-                      border: "1px solid #C8D9ED",
-                      background: "#F4F8FC",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#145C35";
-                      e.target.style.background = "#fff";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#C8D9ED";
-                      e.target.style.background = "#F4F8FC";
-                    }}
-                  />
-                </label>
+                </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={resetAdministracaoForm}
-                  className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all"
-                  style={{
-                    border: "1px solid #C8D9ED",
-                    color: "#5C7A9B",
-                    background: "transparent",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.background = "#F0F4F8")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
-                >
-                  Cancelar
-                </button>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black uppercase text-[#8FA8C4] ml-1">Relatório de Administração</label>
+                <textarea
+                  value={administracaoData.observacoes}
+                  onChange={(e) => setAdministracaoData({ ...administracaoData, observacoes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2.5 bg-white border border-[#C8D9ED] rounded-xl text-sm font-medium outline-none focus:border-[#1A3F72] transition-all resize-none"
+                  placeholder="Informações relevantes sobre a administração..."
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={resetAdministracaoForm} className="px-6 py-2.5 text-xs font-bold text-[#5C7A9B] hover:bg-[#F8FAFD] rounded-xl">Cancelar</button>
                 <button
                   type="submit"
                   disabled={isAdministrandoMed}
-                  className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all disabled:opacity-50"
-                  style={{ background: "#145C35" }}
-                  onMouseEnter={(e) =>
-                    !isAdministrandoMed &&
-                    (e.currentTarget.style.background = "#0E4226")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = "#145C35")
-                  }
+                  className="px-8 py-2.5 bg-[#145C35] text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-100 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isAdministrandoMed
-                    ? "Registrando..."
-                    : "Registrar Administração"}
+                  <CheckCircle className="h-4 w-4" />
+                  {isAdministrandoMed ? "Processando..." : "Confirmar Administração"}
                 </button>
               </div>
             </form>

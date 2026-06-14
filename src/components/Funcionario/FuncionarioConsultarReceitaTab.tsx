@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Package } from "lucide-react";
+import { Search, Package, User, Clock, MapPin, FileText, CheckCircle, AlertCircle, ShieldCheck, Pill } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -32,444 +32,225 @@ const FuncionarioConsultarReceitaTab: React.FC<ConsultarReceitaTabProps> = ({
 }) => {
   return (
     <div
-      className="rounded-xl p-5"
+      className="rounded-2xl flex flex-col h-full"
       style={{
         background: "#fff",
         border: "1px solid #D9E4F0",
         boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
       }}
     >
-      {/* Header compacto */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="text-base font-bold text-[#0F2242] tracking-tight leading-tight">
-            Consultar Receita
-          </h2>
-          <p className="text-xs text-[#8FA8C4] mt-0.5">
-            Busque pelo número de registro de assinatura
-          </p>
-        </div>
-      </div>
-
-      {!receitaEncontrada ? (
-        <form onSubmit={handleBuscarReceita} className="flex gap-2 max-w-lg">
-          <input
-            type="text"
-            value={registroReceitaBusca}
-            onChange={(e) => setRegistroReceitaBusca(e.target.value)}
-            placeholder="Ex: REG-SISC1A2B3C-D4E5F6"
-            className="flex-1 rounded-lg px-3 py-2 text-sm text-[#1A2E4A] outline-none transition-all"
-            style={{
-              border: "1px solid #C8D9ED",
-              background: "#F4F8FC",
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = "#1A3F72";
-              e.target.style.background = "#fff";
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = "#C8D9ED";
-              e.target.style.background = "#F4F8FC";
-            }}
-            required
-          />
-          <button
-            type="submit"
-            disabled={buscarReceitaLoading || carregandoReceita}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 flex items-center gap-1.5"
-            style={{ background: "#1A3F72" }}
-            onMouseEnter={(e) =>
-              !buscarReceitaLoading &&
-              (e.currentTarget.style.background = "#0F2A52")
-            }
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#1A3F72")}
-          >
-            <Search className="h-3.5 w-3.5" />
-            Buscar
-          </button>
-        </form>
-      ) : (
-        <div className="space-y-4">
-          {/* Barra de status + registro + nova busca — tudo em uma linha */}
-          <div
-            className="flex items-center justify-between rounded-lg px-3 py-2.5"
-            style={{
-              background: "#F0F6FF",
-              border: "1px solid #D9E4F0",
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <span
-                className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold"
-                style={{
-                  background:
-                    receitaEncontrada.status === "ativa"
-                      ? "#D1F3E9"
-                      : "#FEE4E2",
-                  color:
-                    receitaEncontrada.status === "ativa"
-                      ? "#145C35"
-                      : "#912F29",
-                }}
-              >
-                {receitaEncontrada.status
-                  ? receitaEncontrada.status.charAt(0).toUpperCase() +
-                    receitaEncontrada.status.slice(1)
-                  : "N/A"}
-              </span>
-              <span className="text-xs text-[#8FA8C4]">
-                Reg.:&nbsp;
-                <span className="font-mono font-semibold text-[#0F2242]">
-                  {receitaEncontrada.registroAssinatura || "N/A"}
-                </span>
-              </span>
-            </div>
-            <button
-              onClick={handleLimparReceita}
-              className="px-2.5 py-1 rounded-md text-xs font-semibold transition-all"
-              style={{
-                border: "1px solid #C8D9ED",
-                color: "#5C7A9B",
-                background: "transparent",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "#F0F4F8")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "transparent")
-              }
-            >
-              Nova busca
-            </button>
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-xl bg-[#F0FDF4] flex items-center justify-center border border-[#DCFCE7]">
+            <ShieldCheck className="h-5 w-5 text-[#166534]" />
           </div>
-
-          {/* Paciente + Médico/UBS lado a lado */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Paciente */}
-            <div
-              className="rounded-lg p-3 space-y-2.5"
-              style={{
-                background: "#F8FAFD",
-                border: "1px solid #E4EDF7",
-              }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                Paciente
-              </p>
-              <p className="text-sm font-semibold text-[#0F2242] leading-tight">
-                {receitaEncontrada.paciente?.nome || "N/A"}
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                {[
-                  {
-                    label: "CPF",
-                    value: receitaEncontrada.paciente?.cpf,
-                  },
-                  {
-                    label: "CNS",
-                    value: receitaEncontrada.paciente?.cns,
-                  },
-                  {
-                    label: "Nascimento",
-                    value: receitaEncontrada.paciente?.nascimento
-                      ? format(
-                          new Date(receitaEncontrada.paciente.nascimento),
-                          "dd/MM/yyyy",
-                          { locale: ptBR },
-                        )
-                      : null,
-                  },
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                      {label}
-                    </p>
-                    <p className="text-xs font-semibold text-[#0F2242]">
-                      {value || "N/A"}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Médico / UBS */}
-            <div
-              className="rounded-lg p-3 space-y-2.5"
-              style={{
-                background: "#F8FAFD",
-                border: "1px solid #E4EDF7",
-              }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                Médico / UBS
-              </p>
-              <p className="text-sm font-semibold text-[#0F2242] leading-tight">
-                {receitaEncontrada.funcionario?.nome || "N/A"}
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                    CRM
-                  </p>
-                  <p className="text-xs font-semibold text-[#0F2242]">
-                    {receitaEncontrada.funcionario?.crm || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                    UBS
-                  </p>
-                  <p className="text-xs font-semibold text-[#0F2242]">
-                    {receitaEncontrada.ubs?.nome || "N/A"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Observações gerais (se houver) */}
-          {receitaEncontrada.observacoes && (
-            <div
-              className="rounded-lg px-3 py-2.5"
-              style={{
-                background: "#F8FAFD",
-                border: "1px solid #E4EDF7",
-              }}
-            >
-              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4] mb-1">
-                Observações
-              </p>
-              <p className="text-xs text-[#1A2E4A]">
-                {receitaEncontrada.observacoes}
-              </p>
-            </div>
-          )}
-
-          {/* Medicamentos */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#0F2242] mb-2">
-              Medicamentos da Receita
+            <h2 className="text-xl font-bold text-[#0F2242] tracking-tight">
+              Validação de Prescrições
+            </h2>
+            <p className="text-xs text-[#8FA8C4]">
+              Consulte receitas digitais e realize a dispensação de medicamentos.
             </p>
+          </div>
+        </div>
 
-            {receitaEncontrada.itens && receitaEncontrada.itens.length > 0 ? (
-              <div
-                className="rounded-lg overflow-hidden"
-                style={{ border: "1px solid #E4EDF7" }}
+        {!receitaEncontrada ? (
+          <div className="max-w-2xl mx-auto py-10">
+            <form
+              onSubmit={handleBuscarReceita}
+              className="p-1.5 bg-[#F8FAFD] border border-[#E4EDF7] rounded-2xl flex flex-col sm:flex-row gap-2 shadow-sm"
+            >
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <FileText className="h-4 w-4 text-[#8FA8C4]" />
+                </div>
+                <input
+                  type="text"
+                  value={registroReceitaBusca}
+                  onChange={(e) => setRegistroReceitaBusca(e.target.value)}
+                  placeholder="Código de Registro (Ex: REG-SISC1A2B3C...)"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-[#D9E4F0] rounded-xl text-sm font-medium text-[#0F2242] outline-none focus:border-[#1A3F72] transition-all"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={buscarReceitaLoading || carregandoReceita}
+                className="px-6 py-3 bg-[#1A3F72] text-white rounded-xl text-sm font-bold shadow-lg shadow-[#1A3F72]/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
               >
-                {/* Cabeçalho da tabela */}
-                <div
-                  className="grid gap-2 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]"
-                  style={{
-                    gridTemplateColumns: "2fr 1fr 1fr 1.5fr auto",
-                    background: "#F8FAFD",
-                    borderBottom: "1px solid #E4EDF7",
-                  }}
+                {buscarReceitaLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
+                Consultar
+              </button>
+            </form>
+            <div className="mt-8 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 rounded-full bg-[#F8FAFD] flex items-center justify-center mb-4 border border-[#E4EDF7]">
+                <ShieldCheck className="h-8 w-8 text-[#C8D9ED]" />
+              </div>
+              <p className="text-sm text-[#8FA8C4] max-w-sm">
+                O código de registro garante a autenticidade da prescrição e evita dispensações duplicadas.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {/* Header do Resultado */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 p-4 bg-[#EBF2FB] rounded-2xl border border-[#C8D9ED]">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    receitaEncontrada.status === "ativa"
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                      : "bg-rose-50 text-rose-700 border-rose-100"
+                  }`}
                 >
-                  <span>Medicamento</span>
-                  <span>Dosagem</span>
-                  <span>Qtd.</span>
-                  <span>Posologia</span>
-                  <span>Status</span>
+                  {receitaEncontrada.status || "Pendente"}
+                </span>
+                <span className="text-xs font-bold text-[#3A5B82]">
+                  REGISTRO: <span className="font-mono text-[#1A3F72]">{receitaEncontrada.registroAssinatura || "N/A"}</span>
+                </span>
+              </div>
+              <button
+                onClick={handleLimparReceita}
+                className="px-4 py-1.5 rounded-xl text-xs font-bold text-[#5C7A9B] border border-[#C8D9ED] bg-white hover:bg-[#F8FAFD] transition-all"
+              >
+                Nova Consulta
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Coluna 1 e 2: Detalhes */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card Paciente */}
+                  <div className="p-5 bg-[#FAFCFF] border border-[#E4EDF7] rounded-2xl">
+                    <p className="text-[10px] font-black text-[#8FA8C4] uppercase tracking-widest mb-3">Identificação do Paciente</p>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-11 h-11 rounded-full bg-white border border-[#C8D9ED] flex items-center justify-center shadow-sm">
+                        <User className="h-5.5 w-5.5 text-[#1A3F72]" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-[#0F2242] truncate">{receitaEncontrada.paciente?.nome}</p>
+                        <p className="text-[10px] font-bold text-[#3A5B82] uppercase">CPF: {receitaEncontrada.paciente?.cpf}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Emissor */}
+                  <div className="p-5 bg-[#FAFCFF] border border-[#E4EDF7] rounded-2xl">
+                    <p className="text-[10px] font-black text-[#8FA8C4] uppercase tracking-widest mb-3">Unidade e Profissional</p>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-11 h-11 rounded-full bg-white border border-[#C8D9ED] flex items-center justify-center shadow-sm">
+                        <ShieldCheck className="h-5.5 w-5.5 text-[#145C35]" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-black text-[#0F2242] truncate">{receitaEncontrada.funcionario?.nome}</p>
+                        <p className="text-[10px] font-bold text-[#3A5B82] uppercase truncate">{receitaEncontrada.ubs?.nome || "UBS Local"}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="divide-y" style={{ borderColor: "#E4EDF7" }}>
-                  {receitaEncontrada.itens.map((item: any, idx: number) => {
-                    const foiDispensado =
-                      receitaEncontrada.dispensacoes?.some(
-                        (d: any) => d.medicamentoFornecido === item.medicamento,
-                      ) || false;
-
-                    return (
-                      <div key={idx}>
-                        <div
-                          className="grid gap-2 items-center px-3 py-2.5 bg-white"
-                          style={{
-                            gridTemplateColumns: "2fr 1fr 1fr 1.5fr auto",
-                          }}
-                        >
-                          <p className="text-xs font-semibold text-[#0F2242] leading-tight">
-                            {item.medicamento || "N/A"}
-                          </p>
-                          <p className="text-xs text-[#3A5B82]">{item.dosagem || "—"}</p>
-                          <p className="text-xs text-[#3A5B82]">{item.quantidade || "—"}</p>
-                          <p className="text-xs text-[#3A5B82] leading-tight">
-                            {item.posologia || "—"}
-                          </p>
-                          <span
-                            className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
-                            style={{
-                              background: foiDispensado ? "#D1F3E9" : "#FEE4E2",
-                              color: foiDispensado ? "#145C35" : "#912F29",
-                            }}
-                          >
-                            {foiDispensado ? "✓ Dispensado" : "⧖ Pendente"}
-                          </span>
-                        </div>
-
-                        {/* Observações do item (linha expandida, se houver) */}
-                        {item.observacoes && (
-                          <div
-                            className="px-3 pb-2 -mt-1"
-                            style={{ background: "#FAFCFF" }}
-                          >
-                            <span className="text-[9px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]">
-                              Obs.:{" "}
-                            </span>
-                            <span className="text-[10px] text-[#5C7A9B]">
-                              {item.observacoes}
+                {/* Lista de Medicamentos */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-[#0F2242] uppercase tracking-widest flex items-center gap-2 ml-1">
+                    <Pill className="h-4 w-4 text-[#1A3F72]" /> Itens da Prescrição
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {receitaEncontrada.itens?.map((item: any, idx: number) => {
+                      const foiDispensado = receitaEncontrada.dispensacoes?.some(
+                        (d: any) => d.medicamentoFornecido === item.medicamento
+                      );
+                      return (
+                        <div key={idx} className="p-4 bg-white border border-[#E4EDF7] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#A8C4E0] transition-all group">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${foiDispensado ? 'bg-emerald-50 border-emerald-100' : 'bg-[#F8FAFD] border-[#E4EDF7] group-hover:bg-[#EBF2FB]'}`}>
+                              <Package className={`h-5 w-5 ${foiDispensado ? 'text-emerald-600' : 'text-[#3A5B82]'}`} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-[#0F2242] leading-tight">{item.medicamento}</p>
+                              <p className="text-[11px] font-medium text-[#5C7A9B] mt-0.5">{item.dosagem} • {item.posologia}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-3 sm:pt-0">
+                            <div className="text-right">
+                              <p className="text-xs font-black text-[#1A3F72]">{item.quantidade} un</p>
+                              <p className="text-[9px] font-bold text-[#8FA8C4] uppercase">Quantidade</p>
+                            </div>
+                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${
+                              foiDispensado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                            }`}>
+                              {foiDispensado ? "Dispensado" : "Pendente"}
                             </span>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            ) : (
-              <p className="text-xs text-[#8FA8C4] py-3 text-center">
-                Nenhum medicamento encontrado.
-              </p>
-            )}
-          </div>
 
-          {/* Histórico de Dispensações */}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#0F2242] mb-2">
-              Histórico de Dispensações
-            </p>
-
-            {receitaEncontrada.dispensacoes &&
-            receitaEncontrada.dispensacoes.length > 0 ? (
-              <div
-                className="rounded-lg overflow-hidden"
-                style={{ border: "1px solid #E4EDF7" }}
-              >
-                <div
-                  className="grid gap-2 px-3 py-2 text-[9px] font-bold uppercase tracking-[0.08em] text-[#8FA8C4]"
-                  style={{
-                    gridTemplateColumns: "1.5fr 1.2fr 0.8fr 0.9fr 0.8fr",
-                    background: "#F8FAFD",
-                    borderBottom: "1px solid #E4EDF7",
-                  }}
-                >
-                  <span>Farmácia</span>
-                  <span>Medicamento</span>
-                  <span>Qtd.</span>
-                  <span>Status</span>
-                  <span>Data</span>
+              {/* Coluna 3: Ações e Histórico */}
+              <div className="space-y-6">
+                {/* Ações */}
+                <div className="p-5 bg-[#F8FAFD] border border-[#C8D9ED] rounded-2xl shadow-sm">
+                  <p className="text-[10px] font-black text-[#8FA8C4] uppercase tracking-widest mb-4">Gerenciamento</p>
+                  <div className="space-y-3">
+                    {receitaEncontrada.itens?.some((m: any) => m.status === "pendente") ? (
+                      <button
+                        onClick={handleValidarDispensacao}
+                        disabled={isDispensando || isValidando}
+                        className="w-full py-3.5 bg-[#145C35] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-100 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        {isValidando ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4" />
+                        )}
+                        Validar e Dispensar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowDetalhesDispensacaoModal(true)}
+                        className="w-full py-3.5 bg-[#1A3F72] text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-lg shadow-[#1A3F72]/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                      >
+                        <FileText className="h-4 w-4" />
+                        Detalhes da Dispensação
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="divide-y" style={{ borderColor: "#E4EDF7" }}>
-                  {receitaEncontrada.dispensacoes.map(
-                    (dispensacao: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className="grid gap-2 items-center px-3 py-2 bg-white"
-                        style={{
-                          gridTemplateColumns: "1.5fr 1.2fr 0.8fr 0.9fr 0.8fr",
-                        }}
-                      >
-                        <p className="text-xs font-semibold text-[#0F2242] truncate">
-                          {dispensacao.farmaciaResponsavel ||
-                            dispensacao.farmacia?.nome ||
-                            "N/A"}
-                        </p>
-                        <p className="text-xs text-[#3A5B82] truncate">
-                          {dispensacao.medicamentoFornecido ||
-                            receitaEncontrada.medicamento ||
-                            "N/A"}
-                        </p>
-                        <p className="text-xs text-[#3A5B82]">
-                          {dispensacao.quantidadeDispensada || "—"}
-                        </p>
-                        <span
-                          className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold"
-                          style={{
-                            background:
-                              dispensacao.statusDispensacao === "completa"
-                                ? "#D1F3E9"
-                                : "#FFF3CD",
-                            color:
-                              dispensacao.statusDispensacao === "completa"
-                                ? "#145C35"
-                                : "#856404",
-                          }}
-                        >
-                          {dispensacao.statusDispensacao || "N/A"}
-                        </span>
-                        <p className="text-[10px] text-[#8FA8C4]">
-                          {dispensacao.dataDispensacao
-                            ? format(
-                                new Date(dispensacao.dataDispensacao),
-                                "dd/MM/yy",
-                                { locale: ptBR },
-                              )
-                            : dispensacao.createdAt
-                              ? format(
-                                  new Date(dispensacao.createdAt),
-                                  "dd/MM/yy",
-                                  { locale: ptBR },
-                                )
-                              : "N/A"}
-                        </p>
-                      </div>
-                    ),
+                {/* Mini Histórico */}
+                <div className="p-5 bg-white border border-[#E4EDF7] rounded-2xl">
+                  <p className="text-[10px] font-black text-[#8FA8C4] uppercase tracking-widest mb-4">Últimas Dispensações</p>
+                  {receitaEncontrada.dispensacoes && receitaEncontrada.dispensacoes.length > 0 ? (
+                    <div className="space-y-3">
+                      {receitaEncontrada.dispensacoes.slice(0, 3).map((disp: any, idx: number) => (
+                        <div key={idx} className="pb-3 border-b border-[#F4F8FC] last:border-0 last:pb-0">
+                          <p className="text-xs font-bold text-[#0F2242] truncate">{disp.farmaciaResponsavel || "Unidade Local"}</p>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-[10px] text-[#8FA8C4]">{format(new Date(disp.dataDispensacao || disp.createdAt), "dd/MM/yy")}</span>
+                            <span className="text-[10px] font-bold text-emerald-600">✓ Concluída</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Clock className="h-6 w-6 text-[#C8D9ED] mx-auto mb-2" />
+                      <p className="text-[10px] font-bold text-[#8FA8C4] uppercase">Nenhum registro</p>
+                    </div>
                   )}
                 </div>
               </div>
-            ) : (
-              <div
-                className="flex items-center gap-2 py-3 px-3 rounded-lg"
-                style={{
-                  background: "#F8FAFD",
-                  border: "1px solid #E4EDF7",
-                }}
-              >
-                <Package className="h-4 w-4 text-[#C8D9ED] shrink-0" />
-                <p className="text-xs text-[#8FA8C4]">
-                  Nenhuma dispensação registrada para esta receita.
-                </p>
-              </div>
-            )}
+            </div>
           </div>
-
-          {/* Ação */}
-          <div className="flex justify-end pt-1">
-            {receitaEncontrada.itens &&
-            receitaEncontrada.itens.filter((m: any) => m.status === "dispensado")
-              .length === receitaEncontrada.itens.length ? (
-              // Todos os medicamentos foram dispensados
-              <button
-                onClick={() => setShowDetalhesDispensacaoModal(true)}
-                className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all flex items-center gap-2"
-                style={{ background: "#1A3F72" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#0F2242")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#1A3F72")}
-              >
-                <Package className="h-3.5 w-3.5" />
-                Ver Detalhes das Dispensações
-              </button>
-            ) : receitaEncontrada.itens &&
-              receitaEncontrada.itens.filter((m: any) => m.status === "pendente")
-                .length > 0 ? (
-              // Existem medicamentos pendentes
-              <button
-                onClick={handleValidarDispensacao}
-                disabled={isDispensando || isValidando}
-                className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-50 flex items-center gap-2"
-                style={{ background: "#00A651" }}
-                onMouseEnter={(e) =>
-                  !isDispensando && (e.currentTarget.style.background = "#007A3F")
-                }
-                onMouseLeave={(e) => (e.currentTarget.style.background = "#00A651")}
-              >
-                <Package className="h-3.5 w-3.5" />
-                Dispensar Receita
-              </button>
-            ) : null}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
