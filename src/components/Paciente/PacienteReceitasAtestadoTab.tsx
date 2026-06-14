@@ -81,7 +81,10 @@ export const PacienteReceitasAtestadoTab: React.FC<PacienteReceitasAtestadoTabPr
   const formatarData = (data: any) => {
     if (!data) return "—";
     try {
-      return format(new Date(data), "dd/MM/yyyy", { locale: ptBR });
+      const date = new Date(data);
+      // Compensa o fuso horário para exibir a data correta (evita o problema de "dia anterior")
+      const adjustedDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+      return format(adjustedDate, "dd/MM/yyyy", { locale: ptBR });
     } catch (e) {
       return "—";
     }
