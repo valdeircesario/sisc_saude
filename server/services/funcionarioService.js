@@ -1,48 +1,127 @@
 import { prisma } from "../config/database.js";
 
 export const registrarHistoricoMedico = async (funcionarioId, data) => {
-  const { pacienteId, consultaId, laudo, doenca, diagnostico, medicacao, observacoes, dataConsulta } = data;
+  const { 
+    pacienteId, 
+    consultaId, 
+    laudo, 
+    doenca, 
+    diagnostico, 
+    medicacao, 
+    observacoes, 
+    dataConsulta,
+    receita,
+    atestado
+  } = data;
 
   if (!pacienteId || !laudo || !diagnostico || !dataConsulta) {
     throw { status: 400, data: { message: "Campos obrigatórios: pacienteId, laudo, diagnostico e dataConsulta." } };
   }
 
-  if (consultaId) {
-    const historicoExistente = await prisma.historicoMedico.findUnique({
-      where: { consultaId },
+  const result = await prisma.$transaction(async (tx) => {
+    if (consultaId) {
+      const historicoExistente = await tx.historicoMedico.findUnique({
+        where: { consultaId },
+      });
+
+      if (historicoExistente) {
+        throw { status: 409, data: { message: "Esta consulta já possui um histórico médico registrado." } };
+      }
+    }
+
+    const novoHistorico = await tx.historicoMedico.create({
+      data: {
+        pacienteId,
+        funcionarioId,
+        consultaId,
+        laudo,
+        doenca,
+        diagnostico,
+        medicacao,
+        observacoes,
+        dataConsulta: new Date(dataConsulta),
+      },
     });
 
-    if (historicoExistente) {
-      throw { status: 409, data: { message: "Esta consulta já possui um histórico médico registrado." } };
-    }
-  }
+    const funcionario = await tx.funcionario.findUnique({
+      where: { id: funcionarioId },
+      select: { ubsId: true },
+    });
 
-  const novoHistorico = await prisma.historicoMedico.create({
-    data: {
-      pacienteId,
-      funcionarioId,
-      consultaId,
-      laudo,
-      doenca,
-      diagnostico,
-      medicacao,
-      observacoes,
-      dataConsulta: new Date(dataConsulta),
-    },
+    if (!funcionario) {
+      throw { status: 404, data: { message: "Funcionário não encontrado." } };
+    }
+
+    // Registrar Receita se fornecida
+    if (receita && consultaId) {
+      const { descricao, cid, medicamentos = [], observacoes: obsReceita, dataEmissao } = receita;
+      if (descricao && cid && medicamentos.length > 0) {
+        const novaReceita = await tx.receitaMedica.create({
+          data: {
+            pacienteId,
+            funcionarioId,
+            ubsId: funcionario.ubsId,
+            consultaId,
+            descricao,
+            cid,
+            medicamento: medicamentos[0].medicamento || "MULTIPLOS",
+            dosagem: medicamentos[0].dosagem || "",
+            quantidade: medicamentos[0].quantidade?.toString() || "1",
+            status: "ativo",
+            observacoes: obsReceita,
+            dataEmissao: dataEmissao ? new Date(dataEmissao) : new Date(),
+          },
+        });
+
+        await tx.receitaMedicamento.createMany({
+          data: medicamentos.map((item) => ({
+            receitaId: novaReceita.id,
+            medicamento: item.medicamento,
+            dosagem: item.dosagem,
+            quantidade: Number(item.quantidade || 1),
+            posologia: item.posologia || null,
+            observacoes: item.observacoes || null,
+            status: "pendente",
+          })),
+        });
+      }
+    }
+
+    // Registrar Atestado se fornecido
+    if (atestado && consultaId) {
+      const { descricao, cid, diasRepouso, observacoes: obsAtestado, dataEmissao } = atestado;
+      if (descricao && cid && diasRepouso) {
+        await tx.atestadoMedico.create({
+          data: {
+            pacienteId,
+            funcionarioId,
+            ubsId: funcionario.ubsId,
+            consultaId,
+            descricao,
+            cid,
+            diasRepouso: Number(diasRepouso),
+            observacoes: obsAtestado,
+            dataEmissao: dataEmissao ? new Date(dataEmissao) : new Date(),
+          },
+        });
+      }
+    }
+
+    if (consultaId) {
+      try {
+        await tx.consulta.update({
+          where: { id: consultaId },
+          data: { status: "realizado" },
+        });
+      } catch (err) {
+        console.error("Erro ao atualizar status da consulta:", err);
+      }
+    }
+
+    return novoHistorico;
   });
 
-  if (consultaId) {
-    try {
-      await prisma.consulta.update({
-        where: { id: consultaId },
-        data: { status: "realizado" },
-      });
-    } catch (err) {
-      console.error("Erro ao atualizar status da consulta:", err);
-    }
-  }
-
-  return novoHistorico;
+  return result;
 };
 
 export const registrarVacina = async (funcionarioId, data) => {
@@ -598,6 +677,12 @@ export const listarMinhasConsultas = async (funcionarioId) => {
       paciente: { select: { id: true, nome: true, cpf: true, cns: true, telefone: true, email: true } },
       ubs: { select: { id: true, nome: true, endereco: true } },
       historicoMedico: { select: { id: true, diagnostico: true, doenca: true, laudo: true, medicacao: true, observacoes: true, dataConsulta: true } },
+      receita: {
+        include: {
+          itens: { orderBy: { createdAt: "asc" } }
+        }
+      },
+      atestado: true
     },
     orderBy: { createdAt: "desc" },
   });

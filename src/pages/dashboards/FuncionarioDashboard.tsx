@@ -53,6 +53,10 @@ const FuncionarioDashboard: React.FC = () => {
     setAdministracaoData,
     handleAdministrarSubmit,
     isAdministrandoMed,
+    cnsBuscaTerm,
+    setCnsBuscaTerm,
+    isBuscandoPacienteCns,
+    buscarPacientePorCns,
     historicoBuscaResultado,
     setShowBuscaHistoricoModal,
     abrirDetalheHistorico,
@@ -100,6 +104,11 @@ const FuncionarioDashboard: React.FC = () => {
     handleRegistrarHistorico,
     formHistorico,
     setFormHistorico,
+    toggleIncluirReceita,
+    toggleIncluirAtestado,
+    adicionarMedicamentoEvolucao,
+    removerMedicamentoEvolucao,
+    atualizarMedicamentoEvolucao,
     loadingHistorico,
     selectedConsulta,
     setSelectedConsulta,
@@ -257,9 +266,7 @@ const FuncionarioDashboard: React.FC = () => {
             )}
 
             <FuncionarioMedicationModals
-              showAdministradorMedicamentoModal={
-                showAdministradorMedicamentoModal
-              }
+              showAdministradorMedicamentoModal={showAdministradorMedicamentoModal}
               selectedAdminPaciente={selectedAdminPaciente}
               resetAdministracaoForm={resetAdministracaoForm}
               medSearchTerm={medSearchTerm}
@@ -278,6 +285,10 @@ const FuncionarioDashboard: React.FC = () => {
               setAdministracaoData={setAdministracaoData}
               handleAdministrarSubmit={handleAdministrarSubmit}
               isAdministrandoMed={isAdministrandoMed}
+              cnsBuscaTerm={cnsBuscaTerm}
+              setCnsBuscaTerm={setCnsBuscaTerm}
+              isBuscandoPacienteCns={isBuscandoPacienteCns}
+              buscarPacientePorCns={buscarPacientePorCns}
             />
 
             <FuncionarioConsultaModals
@@ -293,6 +304,11 @@ const FuncionarioDashboard: React.FC = () => {
               handleRegistrarHistorico={handleRegistrarHistorico}
               formHistorico={formHistorico}
               setFormHistorico={setFormHistorico}
+              toggleIncluirReceita={toggleIncluirReceita}
+              toggleIncluirAtestado={toggleIncluirAtestado}
+              adicionarMedicamentoEvolucao={adicionarMedicamentoEvolucao}
+              removerMedicamentoEvolucao={removerMedicamentoEvolucao}
+              atualizarMedicamentoEvolucao={atualizarMedicamentoEvolucao}
               isRegistrandoHistorico={loadingHistorico}
             />
 

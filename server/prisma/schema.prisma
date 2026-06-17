@@ -369,6 +369,9 @@ model ReceitaMedica {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  consultaId      String?  @unique
+  consulta        Consulta? @relation(fields: [consultaId], references: [id])
+
   paciente    Paciente    @relation(fields: [pacienteId], references: [id])
   funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
   ubs         UBS         @relation(fields: [ubsId], references: [id])
@@ -419,6 +422,9 @@ model AtestadoMedico {
   assinaturaData  DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  consultaId      String?  @unique
+  consulta        Consulta? @relation(fields: [consultaId], references: [id])
 
   paciente    Paciente    @relation(fields: [pacienteId], references: [id])
   funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
@@ -774,6 +780,8 @@ model Consulta {
   ubs         UBS          @relation(fields: [ubsId], references: [id])
   funcionario Funcionario? @relation(fields: [funcionarioId], references: [id])
   historicoMedico HistoricoMedico?
+  receita         ReceitaMedica?
+  atestado        AtestadoMedico?
 
   @@map("consultas")
 }

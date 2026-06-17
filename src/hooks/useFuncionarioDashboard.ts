@@ -559,9 +559,77 @@ export const useFuncionarioDashboard = () => {
     medicacao: "",
     observacoes: "",
     dataConsulta: format(new Date(), "yyyy-MM-dd"),
+    incluirReceita: false,
+    receita: {
+      descricao: "",
+      cid: "",
+      medicamentos: [{ medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }],
+      observacoes: "",
+    },
+    incluirAtestado: false,
+    atestado: {
+      descricao: "",
+      cid: "",
+      diasRepouso: "",
+      observacoes: "",
+    }
   });
 
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+
+  const toggleIncluirReceita = () => {
+    setFormHistorico(prev => ({
+      ...prev,
+      incluirReceita: !prev.incluirReceita,
+      receita: {
+        ...prev.receita,
+        cid: !prev.incluirReceita ? prev.doenca : prev.receita.cid
+      }
+    }));
+  };
+
+  const toggleIncluirAtestado = () => {
+    setFormHistorico(prev => ({
+      ...prev,
+      incluirAtestado: !prev.incluirAtestado,
+      atestado: {
+        ...prev.atestado,
+        cid: !prev.incluirAtestado ? prev.doenca : prev.atestado.cid
+      }
+    }));
+  };
+
+  // Handlers para medicamentos no modal de evolução
+  const adicionarMedicamentoEvolucao = () => {
+    setFormHistorico(prev => ({
+      ...prev,
+      receita: {
+        ...prev.receita,
+        medicamentos: [...prev.receita.medicamentos, { medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }]
+      }
+    }));
+  };
+
+  const removerMedicamentoEvolucao = (index: number) => {
+    setFormHistorico(prev => ({
+      ...prev,
+      receita: {
+        ...prev.receita,
+        medicamentos: prev.receita.medicamentos.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const atualizarMedicamentoEvolucao = (index: number, campo: string, valor: string) => {
+    setFormHistorico(prev => {
+      const novosMeds = [...prev.receita.medicamentos];
+      novosMeds[index] = { ...novosMeds[index], [campo]: valor };
+      return {
+        ...prev,
+        receita: { ...prev.receita, medicamentos: novosMeds }
+      };
+    });
+  };
 
   // Handlers
   const handleBuscarReceita = (e: React.FormEvent) => {
@@ -771,6 +839,20 @@ export const useFuncionarioDashboard = () => {
         medicacao: "",
         observacoes: "",
         dataConsulta: format(new Date(), "yyyy-MM-dd"),
+        incluirReceita: false,
+        receita: {
+          descricao: "",
+          cid: "",
+          medicamentos: [{ medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }],
+          observacoes: "",
+        },
+        incluirAtestado: false,
+        atestado: {
+          descricao: "",
+          cid: "",
+          diasRepouso: "",
+          observacoes: "",
+        }
       });
     } catch (error: any) {
       toast.error(
@@ -981,6 +1063,11 @@ export const useFuncionarioDashboard = () => {
     handleRegistrarHistorico,
     formHistorico,
     setFormHistorico,
+    toggleIncluirReceita,
+    toggleIncluirAtestado,
+    adicionarMedicamentoEvolucao,
+    removerMedicamentoEvolucao,
+    atualizarMedicamentoEvolucao,
     loadingHistorico,
     selectedConsulta,
     setSelectedConsulta,
