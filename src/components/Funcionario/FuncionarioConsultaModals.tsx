@@ -18,8 +18,36 @@ interface ConsultaModalsProps {
   toggleIncluirAtestado: () => void;
   adicionarMedicamentoEvolucao: () => void;
   removerMedicamentoEvolucao: (index: number) => void;
-  atualizarMedicamentoEvolucao: (index: number, campo: string, valor: string) => void;
+  atualizarMedicamentoEvolucao: (
+    index: number,
+    campo: string,
+    valor: string,
+  ) => void;
   isRegistrandoHistorico: boolean;
+
+  // Retorno (Agendamento) 
+  formRetorno: any;
+  setFormRetorno: (val: any) => void;
+  modalRetorno: { aberto: boolean; consulta: any };
+  setModalRetorno: (modal: { aberto: boolean; consulta: any }) => void;
+  handleAgendarRetorno: (e: React.FormEvent) => void;
+  handleCancelarRetorno: (id: string) => void;
+
+  // Evolução de Retorno (Exclusivo - Atendimento do Retorno)
+  modalEvolucaoRetorno: { aberto: boolean; consulta: any };
+  setModalEvolucaoRetorno: (modal: { aberto: boolean; consulta: any }) => void;
+  formEvolucaoRetorno: any;
+  setFormEvolucaoRetorno: (val: any) => void;
+  toggleIncluirReceitaRetorno: () => void;
+  toggleIncluirAtestadoRetorno: () => void;
+  adicionarMedicamentoEvolucaoRetorno: () => void;
+  removerMedicamentoEvolucaoRetorno: (index: number) => void;
+  atualizarMedicamentoEvolucaoRetorno: (
+    index: number,
+    campo: string,
+    valor: string,
+  ) => void;
+  handleRegistrarEvolucaoRetorno: (e: React.FormEvent) => void;
 }
 
 const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
@@ -41,7 +69,25 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
   removerMedicamentoEvolucao,
   atualizarMedicamentoEvolucao,
   isRegistrandoHistorico,
+  formRetorno,
+  setFormRetorno,
+  modalRetorno,
+  setModalRetorno,
+  handleAgendarRetorno,
+  handleCancelarRetorno,
+  modalEvolucaoRetorno,
+  setModalEvolucaoRetorno,
+  formEvolucaoRetorno,
+  setFormEvolucaoRetorno,
+  toggleIncluirReceitaRetorno,
+  toggleIncluirAtestadoRetorno,
+  adicionarMedicamentoEvolucaoRetorno,
+  removerMedicamentoEvolucaoRetorno,
+  atualizarMedicamentoEvolucaoRetorno,
+  handleRegistrarEvolucaoRetorno,
 }) => {
+  const [confirmandoCancelamento, setConfirmandoCancelamento] = React.useState(false);
+
   const ModalHeader = ({ title, subtitle, icon: Icon, colorClass, onClose }: any) => (
     <div className="flex items-center justify-between px-6 py-4 border-b border-[#EEF2F7]">
       <div className="flex items-center gap-3">
@@ -140,35 +186,41 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
                   <p className="text-base text-[#1A2E4A] font-bold leading-relaxed italic opacity-90">"{selectedConsulta.motivo || "Não informado"}"</p>
                 </div>
 
-                {selectedConsulta.historicoMedico && (
+                {(selectedConsulta.historicoMedico || selectedConsulta.laudo) && (
                   <div className="p-8 bg-emerald-50/40 border-2 border-emerald-100 rounded-[2.5rem] space-y-7 shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className="p-2.5 bg-emerald-100 rounded-xl">
                         <ClipboardCheck className="h-6 w-6 text-emerald-700" />
                       </div>
-                      <h4 className="text-[13px] font-black text-emerald-800 uppercase tracking-widest">Evolução do Atendimento</h4>
+                      <h4 className="text-[13px] font-black text-emerald-800 uppercase tracking-widest">
+                        {selectedConsulta.tipo === "retorno" ? "Evolução do Retorno" : "Evolução do Atendimento"}
+                      </h4>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1">
                         <p className="text-[10px] font-black text-emerald-700/70 uppercase mb-2 ml-1">Diagnóstico (CID)</p>
-                        <p className="text-base font-black text-[#0F2242] bg-white px-5 py-3 rounded-2xl border border-emerald-100 shadow-sm">{selectedConsulta.historicoMedico.diagnostico || "—"}</p>
+                        <p className="text-base font-black text-[#0F2242] bg-white px-5 py-3 rounded-2xl border border-emerald-100 shadow-sm">
+                          {selectedConsulta.historicoMedico?.diagnostico || selectedConsulta.diagnostico || "—"}
+                        </p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[10px] font-black text-emerald-700/70 uppercase mb-2 ml-1">Doença / CID Interno</p>
-                        <p className="text-base font-black text-[#0F2242] bg-white px-5 py-3 rounded-2xl border border-emerald-100 shadow-sm">{getConsultaDisease(selectedConsulta)}</p>
+                        <p className="text-base font-black text-[#0F2242] bg-white px-5 py-3 rounded-2xl border border-emerald-100 shadow-sm">
+                          {selectedConsulta.historicoMedico ? getConsultaDisease(selectedConsulta) : (selectedConsulta.doenca || "—")}
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-1">
                       <p className="text-[10px] font-black text-emerald-700/70 uppercase mb-2 ml-1">Conduta Clínica e Prontuário</p>
                       <div className="text-base text-[#0F2242] font-bold leading-relaxed bg-white p-6 rounded-3xl border border-emerald-100 shadow-sm whitespace-pre-wrap">
-                        {selectedConsulta.historicoMedico.laudo}
+                        {selectedConsulta.historicoMedico?.laudo || selectedConsulta.laudo}
                       </div>
                     </div>
-                    {selectedConsulta.historicoMedico.observacoes && (
+                    {(selectedConsulta.historicoMedico?.observacoes || selectedConsulta.observacao) && (
                       <div className="space-y-1">
                         <p className="text-[10px] font-black text-emerald-700/70 uppercase mb-2 ml-1">Observações Gerais</p>
                         <p className="text-sm text-[#4A5568] font-bold bg-white/60 px-5 py-3 rounded-2xl border border-emerald-100/50 italic">
-                          {selectedConsulta.historicoMedico.observacoes}
+                          {selectedConsulta.historicoMedico?.observacoes || selectedConsulta.observacao}
                         </p>
                       </div>
                     )}
@@ -185,7 +237,6 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
                         </div>
                         <div>
                           <h4 className="text-[13px] font-black text-blue-900 uppercase tracking-widest">Receita Médica Digital</h4>
-                          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">ID: {selectedConsulta.receita.id.slice(-8).toUpperCase()}</p>
                         </div>
                       </div>
                       <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
@@ -285,7 +336,29 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
             </div>
 
             <div className="p-8 bg-[#F8FAFD] border-t border-[#E4EDF7] flex justify-end gap-4">
-              {(selectedConsulta.status === "agendada" || selectedConsulta.status === "agendado") && !selectedConsulta.historicoMedico && (
+              {selectedConsulta.status === "realizado" && selectedConsulta.tipo !== "retorno" && (
+                <button
+                  onClick={() => {
+                    setShowConsultaDetailsModal(false);
+                    setModalRetorno({
+                      aberto: true,
+                      consulta: selectedConsulta,
+                    });
+                    setFormRetorno((prev: any) => ({
+                      ...prev,
+                      diagnostico: selectedConsulta.historicoMedico?.diagnostico || "",
+                      motivo: `Retorno de ${selectedConsulta.especialidade}`
+                    }));
+                  }}
+                  className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 hover:scale-[1.03] active:scale-[0.97] transition-all flex items-center gap-2"
+                >
+                  <Clock className="h-4 w-4" /> Marcar Retorno
+                </button>
+              )}
+
+              {(selectedConsulta.status === "agendada" || selectedConsulta.status === "agendado") && 
+               !selectedConsulta.historicoMedico && 
+               selectedConsulta.tipo !== "retorno" && (
                 <button
                   onClick={() => {
                     setShowConsultaDetailsModal(false);
@@ -309,6 +382,136 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
                 Fechar Detalhes
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL AGENDAR/EDITAR RETORNO ══ */}
+      {modalRetorno.aberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A192F]/70 backdrop-blur-md">
+          <div className="w-full max-w-3xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-white/20">
+            <ModalHeader 
+              title={modalRetorno.consulta?.id?.startsWith("ret-") ? "Editar Agendamento de Retorno" : "Agendar Retorno / Acompanhamento"} 
+              subtitle={`Paciente: ${modalRetorno.consulta?.paciente?.nome}`} 
+              icon={Clock} 
+              colorClass="bg-[#EBF2FB] text-[#1A3F72] border-[#C8D9ED]"
+              onClose={() => setModalRetorno({ aberto: false, consulta: null })}
+            />
+            
+            <form onSubmit={handleAgendarRetorno} className="p-8 space-y-6">
+              <div className="p-6 bg-blue-50/30 border border-blue-100 rounded-3xl space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Data e Hora do Retorno *</Label>
+                    <input
+                      type="datetime-local"
+                      required
+                      value={formRetorno.dataRetorno}
+                      onChange={(e) => setFormRetorno((prev: any) => ({ ...prev, dataRetorno: e.target.value }))}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-blue-600 transition-all shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Motivo do Retorno *</Label>
+                    <input
+                      required
+                      value={formRetorno.motivo}
+                      onChange={(e) => setFormRetorno((prev: any) => ({ ...prev, motivo: e.target.value }))}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-blue-600 transition-all shadow-sm"
+                      placeholder="Ex: Acompanhamento de exames"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Diagnóstico Prévio (Sincronizado)</Label>
+                  <input
+                    value={formRetorno.diagnostico}
+                    onChange={(e) => setFormRetorno((prev: any) => ({ ...prev, diagnostico: e.target.value }))}
+                    className="w-full px-5 py-3.5 bg-white border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-blue-600 transition-all shadow-sm"
+                    placeholder="Diagnóstico identificado na consulta anterior"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Observações para o Retorno</Label>
+                  <textarea
+                    rows={3}
+                    value={formRetorno.observacao}
+                    onChange={(e) => setFormRetorno((prev: any) => ({ ...prev, observacao: e.target.value }))}
+                    className="w-full px-5 py-3.5 bg-white border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-blue-600 transition-all resize-none shadow-sm"
+                    placeholder="Instruções para o dia do retorno..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {confirmandoCancelamento ? (
+                  <div className="p-6 bg-red-50 border-2 border-red-100 rounded-3xl animate-in zoom-in-95 duration-300">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-red-100 rounded-lg">
+                        <AlertCircle className="h-6 w-6 text-red-600" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-red-900 uppercase tracking-tight">Confirmar Cancelamento</h4>
+                        <p className="text-[11px] text-red-700 font-bold">Esta ação é permanente e finalizará o fluxo deste retorno.</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-red-800 mb-6 leading-relaxed">
+                      Tem certeza que deseja cancelar este agendamento? O paciente será notificado e este horário ficará disponível na agenda.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmandoCancelamento(false)}
+                        className="flex-1 px-4 py-3 bg-white text-red-600 border border-red-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-50 transition-all"
+                      >
+                        Não, manter agendamento
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleCancelarRetorno(modalRetorno.consulta.id);
+                          setConfirmandoCancelamento(false);
+                        }}
+                        className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-red-200 hover:bg-red-700 transition-all"
+                      >
+                        Sim, cancelar agora
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setModalRetorno({ aberto: false, consulta: null })}
+                        className="flex-1 px-8 py-4 bg-white text-[#4A5568] border-2 border-[#C8D9ED] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-[#F8FAFD] transition-all"
+                      >
+                        Voltar
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-[2] px-8 py-4 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                      >
+                        <Save className="h-5 w-5" /> 
+                        {modalRetorno.consulta?.id?.startsWith("ret-") ? "Salvar Alterações" : "Confirmar Agendamento"}
+                      </button>
+                    </div>
+
+                    {modalRetorno.consulta?.id?.startsWith("ret-") && (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmandoCancelamento(true)}
+                        className="w-full px-8 py-3 bg-red-50 text-red-600 border-2 border-red-100 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" /> Cancelar este Agendamento Permanentemente
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -545,16 +748,6 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
                               />
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label>Instruções / Observações por Item</Label>
-                            <textarea
-                              value={med.observacoes}
-                              onChange={(e) => atualizarMedicamentoEvolucao(index, "observacoes", e.target.value)}
-                              rows={2}
-                              className="w-full px-4 py-3 bg-[#F8FAFD] border-2 border-[#E4EDF7] rounded-xl text-sm font-bold text-[#0F2242] outline-none focus:border-blue-400 resize-none placeholder:text-[#A4BCCC]"
-                              placeholder="Instruções específicas: Ex: Tomar em jejum, Diluir em 200ml de água..."
-                            />
-                          </div>
                         </div>
                       ))}
                     </div>
@@ -601,34 +794,6 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
                       />
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label>CID Principal *</Label>
-                      <input
-                        required={formHistorico.incluirAtestado}
-                        value={formHistorico.atestado.cid}
-                        onChange={(e) => setFormHistorico((prev: any) => ({
-                          ...prev,
-                          atestado: { ...prev.atestado, cid: e.target.value }
-                        }))}
-                        className="w-full px-5 py-3.5 bg-white border-2 border-[#DDD6FE] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-purple-600 transition-all shadow-sm"
-                        placeholder="Ex: Z76.3"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Observações do Atestado</Label>
-                      <input
-                        value={formHistorico.atestado.observacoes}
-                        onChange={(e) => setFormHistorico((prev: any) => ({
-                          ...prev,
-                          atestado: { ...prev.atestado, observacoes: e.target.value }
-                        }))}
-                        className="w-full px-5 py-3.5 bg-white border-2 border-[#DDD6FE] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-purple-600 transition-all shadow-sm"
-                        placeholder="Detalhes opcionais para o empregador..."
-                      />
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -656,6 +821,190 @@ const FuncionarioConsultaModals: React.FC<ConsultaModalsProps> = ({
                       Finalizar e Salvar Prontuário
                     </>
                   )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ══ MODAL REGISTRAR EVOLUÇÃO DE RETORNO (EXCLUSIVO) ══ */}
+      {modalEvolucaoRetorno.aberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0A192F]/70 backdrop-blur-md">
+          <div className="w-full max-w-5xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[95vh] border border-white/20">
+            <ModalHeader 
+              title="Registrar Atendimento de Retorno" 
+              subtitle={`Paciente: ${modalEvolucaoRetorno.consulta?.paciente?.nome}`} 
+              icon={Activity} 
+              colorClass="bg-[#EBF2FB] text-[#1A3F72] border-[#C8D9ED]"
+              onClose={() => setModalEvolucaoRetorno({ aberto: false, consulta: null })}
+            />
+            
+            <form onSubmit={handleRegistrarEvolucaoRetorno} className="overflow-y-auto flex-1 p-8 space-y-7">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Diagnóstico do Retorno *</Label>
+                  <input
+                    required
+                    value={formEvolucaoRetorno.diagnostico}
+                    onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({ ...prev, diagnostico: e.target.value }))}
+                    className="w-full px-5 py-3.5 bg-[#F8FAFD] border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-[#1A3F72] focus:bg-white transition-all shadow-sm placeholder:text-[#8FA8C4]"
+                    placeholder="Diagnóstico atualizado no retorno"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Doença / CID *</Label>
+                  <input
+                    required
+                    value={formEvolucaoRetorno.doenca}
+                    onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({ ...prev, doenca: e.target.value }))}
+                    className="w-full px-5 py-3.5 bg-[#F8FAFD] border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-[#1A3F72] focus:bg-white transition-all shadow-sm placeholder:text-[#8FA8C4]"
+                    placeholder="Ex: J03.9"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Evolução Clínica / Conduta *</Label>
+                <textarea
+                  required
+                  rows={5}
+                  value={formEvolucaoRetorno.laudo}
+                  onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({ ...prev, laudo: e.target.value }))}
+                  className="w-full px-5 py-3.5 bg-[#F8FAFD] border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-[#1A3F72] focus:bg-white transition-all resize-none shadow-sm placeholder:text-[#8FA8C4]"
+                  placeholder="Descreva a evolução do paciente desde a última consulta..."
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Nova Medicação (se houver)</Label>
+                  <input
+                    value={formEvolucaoRetorno.medicacao}
+                    onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({ ...prev, medicacao: e.target.value }))}
+                    className="w-full px-5 py-3.5 bg-[#F8FAFD] border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-[#1A3F72] focus:bg-white transition-all shadow-sm placeholder:text-[#8FA8C4]"
+                    placeholder="Resumo das medicações"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Observações de Retorno</Label>
+                  <input
+                    value={formEvolucaoRetorno.observacao}
+                    onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({ ...prev, observacao: e.target.value }))}
+                    className="w-full px-5 py-3.5 bg-[#F8FAFD] border-2 border-[#C8D9ED] rounded-2xl text-sm font-bold text-[#0F2242] outline-none focus:border-[#1A3F72] focus:bg-white transition-all shadow-sm placeholder:text-[#8FA8C4]"
+                    placeholder="Notas adicionais do retorno"
+                  />
+                </div>
+              </div>
+
+              {/* Opções Extras para Retorno */}
+              <div className="grid grid-cols-2 gap-6 pt-4 border-t border-[#EEF2F7]">
+                <button
+                  type="button"
+                  onClick={toggleIncluirReceitaRetorno}
+                  className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-3 group relative overflow-hidden ${
+                    formEvolucaoRetorno.incluirReceita 
+                    ? "bg-[#E6F0FF] border-[#3B82F6] text-[#1E40AF] shadow-lg scale-[1.02]" 
+                    : "bg-[#F0F4F8] border-[#D1D9E0] text-[#4A5568] hover:bg-white hover:border-[#3B82F6] hover:text-[#3B82F6]"
+                  }`}
+                >
+                  <Pill className="h-7 w-7" />
+                  <span className="text-[12px] font-black uppercase tracking-[0.1em]">Gerar Receita no Retorno</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleIncluirAtestadoRetorno}
+                  className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-3 group relative overflow-hidden ${
+                    formEvolucaoRetorno.incluirAtestado 
+                    ? "bg-[#FAF5FF] border-[#8B5CF6] text-[#5B21B6] shadow-lg scale-[1.02]" 
+                    : "bg-[#F0F4F8] border-[#D1D9E0] text-[#4A5568] hover:bg-white hover:border-[#8B5CF6] hover:text-[#8B5CF6]"
+                  }`}
+                >
+                  <ClipboardList className="h-7 w-7" />
+                  <span className="text-[12px] font-black uppercase tracking-[0.1em]">Gerar Atestado no Retorno</span>
+                </button>
+              </div>
+
+              {/* Seção da Receita no Retorno */}
+              {formEvolucaoRetorno.incluirReceita && (
+                <div className="p-7 bg-[#F0F7FF] border-2 border-[#BFDBFE] rounded-[2.5rem] space-y-6">
+                  <Label>Detalhes da Receita de Retorno</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      placeholder="Descrição"
+                      value={formEvolucaoRetorno.receita.descricao}
+                      onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({
+                        ...prev,
+                        receita: { ...prev.receita, descricao: e.target.value }
+                      }))}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-[#BFDBFE] rounded-2xl"
+                    />
+                    <input
+                      placeholder="CID"
+                      value={formEvolucaoRetorno.receita.cid}
+                      onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({
+                        ...prev,
+                        receita: { ...prev.receita, cid: e.target.value }
+                      }))}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-[#BFDBFE] rounded-2xl"
+                    />
+                  </div>
+                  <button type="button" onClick={adicionarMedicamentoEvolucaoRetorno} className="text-xs font-bold text-blue-600">+ Adicionar Medicamento</button>
+                  {formEvolucaoRetorno.receita.medicamentos.map((med: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-white border rounded-xl space-y-2">
+                       <input placeholder="Medicamento" value={med.medicamento} onChange={(e) => atualizarMedicamentoEvolucaoRetorno(idx, "medicamento", e.target.value)} className="w-full px-3 py-2 border rounded" />
+                       <div className="grid grid-cols-2 gap-2">
+                         <input placeholder="Dosagem" value={med.dosagem} onChange={(e) => atualizarMedicamentoEvolucaoRetorno(idx, "dosagem", e.target.value)} className="px-3 py-2 border rounded" />
+                         <input placeholder="Quantidade" type="number" value={med.quantidade} onChange={(e) => atualizarMedicamentoEvolucaoRetorno(idx, "quantidade", e.target.value)} className="px-3 py-2 border rounded" />
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Seção do Atestado no Retorno */}
+              {formEvolucaoRetorno.incluirAtestado && (
+                <div className="p-7 bg-[#F9F5FF] border-2 border-[#DDD6FE] rounded-[2.5rem] space-y-6">
+                  <Label>Detalhes do Atestado de Retorno</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      placeholder="Motivo"
+                      value={formEvolucaoRetorno.atestado.descricao}
+                      onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({
+                        ...prev,
+                        atestado: { ...prev.atestado, descricao: e.target.value }
+                      }))}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-[#DDD6FE] rounded-2xl"
+                    />
+                    <input
+                      placeholder="Dias"
+                      type="number"
+                      value={formEvolucaoRetorno.atestado.diasRepouso}
+                      onChange={(e) => setFormEvolucaoRetorno((prev: any) => ({
+                        ...prev,
+                        atestado: { ...prev.atestado, diasRepouso: e.target.value }
+                      }))}
+                      className="w-full px-5 py-3.5 bg-white border-2 border-[#DDD6FE] rounded-2xl"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-4 pt-6 border-t border-[#EEF2F7]">
+                <button
+                  type="button"
+                  onClick={() => setModalEvolucaoRetorno({ aberto: false, consulta: null })}
+                  className="flex-1 px-8 py-4 bg-white text-[#4A5568] border-2 border-[#C8D9ED] rounded-[1.5rem] text-xs font-black uppercase tracking-widest"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRegistrandoHistorico}
+                  className="flex-[2] px-8 py-4 bg-blue-600 text-white rounded-[1.5rem] text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-100"
+                >
+                  {isRegistrandoHistorico ? "Processando..." : "Finalizar Retorno"}
                 </button>
               </div>
             </form>

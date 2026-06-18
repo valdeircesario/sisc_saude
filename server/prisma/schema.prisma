@@ -42,6 +42,7 @@ model UBS {
   atestadosMedicos       AtestadoMedico[]
   dispensacoes           DispensacaoReceita[]
   agendamentosCampanha   AgendamentoCampanha[]
+  retornos               RetornoConsulta[]
 
   @@map("ubs")
 }
@@ -239,6 +240,7 @@ model Funcionario {
   receitasMedicas          ReceitaMedica[]
   atestadosMedicos         AtestadoMedico[]
   dispensacoes             DispensacaoReceita[]
+  retornos                 RetornoConsulta[]
 
   @@map("funcionarios")
 }
@@ -315,6 +317,7 @@ model Paciente {
   medicacoesPaciente       MedicacaoPaciente[]
   receitasMedicas          ReceitaMedica[]
   atestadosMedicos         AtestadoMedico[]
+  retornos                 RetornoConsulta[]
 
   @@map("pacientes")
 }
@@ -371,6 +374,9 @@ model ReceitaMedica {
 
   consultaId      String?  @unique
   consulta        Consulta? @relation(fields: [consultaId], references: [id])
+  
+  retornoId       String?  @unique
+  retorno         RetornoConsulta? @relation(fields: [retornoId], references: [id])
 
   paciente    Paciente    @relation(fields: [pacienteId], references: [id])
   funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
@@ -425,6 +431,9 @@ model AtestadoMedico {
 
   consultaId      String?  @unique
   consulta        Consulta? @relation(fields: [consultaId], references: [id])
+  
+  retornoId       String?  @unique
+  retorno         RetornoConsulta? @relation(fields: [retornoId], references: [id])
 
   paciente    Paciente    @relation(fields: [pacienteId], references: [id])
   funcionario Funcionario @relation(fields: [funcionarioId], references: [id])
@@ -782,8 +791,40 @@ model Consulta {
   historicoMedico HistoricoMedico?
   receita         ReceitaMedica?
   atestado        AtestadoMedico?
+  retornos        RetornoConsulta[] @relation("ConsultaOriginal")
 
   @@map("consultas")
+}
+
+model RetornoConsulta {
+  id                String   @id @default(cuid())
+  consultaId        String   // ID da consulta que gerou o retorno
+  pacienteId        String
+  funcionarioId     String
+  ubsId             String
+  dataRetorno       DateTime
+  status            String   @default("agendado") // agendado, confirmado, realizado, cancelado
+  
+  // Campos de Evolução (Similares ao HistoricoMedico)
+  motivo            String?
+  laudo             String?
+  doenca            String?
+  diagnostico       String?
+  medicacao         String?
+  observacao        String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  consultaOriginal  Consulta    @relation("ConsultaOriginal", fields: [consultaId], references: [id])
+  paciente          Paciente    @relation(fields: [pacienteId], references: [id])
+  funcionario       Funcionario @relation(fields: [funcionarioId], references: [id])
+  ubs               UBS         @relation(fields: [ubsId], references: [id])
+
+  receita           ReceitaMedica?
+  atestado          AtestadoMedico?
+
+  @@map("retornos_consultas")
 }
 
 model Medicamento {

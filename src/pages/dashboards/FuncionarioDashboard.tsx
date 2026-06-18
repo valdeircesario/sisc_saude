@@ -1,4 +1,4 @@
-import React from "react";
+import React, { FormEvent } from "react";
 import ReceitasAtestado from "../../components/receitasAtestado";
 import FuncionarioPacientesTab from "../../components/Funcionario/FuncionarioPacientesTab";
 import FuncionarioMedicamentosTab from "../../components/Funcionario/FuncionarioMedicamentosTab";
@@ -59,9 +59,9 @@ const FuncionarioDashboard: React.FC = () => {
     buscarPacientePorCns,
     historicoBuscaResultado,
     setShowBuscaHistoricoModal,
+    showBuscaHistoricoModal,
     abrirDetalheHistorico,
     historicoPaciente,
-    showBuscaHistoricoModal,
     handleBuscarHistoricoPorCpf,
     cpfHistoricoBusca,
     setCpfHistoricoBusca,
@@ -99,10 +99,12 @@ const FuncionarioDashboard: React.FC = () => {
     getConsultaDisease,
     setShowConsultaDetailsModal,
     showConsultaDetailsModal,
+    modalRetorno,
     setModalHistorico,
     modalHistorico,
     handleRegistrarHistorico,
     formHistorico,
+    formRetorno,
     setFormHistorico,
     toggleIncluirReceita,
     toggleIncluirAtestado,
@@ -111,7 +113,19 @@ const FuncionarioDashboard: React.FC = () => {
     atualizarMedicamentoEvolucao,
     loadingHistorico,
     selectedConsulta,
+    handleCancelarRetorno,
+    handleAbrirEditarRetorno,
     setSelectedConsulta,
+    modalEvolucaoRetorno,
+    setModalEvolucaoRetorno,
+    formEvolucaoRetorno,
+    setFormEvolucaoRetorno,
+    toggleIncluirReceitaRetorno,
+    toggleIncluirAtestadoRetorno,
+    adicionarMedicamentoEvolucaoRetorno,
+    removerMedicamentoEvolucaoRetorno,
+    atualizarMedicamentoEvolucaoRetorno,
+    handleRegistrarEvolucaoRetorno,
     exameSearchTerm,
     setExameSearchTerm,
     loadingExames,
@@ -148,6 +162,9 @@ const FuncionarioDashboard: React.FC = () => {
     openExameModal,
     openInternacaoModal,
     openAdministrarMedicamentoModal,
+    setFormRetorno,
+    handleAgendarRetorno,
+    setModalRetorno,
   } = useFuncionarioDashboard();
 
   return (
@@ -253,6 +270,10 @@ const FuncionarioDashboard: React.FC = () => {
                 setSelectedConsulta={setSelectedConsulta}
                 setShowConsultaDetailsModal={setShowConsultaDetailsModal}
                 setModalHistorico={setModalHistorico}
+                setModalEvolucaoRetorno={setModalEvolucaoRetorno}
+                handleCancelarRetorno={handleCancelarRetorno}
+                handleAbrirEditarRetorno={handleAbrirEditarRetorno}
+                setFormRetorno={setFormRetorno}
               />
             )}
 
@@ -310,6 +331,22 @@ const FuncionarioDashboard: React.FC = () => {
               removerMedicamentoEvolucao={removerMedicamentoEvolucao}
               atualizarMedicamentoEvolucao={atualizarMedicamentoEvolucao}
               isRegistrandoHistorico={loadingHistorico}
+              formRetorno={formRetorno}
+              setFormRetorno={setFormRetorno}
+              modalRetorno={modalRetorno}
+              setModalRetorno={setModalRetorno}
+              handleAgendarRetorno={handleAgendarRetorno}
+              handleCancelarRetorno={handleCancelarRetorno}
+              handleRegistrarEvolucaoRetorno={handleRegistrarEvolucaoRetorno}
+              modalEvolucaoRetorno={modalEvolucaoRetorno}
+              setModalEvolucaoRetorno={setModalEvolucaoRetorno}
+              formEvolucaoRetorno={formEvolucaoRetorno}
+              setFormEvolucaoRetorno={setFormEvolucaoRetorno}
+              toggleIncluirReceitaRetorno={toggleIncluirReceitaRetorno}
+              toggleIncluirAtestadoRetorno={toggleIncluirAtestadoRetorno}
+              adicionarMedicamentoEvolucaoRetorno={adicionarMedicamentoEvolucaoRetorno}
+              removerMedicamentoEvolucaoRetorno={removerMedicamentoEvolucaoRetorno}
+              atualizarMedicamentoEvolucaoRetorno={atualizarMedicamentoEvolucaoRetorno}
             />
 
             <FuncionarioHistoricoModals

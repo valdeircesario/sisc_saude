@@ -37,6 +37,7 @@ import { PacienteEditarPerfilModal } from "../../components/Paciente/PacienteEdi
 import { PacienteDetalhesModal } from "../../components/Paciente/PacienteDetalhesModal";
 import { PacienteConfirmarAgendamentoModal } from "../../components/Paciente/PacienteConfirmarAgendamentoModal";
 import { PacienteCancelarConsultaModal } from "../../components/Paciente/PacienteCancelarConsultaModal";
+import { PacienteGerenciarRetornoModal } from "../../components/Paciente/PacienteGerenciarRetornoModal";
 import { EmptyState } from "../../components/UI/EmptyState";
 import { StatusBadge } from "../../components/UI/StatusBadge";
 import { SectionHeader } from "../../components/UI/SectionHeader";
@@ -124,6 +125,14 @@ const PacienteDashboard: React.FC = () => {
     handleAtualizarPerfil,
     handleCancelarConsulta,
     confirmarConsultaMutation,
+    
+    // Gerenciamento de Retorno
+    showGerenciarRetornoModal,
+    setShowGerenciarRetornoModal,
+    formRetorno,
+    setFormRetorno,
+    handleSalvarEdicaoRetorno,
+    handleCancelarRetorno: handleCancelarRetornoHook,
     
     // Mutations loading
     isInscrevendoCampanha,
@@ -412,6 +421,9 @@ const PacienteDashboard: React.FC = () => {
               especialidadesUnicas={especialidadesUnicas}
               setShowConsultaModal={setShowConsultaModal}
               openDetalhesModal={openDetalhesModal}
+              setSelectedItem={setSelectedItem}
+              setShowGerenciarRetornoModal={setShowGerenciarRetornoModal}
+              setFormRetorno={setFormRetorno}
               SectionHeader={SectionHeader}
               StatusBadge={StatusBadge}
               EmptyState={EmptyState}
@@ -627,6 +639,17 @@ const PacienteDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Gerenciar Retorno */}
+      <PacienteGerenciarRetornoModal
+        showModal={showGerenciarRetornoModal}
+        onClose={() => setShowGerenciarRetornoModal(false)}
+        selectedItem={selectedItem}
+        formRetorno={formRetorno}
+        setFormRetorno={setFormRetorno}
+        onSave={handleSalvarEdicaoRetorno}
+        onCancel={handleCancelarRetornoHook}
+      />
     </div>
   );
 };

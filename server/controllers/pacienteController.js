@@ -286,6 +286,20 @@ export const cancelarConsulta = async (req, res) => {
   }
 };
 
+export const atualizarRetorno = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const retorno = await pacienteService.atualizarRetornoPaciente(
+      req.user.id,
+      id,
+      req.body
+    );
+    res.json({ message: "Retorno atualizado com sucesso", retorno });
+  } catch (error) {
+    handleError(res, error, "Erro ao atualizar retorno:");
+  }
+};
+
 export const listarUbs = async (req, res) => {
   try {
     const ubsList = await pacienteService.listarUbs();

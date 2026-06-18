@@ -599,6 +599,131 @@ export const useFuncionarioDashboard = () => {
     }));
   };
 
+  const [modalEvolucaoRetorno, setModalEvolucaoRetorno] = useState<{
+    aberto: boolean;
+    consulta: any;
+  }>({
+    aberto: false,
+    consulta: null,
+  });
+
+  const [formEvolucaoRetorno, setFormEvolucaoRetorno] = useState({
+    laudo: "",
+    diagnostico: "",
+    doenca: "",
+    medicacao: "",
+    observacao: "",
+    incluirReceita: false,
+    receita: {
+      descricao: "",
+      cid: "",
+      medicamentos: [{ medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }],
+      observacoes: "",
+    },
+    incluirAtestado: false,
+    atestado: {
+      descricao: "",
+      cid: "",
+      diasRepouso: "",
+      observacoes: "",
+    }
+  });
+
+  const toggleIncluirReceitaRetorno = () => {
+    setFormEvolucaoRetorno(prev => ({
+      ...prev,
+      incluirReceita: !prev.incluirReceita,
+      receita: {
+        ...prev.receita,
+        cid: !prev.incluirReceita ? prev.doenca : prev.receita.cid
+      }
+    }));
+  };
+
+  const toggleIncluirAtestadoRetorno = () => {
+    setFormEvolucaoRetorno(prev => ({
+      ...prev,
+      incluirAtestado: !prev.incluirAtestado,
+      atestado: {
+        ...prev.atestado,
+        cid: !prev.incluirAtestado ? prev.doenca : prev.atestado.cid
+      }
+    }));
+  };
+
+  const [formRetorno, setFormRetorno] = useState({
+    dataRetorno: "",
+    motivo: "",
+    diagnostico: "",
+    observacao: ""
+  });
+
+  const [modalRetorno, setModalRetorno] = useState<{ aberto: boolean; consulta: any }>({
+    aberto: false,
+    consulta: null,
+  });
+
+  const handleAgendarRetorno = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (modalRetorno.consulta?.id && !modalRetorno.consulta?.id.startsWith("ret-")) {
+        // Criar novo retorno
+        await api.post("/funcionario/agendar-retorno", {
+          consultaId: modalRetorno.consulta?.id,
+          pacienteId: modalRetorno.consulta?.paciente?.id,
+          ...formRetorno,
+        });
+        toast.success("Retorno agendado com sucesso!");
+      } else {
+        // Editar retorno existente (ID começa com ret-)
+        const idLimpo = modalRetorno.consulta.id.replace("ret-", "");
+        await api.put(`/funcionario/retorno/${idLimpo}`, {
+          ...formRetorno,
+          dataRetorno: formRetorno.dataRetorno
+        });
+        toast.success("Retorno atualizado com sucesso!");
+      }
+      
+      setModalRetorno({ aberto: false, consulta: null });
+      setFormRetorno({ dataRetorno: "", motivo: "", diagnostico: "", observacao: "" });
+      refetchConsultas();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao processar retorno");
+    }
+  };
+
+  const handleCancelarRetorno = async (retornoId: string) => {
+    if (!retornoId) return;
+    
+    try {
+      const idLimpo = retornoId.startsWith("ret-") ? retornoId.replace("ret-", "") : retornoId;
+      
+      await api.put(`/funcionario/retorno/${idLimpo}`, {
+        status: "cancelado"
+      });
+
+      toast.success("O agendamento de retorno foi cancelado com sucesso.");
+      setModalRetorno({ aberto: false, consulta: null });
+      refetchConsultas();
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Não foi possível cancelar o retorno. Tente novamente mais tarde."
+      );
+    }
+  };
+
+  const handleAbrirEditarRetorno = (consulta: any) => {
+    if (!consulta) return;
+    
+    setModalRetorno({ aberto: true, consulta });
+    setFormRetorno({
+      dataRetorno: consulta.dataAgendada ? new Date(consulta.dataAgendada).toISOString().slice(0, 16) : "",
+      motivo: consulta.motivo || "",
+      diagnostico: consulta.diagnostico || "",
+      observacao: consulta.observacao || ""
+    });
+  };
+
   // Handlers para medicamentos no modal de evolução
   const adicionarMedicamentoEvolucao = () => {
     setFormHistorico(prev => ({
@@ -622,6 +747,38 @@ export const useFuncionarioDashboard = () => {
 
   const atualizarMedicamentoEvolucao = (index: number, campo: string, valor: string) => {
     setFormHistorico(prev => {
+      const novosMeds = [...prev.receita.medicamentos];
+      novosMeds[index] = { ...novosMeds[index], [campo]: valor };
+      return {
+        ...prev,
+        receita: { ...prev.receita, medicamentos: novosMeds }
+      };
+    });
+  };
+
+  // Handlers para medicamentos no modal de evolução de RETORNO
+  const adicionarMedicamentoEvolucaoRetorno = () => {
+    setFormEvolucaoRetorno(prev => ({
+      ...prev,
+      receita: {
+        ...prev.receita,
+        medicamentos: [...prev.receita.medicamentos, { medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }]
+      }
+    }));
+  };
+
+  const removerMedicamentoEvolucaoRetorno = (index: number) => {
+    setFormEvolucaoRetorno(prev => ({
+      ...prev,
+      receita: {
+        ...prev.receita,
+        medicamentos: prev.receita.medicamentos.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const atualizarMedicamentoEvolucaoRetorno = (index: number, campo: string, valor: string) => {
+    setFormEvolucaoRetorno(prev => {
       const novosMeds = [...prev.receita.medicamentos];
       novosMeds[index] = { ...novosMeds[index], [campo]: valor };
       return {
@@ -863,6 +1020,51 @@ export const useFuncionarioDashboard = () => {
     }
   };
 
+  const handleRegistrarEvolucaoRetorno = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoadingHistorico(true);
+    try {
+      const idOriginal = modalEvolucaoRetorno.consulta?.originalRetornoId || modalEvolucaoRetorno.consulta?.id;
+      const idLimpo = idOriginal?.startsWith("ret-") ? idOriginal.replace("ret-", "") : idOriginal;
+
+      await api.post("/funcionario/registrar-evolucao-retorno", {
+        retornoId: idLimpo,
+        ...formEvolucaoRetorno,
+      });
+      await queryClient.invalidateQueries("funcionario-consultas");
+      await refetchConsultas();
+      toast.success("Atendimento de retorno finalizado com sucesso!");
+      setModalEvolucaoRetorno({ aberto: false, consulta: null });
+      setFormEvolucaoRetorno({
+        laudo: "",
+        diagnostico: "",
+        doenca: "",
+        medicacao: "",
+        observacao: "",
+        incluirReceita: false,
+        receita: {
+          descricao: "",
+          cid: "",
+          medicamentos: [{ medicamento: "", dosagem: "", quantidade: "1", posologia: "", observacoes: "" }],
+          observacoes: "",
+        },
+        incluirAtestado: false,
+        atestado: {
+          descricao: "",
+          cid: "",
+          diasRepouso: "",
+          observacoes: "",
+        }
+      });
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message || "Erro ao registrar evolução do retorno",
+      );
+    } finally {
+      setLoadingHistorico(false);
+    }
+  };
+
   const atualizarConsultas = async () => {
     await queryClient.invalidateQueries(["funcionario-consultas"]);
     await refetchConsultas();
@@ -1065,12 +1267,29 @@ export const useFuncionarioDashboard = () => {
     setFormHistorico,
     toggleIncluirReceita,
     toggleIncluirAtestado,
+    modalEvolucaoRetorno,
+    setModalEvolucaoRetorno,
+    formEvolucaoRetorno,
+    setFormEvolucaoRetorno,
+    toggleIncluirReceitaRetorno,
+    toggleIncluirAtestadoRetorno,
+    formRetorno,
+    setFormRetorno,
+    modalRetorno,
+    setModalRetorno,
+    handleAgendarRetorno,
     adicionarMedicamentoEvolucao,
     removerMedicamentoEvolucao,
     atualizarMedicamentoEvolucao,
+    adicionarMedicamentoEvolucaoRetorno,
+    removerMedicamentoEvolucaoRetorno,
+    atualizarMedicamentoEvolucaoRetorno,
     loadingHistorico,
     selectedConsulta,
     setSelectedConsulta,
+    handleRegistrarEvolucaoRetorno,
+    handleCancelarRetorno,
+    handleAbrirEditarRetorno,
     
     // Exames
     exameSearchTerm,

@@ -1,7 +1,7 @@
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Stethoscope, Calendar, Eye } from "lucide-react";
+import { Stethoscope, Calendar, Eye, Clock } from "lucide-react";
 
 interface PacienteConsultasTabProps {
   consultas: any[];
@@ -11,6 +11,9 @@ interface PacienteConsultasTabProps {
   especialidadesUnicas: string[];
   setShowConsultaModal: (val: boolean) => void;
   openDetalhesModal: (consulta: any) => void;
+  setSelectedItem: (item: any) => void;
+  setShowGerenciarRetornoModal: (val: boolean) => void;
+  setFormRetorno: (val: any) => void;
   SectionHeader: React.FC<{ icon: any; title: string; color?: string }>;
   StatusBadge: React.FC<{ status: string }>;
   EmptyState: React.FC<{ icon: any; message: string }>;
@@ -24,6 +27,9 @@ export const PacienteConsultasTab: React.FC<PacienteConsultasTabProps> = ({
   especialidadesUnicas,
   setShowConsultaModal,
   openDetalhesModal,
+  setSelectedItem,
+  setShowGerenciarRetornoModal,
+  setFormRetorno,
   SectionHeader,
   StatusBadge,
   EmptyState,
@@ -127,13 +133,31 @@ export const PacienteConsultasTab: React.FC<PacienteConsultasTabProps> = ({
                       <StatusBadge status={consulta.status} />
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => openDetalhesModal(consulta)}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-600 hover:bg-teal-100 transition-colors border border-teal-100"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Visualizar
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        {consulta.id?.startsWith("ret-") && (consulta.status === "agendado" || consulta.status === "agendada") && (
+                          <button
+                            onClick={() => {
+                              setFormRetorno({
+                                dataRetorno: consulta.dataAgendada ? new Date(consulta.dataAgendada).toISOString().slice(0, 16) : "",
+                                observacao: consulta.observacao || ""
+                              });
+                              setSelectedItem(consulta);
+                              setShowGerenciarRetornoModal(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition-colors border border-blue-100"
+                          >
+                            <Clock className="h-3.5 w-3.5" />
+                            Gerenciar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => openDetalhesModal(consulta)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-600 hover:bg-teal-100 transition-colors border border-teal-100"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          Visualizar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

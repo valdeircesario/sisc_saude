@@ -82,6 +82,13 @@ export const usePacienteDashboard = () => {
   const [showConfirmarInscricaoModal, setShowConfirmarInscricaoModal] = useState(false);
   const [campanhaParaInscricao, setCampanhaParaInscricao] = useState<any>(null);
 
+  // Estados para Gerenciamento de Retorno (Paciente)
+  const [showGerenciarRetornoModal, setShowGerenciarRetornoModal] = useState(false);
+  const [formRetorno, setFormRetorno] = useState({
+    dataRetorno: "",
+    observacao: ""
+  });
+
   // ── Queries ─────────────────────────
   const { data: perfil } = useQuery("paciente-perfil", () =>
     api.get("/paciente/perfil").then((r) => r.data),
@@ -509,8 +516,45 @@ export const usePacienteDashboard = () => {
       },
     });
     
-    setShowConfirmarInscricaoModal(false);
+    setShowGerenciarRetornoModal(false);
     setCampanhaParaInscricao(null);
+  };
+
+  const handleSalvarEdicaoRetorno = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem?.id) return;
+    
+    try {
+      const idLimpo = selectedItem.id.replace("ret-", "");
+      await api.put(`/paciente/retorno/${idLimpo}`, {
+        observacao: formRetorno.observacao,
+        status: "confirmado"
+      });
+      
+      toast.success("Retorno confirmado com sucesso!");
+      setShowGerenciarRetornoModal(false);
+      queryClient.invalidateQueries("paciente-consultas");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao confirmar retorno.");
+    }
+  };
+
+  const handleCancelarRetorno = async () => {
+    if (!selectedItem?.id) return;
+    
+    try {
+      const idLimpo = selectedItem.id.replace("ret-", "");
+      await api.put(`/paciente/retorno/${idLimpo}`, {
+        status: "cancelado",
+        observacao: formRetorno.observacao
+      });
+      
+      toast.success("O agendamento de retorno foi cancelado.");
+      setShowGerenciarRetornoModal(false);
+      queryClient.invalidateQueries("paciente-consultas");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao cancelar retorno.");
+    }
   };
 
   const handleConfirmarAgendamento = () => {
@@ -652,6 +696,14 @@ export const usePacienteDashboard = () => {
     handleAtualizarPerfil,
     handleCancelarConsulta,
     confirmarConsultaMutation,
+    
+    // Gerenciamento de Retorno
+    showGerenciarRetornoModal,
+    setShowGerenciarRetornoModal,
+    formRetorno,
+    setFormRetorno,
+    handleSalvarEdicaoRetorno,
+    handleCancelarRetorno,
     
     // Navigation
     navigation,

@@ -37,6 +37,9 @@ router.put("/consultas/:id/confirmar", pacienteController.confirmarConsulta);
 // Cancelar consulta
 router.put("/consultas/:id/cancelar", pacienteController.cancelarConsulta);
 
+// Gerenciar retorno (cancelar ou atualizar data/observação)
+router.put("/retorno/:id", pacienteController.atualizarRetorno);
+
 // Listar UBS disponíveis
 router.get("/ubs", pacienteController.listarUbs);
 

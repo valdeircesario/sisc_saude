@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FileText, Calendar, Clock, Stethoscope, User } from "lucide-react";
+import { FileText, Calendar, Clock, Stethoscope, User, Activity } from "lucide-react";
 import { Pagination } from "../UI/Pagination";
 
 interface ConsultasTabProps {
@@ -10,6 +10,10 @@ interface ConsultasTabProps {
   setSelectedConsulta: (consulta: any) => void;
   setShowConsultaDetailsModal: (show: boolean) => void;
   setModalHistorico: (modal: { aberto: boolean; consulta: any }) => void;
+  setModalEvolucaoRetorno: (modal: { aberto: boolean; consulta: any }) => void;
+  handleCancelarRetorno: (id: string) => void;
+  setFormRetorno: (val: any) => void;
+  handleAbrirEditarRetorno: (consulta: any) => void;
 }
 
 const FuncionarioConsultasTab: React.FC<ConsultasTabProps> = ({
@@ -20,6 +24,10 @@ const FuncionarioConsultasTab: React.FC<ConsultasTabProps> = ({
   setSelectedConsulta,
   setShowConsultaDetailsModal,
   setModalHistorico,
+  setModalEvolucaoRetorno,
+  handleCancelarRetorno,
+  setFormRetorno,
+  handleAbrirEditarRetorno,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
@@ -104,8 +112,13 @@ const FuncionarioConsultasTab: React.FC<ConsultasTabProps> = ({
                     </div>
 
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-[#3A5B82]">
+                      <p className="text-xs font-bold text-[#3A5B82] flex items-center gap-2">
                         {consulta.especialidade || "Geral"}
+                        {consulta.tipo === "retorno" && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[9px] font-black uppercase tracking-tighter border border-blue-200">
+                            Retorno
+                          </span>
+                        )}
                       </p>
                       <p className="text-[10px] font-medium text-[#8FA8C4]">
                         {getConsultaDisease(consulta)}
@@ -113,6 +126,16 @@ const FuncionarioConsultasTab: React.FC<ConsultasTabProps> = ({
                     </div>
 
                     <div className="flex flex-wrap gap-2 justify-end lg:pl-4">
+                      {consulta.tipo === "retorno" && 
+                       (consulta.status === "agendado" || consulta.status === "agendada") && (
+                        <button
+                          onClick={() => handleAbrirEditarRetorno(consulta)}
+                          className="flex-1 lg:flex-none px-3 py-1.5 bg-white text-blue-600 border border-blue-200 rounded-lg text-[11px] font-bold hover:bg-blue-50 transition-all flex items-center gap-1.5"
+                        >
+                          <Activity className="h-3.5 w-3.5" />
+                          Gerenciar
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           setSelectedConsulta(consulta);
@@ -124,16 +147,17 @@ const FuncionarioConsultasTab: React.FC<ConsultasTabProps> = ({
                         onMouseLeave={(e) => (e.currentTarget.style.background = "#EBF2FB")}
                       >
                         <FileText className="h-3.5 w-3.5" />
-                        {temHistorico ? "Ver Laudo" : "Ver Detalhes"}
+                        {temHistorico || consulta.status === "cancelado" ? "Ver Detalhes" : "Ver Detalhes"}
                       </button>
-                      {!temHistorico && (
+                      {consulta.status !== "realizado" && consulta.status !== "cancelado" && (
                         <button
-                          onClick={() =>
-                            setModalHistorico({
-                              aberto: true,
-                              consulta,
-                            })
-                          }
+                          onClick={() => {
+                            if (consulta.tipo === "retorno") {
+                              setModalEvolucaoRetorno({ aberto: true, consulta });
+                            } else {
+                              setModalHistorico({ aberto: true, consulta });
+                            }
+                          }}
                           className="flex-1 lg:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all shadow-sm"
                           style={{ background: "#145C35", color: "#fff" }}
                           onMouseEnter={(e) => (e.currentTarget.style.background = "#0E4226")}
