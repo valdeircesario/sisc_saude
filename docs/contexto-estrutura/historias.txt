@@ -23,3 +23,6 @@ server/services/medicamentosService.js criado: A complexa lógica de verificaç�
 server/controllers/medicamentosController.js criado: Intercepta as requisições, pega as validações feitas pelo serviço e monta os retornos padronizados de status HTTP (200, 201, ou erro via handleError).
 server/routes/medicamentos.js refatorado: Ficou extremamente limpo, conectando apenas verbos HTTP, Middlewares (authenticateToken, authorizeRole) e as funções do Controller.
 Agora quero que faça a refatoração do próximo grande módulo  (receitasAtestado.js), seguindo a mesma arquitetura.
+
+
+quero que analise no meu projeto a possivel falha .ao compilar o codigo ele esta caindo muito, sempre que faço uma requisição  um logof e conecto com outro usuario gera o erro , ao inspecionar esta gerando erro 429, sempre que faço alguma alteração ou registro algo no banco. ele cai precisanado novamente reconectar compilar novamente, que susgestão voce me daria pra verificar isso, pra evitar queda no sistema e ter que ficar compilando sempre, para melhor desenvolver  isso não era assim não lembro de tanta queda do sistema , precisando de compilação novamente, analise e me avise o possivel problema.
