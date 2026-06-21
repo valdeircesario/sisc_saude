@@ -8,7 +8,7 @@ import {
   AlertTriangle,
   X,
 } from "lucide-react";
-import { Field, inputClass, RadioOption } from "./FarmaciaUtils";
+import { Field, inputClass } from "./FarmaciaUtils";
 import { ReceitaPayload, ReceitaMedicamento } from "./FarmaciaResultCard";
 
 export interface MedicamentoPendente {
@@ -20,7 +20,7 @@ export interface MedicamentoPendente {
 
 interface FarmaciaDispensacaoModalNovoProps {
   receita: ReceitaPayload;
-  onSubmit: (medicamentos: MedicamentoPendente[]) => void;
+  onSubmit: (medicamentos: MedicamentoPendente[], atendente: string) => void;
   onCancel: () => void;
   isLoading: boolean;
   userName: string;
@@ -53,6 +53,7 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
       {}
     )
   );
+  const [atendente, setAtendente] = useState("");
 
   const handleToggleSelecionado = (id: string) => {
     const novo = new Set(selecionados);
@@ -89,6 +90,13 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
   };
 
   const handleSubmit = async () => {
+    const nomeAtendente = atendente.trim();
+
+    if (!nomeAtendente) {
+      alert("Informe o nome do atendente responsável pela dispensação");
+      return;
+    }
+
     const medicamentosSelecionados = Array.from(selecionados).map((id) => ({
       ...dadosMedicamentos[id],
       receitaMedicamentoId: id,
@@ -99,7 +107,7 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
       return;
     }
 
-    onSubmit(medicamentosSelecionados);
+    onSubmit(medicamentosSelecionados, nomeAtendente);
   };
 
   return (
@@ -262,7 +270,19 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
               </div>
             </div>
 
-            {/* Informações do farmacêutico */}
+            {/* Atendente e farmácia responsável */}
+            <Field id="atendente-farmacia" label="Atendente responsável *">
+              <input
+                id="atendente-farmacia"
+                type="text"
+                className={inputClass}
+                value={atendente}
+                onChange={(e) => setAtendente(e.target.value)}
+                placeholder="Digite o nome do atendente da farmácia"
+                required
+              />
+            </Field>
+
             <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-xl">
               <p className="block text-xs font-semibold text-red-900 mb-1.5 tracking-wide">
                 Farmácia responsável
@@ -272,7 +292,7 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
                 {userName}
               </div>
               <p className="text-[0.7rem] text-red-600 mt-1 italic">
-                Informação fixa do usuário logado
+                Unidade logada no sistema
               </p>
             </div>
 
@@ -312,7 +332,8 @@ export const FarmaciaDispensacaoModalNovo: React.FC<
             disabled={
               isLoading ||
               selecionados.size === 0 ||
-              medicamentosPendentes.length === 0
+              medicamentosPendentes.length === 0 ||
+              !atendente.trim()
             }
             className="flex-1 py-3 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md shadow-red-200 transition-all hover:shadow-lg hover:shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >

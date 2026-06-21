@@ -67,7 +67,8 @@ const FarmaciaDashboard: React.FC = () => {
   };
 
   const handleDispensarMedicamentos = async (
-    medicamentos: MedicamentoPendente[]
+    medicamentos: MedicamentoPendente[],
+    atendente: string,
   ) => {
     if (!receita) return;
 
@@ -76,10 +77,16 @@ const FarmaciaDashboard: React.FC = () => {
       return;
     }
 
+    if (!atendente.trim()) {
+      toast.error("Informe o nome do atendente responsável pela dispensação");
+      return;
+    }
+
     setLoadingDispensacao(true);
     try {
       const payload = {
         receitaId: receita.id,
+        atendente: atendente.trim(),
         medicamentos: medicamentos.map((med) => ({
           receitaMedicamentoId: med.receitaMedicamentoId,
           medicamentoFornecido: med.medicamentoFornecido,

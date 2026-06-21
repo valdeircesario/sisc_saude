@@ -9,6 +9,7 @@ export interface DispensacaoPayload {
   statusDispensacao?: string;
   quantidadeDispensada?: string | number;
   farmaciaResponsavel?: string | null;
+  atendente?: string | null;
   medicamentoFornecido?: string | null;
   observacoesDispensacao?: string | null;
   farmacia?: { nome: string } | null;
@@ -238,12 +239,13 @@ export const FarmaciaResultCard: React.FC<FarmaciaResultCardProps> = ({
                       ).toLocaleString("pt-BR")}
                     </p>
 
-                    {(disp.farmaciaResponsavel ||
+                    {(disp.atendente ||
+                      disp.farmaciaResponsavel ||
                       disp.observacoesDispensacao) && (
                       <p className="mt-1 text-xs text-slate-400">
-                        {disp.farmaciaResponsavel}
+                        {disp.atendente || disp.farmaciaResponsavel}
 
-                        {disp.farmaciaResponsavel &&
+                        {(disp.atendente || disp.farmaciaResponsavel) &&
                           disp.observacoesDispensacao &&
                           " • "}
 

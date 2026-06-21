@@ -61,11 +61,17 @@ export const buscarReceitaPorRegistro = async (registro) => {
 };
 
 export const dispensarMedicamentosFarmacia = async (farmacia, data) => {
-  const { receitaId, medicamentos } = data;
+  const { receitaId, medicamentos, atendente } = data;
 
   if (!receitaId || !Array.isArray(medicamentos) || medicamentos.length === 0) {
     throw { status: 400, data: { message: "receitaId e array de medicamentos são obrigatórios" } };
   }
+
+  if (!atendente || !String(atendente).trim()) {
+    throw { status: 400, data: { message: "Nome do atendente é obrigatório" } };
+  }
+
+  const nomeAtendente = String(atendente).trim();
 
   const receita = await prisma.receitaMedica.findUnique({
     where: { id: receitaId },
@@ -92,6 +98,7 @@ export const dispensarMedicamentosFarmacia = async (farmacia, data) => {
       statusDispensacao: "completa",
       medicamentoFornecido: medicamentoFornecido || item.medicamento,
       quantidadeDispensada: quantidadeDispensada || item.quantidade,
+      atendente: nomeAtendente,
       farmaciaResponsavel: farmacia.nome,
       observacoesDispensacao: observacoes || null,
     });
@@ -356,6 +363,7 @@ export const listarTodasDispensacoes = async () => {
         dataDispensacao: disp.dataDispensacao,
         statusDispensacao: disp.statusDispensacao,
         medicamentoFornecido: disp.medicamentoFornecido,
+        atendente: disp.atendente,
         farmaciaResponsavel: disp.farmaciaResponsavel,
         observacoesDispensacao: disp.observacoesDispensacao,
         quantidadeDispensada: disp.quantidadeDispensada,
@@ -414,7 +422,7 @@ export const obterEstatisticas = async () => {
         paciente: ultimaDispensacao.receita?.paciente?.nome || "N/A",
         medicamento: ultimaDispensacao.medicamentoFornecido || "N/A",
         status: ultimaDispensacao.statusDispensacao,
-        atendente: ultimaDispensacao.farmaciaResponsavel || "N/A",
+        atendente: ultimaDispensacao.atendente || ultimaDispensacao.farmaciaResponsavel || "N/A",
         quantidadeDispensada: ultimaDispensacao.quantidadeDispensada,
       }
     : null;

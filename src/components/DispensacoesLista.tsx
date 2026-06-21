@@ -17,6 +17,7 @@ interface Dispensacao {
   dataDispensacao: string;
   statusDispensacao: "completa" | "parcial";
   medicamentoFornecido: string | null;
+  atendente?: string | null;
   farmaciaResponsavel: string | null;
   observacoesDispensacao: string | null;
   farmacia: string | null;

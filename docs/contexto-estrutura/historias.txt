@@ -26,3 +26,5 @@ Agora quero que faça a refatoração do próximo grande módulo  (receitasAtest
 
 
 quero que analise no meu projeto a possivel falha .ao compilar o codigo ele esta caindo muito, sempre que faço uma requisição  um logof e conecto com outro usuario gera o erro , ao inspecionar esta gerando erro 429, sempre que faço alguma alteração ou registro algo no banco. ele cai precisanado novamente reconectar compilar novamente, que susgestão voce me daria pra verificar isso, pra evitar queda no sistema e ter que ficar compilando sempre, para melhor desenvolver  isso não era assim não lembro de tanta queda do sistema , precisando de compilação novamente, analise e me avise o possivel problema.
+
+corrigir envio do nome do atentende ao dispensar uma receita para a farmarcia
