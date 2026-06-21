@@ -1151,6 +1151,7 @@ export const useFuncionarioDashboard = () => {
     { name: "Histórico Médico", key: "historico", icon: Shield },
     { name: "Receita/Atestado", key: "receitas", icon: FileText },
     { name: "Consultar Receita", key: "consultar_receita", icon: FileText },
+    { name: "Campanhas fazer", key: "Agenda_Campanha", icon: Heart },//iMPLEMENTAR ESSA FUNÇÃO
   ];
 
   const navigation = allNavigation.filter((item) => {
@@ -1158,7 +1159,7 @@ export const useFuncionarioDashboard = () => {
     if (["consultas", "historico", "solicitacoes", "exames", "receitas"].includes(item.key)) {
       return ["medico", "médico"].includes(f);
     }
-    if (["medicamentos", "consultar_receita"].includes(item.key)) {
+    if (["medicamentos", "consultar_receita","Agenda_Campanha"].includes(item.key)) {
       return ["enfermeiro", "farmaceutico", "farmacêutico"].includes(f);
     }
     return true;

@@ -261,6 +261,7 @@ const FuncionarioDashboard: React.FC = () => {
 
             {activeTab === "receitas" && <ReceitasAtestado />}
 
+
             {activeTab === "consultas" && (
               <FuncionarioConsultasTab
                 loadingConsultas={loadingConsultas}
@@ -287,7 +288,9 @@ const FuncionarioDashboard: React.FC = () => {
             )}
 
             <FuncionarioMedicationModals
-              showAdministradorMedicamentoModal={showAdministradorMedicamentoModal}
+              showAdministradorMedicamentoModal={
+                showAdministradorMedicamentoModal
+              }
               selectedAdminPaciente={selectedAdminPaciente}
               resetAdministracaoForm={resetAdministracaoForm}
               medSearchTerm={medSearchTerm}
@@ -344,9 +347,15 @@ const FuncionarioDashboard: React.FC = () => {
               setFormEvolucaoRetorno={setFormEvolucaoRetorno}
               toggleIncluirReceitaRetorno={toggleIncluirReceitaRetorno}
               toggleIncluirAtestadoRetorno={toggleIncluirAtestadoRetorno}
-              adicionarMedicamentoEvolucaoRetorno={adicionarMedicamentoEvolucaoRetorno}
-              removerMedicamentoEvolucaoRetorno={removerMedicamentoEvolucaoRetorno}
-              atualizarMedicamentoEvolucaoRetorno={atualizarMedicamentoEvolucaoRetorno}
+              adicionarMedicamentoEvolucaoRetorno={
+                adicionarMedicamentoEvolucaoRetorno
+              }
+              removerMedicamentoEvolucaoRetorno={
+                removerMedicamentoEvolucaoRetorno
+              }
+              atualizarMedicamentoEvolucaoRetorno={
+                atualizarMedicamentoEvolucaoRetorno
+              }
             />
 
             <FuncionarioHistoricoModals
