@@ -191,6 +191,33 @@ export const listarHospitais = async (req, res) => {
   }
 };
 
+export const agendarRetorno = async (req, res) => {
+  try {
+    const retorno = await funcionarioService.agendarRetorno(req.user.id, req.body);
+    res.status(201).json(retorno);
+  } catch (error) {
+    handleError(res, error, "Erro ao agendar retorno:");
+  }
+};
+
+export const registrarEvolucaoRetorno = async (req, res) => {
+  try {
+    const retorno = await funcionarioService.registrarEvolucaoRetorno(req.user.id, req.body);
+    res.status(200).json(retorno);
+  } catch (error) {
+    handleError(res, error, "Erro ao registrar evolução do retorno:");
+  }
+};
+
+export const atualizarRetorno = async (req, res) => {
+  try {
+    const retorno = await funcionarioService.atualizarRetorno(req.user.id, req.params.id, req.body);
+    res.json(retorno);
+  } catch (error) {
+    handleError(res, error, "Erro ao atualizar retorno:");
+  }
+};
+
 export const listarMinhasConsultas = async (req, res) => {
   try {
     const consultas = await funcionarioService.listarMinhasConsultas(req.user.id);

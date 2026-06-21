@@ -37,6 +37,9 @@ router.put("/consultas/:id/confirmar", pacienteController.confirmarConsulta);
 // Cancelar consulta
 router.put("/consultas/:id/cancelar", pacienteController.cancelarConsulta);
 
+// Gerenciar retorno (cancelar ou atualizar data/observação)
+router.put("/retorno/:id", pacienteController.atualizarRetorno);
+
 // Listar UBS disponíveis
 router.get("/ubs", pacienteController.listarUbs);
 
@@ -86,5 +89,15 @@ router.put("/agendamentos-hospitalares/:id/confirmar", pacienteController.confir
 
 // Obter histórico completo hospitalar do paciente
 router.get("/historico-hospitalar", pacienteController.obterHistoricoHospitalar);
+
+// Obter receitas e atestados do paciente
+router.get("/receitas-atestados", pacienteController.obterReceitasEAtestados);
+
+// ==================== NOTIFICAÇÕES ====================
+
+router.get("/notificacoes", pacienteController.listarNotificacoes);
+router.get("/notificacoes/contagem", pacienteController.contarNotificacoesNaoLidas);
+router.put("/notificacoes/marcar-todas-lidas", pacienteController.marcarTodasNotificacoesLidas);
+router.put("/notificacoes/:id/lida", pacienteController.marcarNotificacaoLida);
 
 export default router;

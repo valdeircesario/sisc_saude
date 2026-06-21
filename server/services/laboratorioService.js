@@ -1,4 +1,8 @@
 import { prisma } from "../config/database.js";
+import {
+  notificarExameAgendado,
+  notificarExameResultado,
+} from "./notificacaoService.js";
 
 export const listarSolicitacoes = async (laboratorioId) => {
   return await prisma.solicitacaoExame.findMany({
@@ -47,21 +51,34 @@ export const agendarExame = async (solicitacaoId, laboratorioId, dataAgendada) =
     }
   });
 
+  await notificarExameAgendado(novoExame);
   return { solicitacao: solicitacaoAtualizada, exame: novoExame };
 };
 
 export const registrarResultado = async (exameId, laboratorioId, resultado, arquivoPdf) => {
+  const exameAtual = await prisma.exame.findUnique({
+    where: { id: exameId }
+  });
+
+  const data = {
+    resultado,
+    status: 'realizado'
+  };
+
+  if (arquivoPdf) {
+    data.arquivoPdf = arquivoPdf;
+  }
+
+  if (!exameAtual.dataRealizado) {
+    data.dataRealizado = new Date();
+  }
+
   const exameAtualizado = await prisma.exame.update({
     where: { 
       id: exameId,
       laboratorioId
     },
-    data: {
-      resultado,
-      arquivoPdf,
-      dataRealizado: new Date(),
-      status: 'realizado'
-    }
+    data
   });
 
   await prisma.solicitacaoExame.updateMany({
@@ -74,6 +91,7 @@ export const registrarResultado = async (exameId, laboratorioId, resultado, arqu
     data: { status: 'realizado' }
   });
 
+  await notificarExameResultado(exameAtualizado);
   return exameAtualizado;
 };
 

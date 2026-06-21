@@ -70,7 +70,7 @@ export const deletarDispensacao = async (req, res) => {
 
 export const listarTodas = async (req, res) => {
   try {
-    const data = await farmaciaService.listarTodasDispensacoes(req.user.id);
+    const data = await farmaciaService.listarTodasDispensacoes();
     res.json(data);
   } catch (error) {
     handleError(res, error);
@@ -79,7 +79,7 @@ export const listarTodas = async (req, res) => {
 
 export const obterEstatisticas = async (req, res) => {
   try {
-    const data = await farmaciaService.obterEstatisticas(req.user.id);
+    const data = await farmaciaService.obterEstatisticas();
     res.json(data);
   } catch (error) {
     handleError(res, error);

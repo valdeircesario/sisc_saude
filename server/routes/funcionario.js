@@ -12,6 +12,9 @@ router.post("/historico-medico", funcController.registrarHistoricoMedico);
 router.post("/vacinas", funcController.registrarVacina);
 router.post("/receitas", funcController.registrarReceita);
 router.post("/atestados", funcController.registrarAtestado);
+router.post("/agendar-retorno", funcController.agendarRetorno);
+router.post("/registrar-evolucao-retorno", funcController.registrarEvolucaoRetorno);
+router.put("/retorno/:id", funcController.atualizarRetorno);
 router.patch("/receitas/:id/assinatura", funcController.assinarReceita);
 router.patch("/atestados/:id/assinatura", funcController.assinarAtestado);
 

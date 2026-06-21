@@ -1,54 +1,175 @@
 import { prisma } from "../config/database.js";
+import {
+  notificarHistoricoRegistrado,
+  notificarConsultaRealizada,
+  notificarReceitaEmitida,
+  notificarAtestadoEmitido,
+  notificarVacinaRegistrada,
+  notificarExameSolicitado,
+  notificarRetornoAgendado,
+  notificarInternacaoStatus,
+} from "./notificacaoService.js";
 
 export const registrarHistoricoMedico = async (funcionarioId, data) => {
-  const { pacienteId, consultaId, laudo, doenca, diagnostico, medicacao, observacoes, dataConsulta } = data;
+  const { 
+    pacienteId, 
+    consultaId, 
+    laudo, 
+    doenca, 
+    diagnostico, 
+    medicacao, 
+    observacoes, 
+    dataConsulta,
+    receita,
+    atestado
+  } = data;
 
   if (!pacienteId || !laudo || !diagnostico || !dataConsulta) {
     throw { status: 400, data: { message: "Campos obrigatórios: pacienteId, laudo, diagnostico e dataConsulta." } };
   }
 
-  if (consultaId) {
-    const historicoExistente = await prisma.historicoMedico.findUnique({
-      where: { consultaId },
+  const result = await prisma.$transaction(async (tx) => {
+    if (consultaId) {
+      const historicoExistente = await tx.historicoMedico.findUnique({
+        where: { consultaId },
+      });
+
+      if (historicoExistente) {
+        throw { status: 409, data: { message: "Esta consulta já possui um histórico médico registrado." } };
+      }
+    }
+
+    const novoHistorico = await tx.historicoMedico.create({
+      data: {
+        pacienteId,
+        funcionarioId,
+        consultaId,
+        laudo,
+        doenca,
+        diagnostico,
+        medicacao,
+        observacoes,
+        dataConsulta: new Date(dataConsulta),
+      },
     });
 
-    if (historicoExistente) {
-      throw { status: 409, data: { message: "Esta consulta já possui um histórico médico registrado." } };
-    }
-  }
+    const funcionario = await tx.funcionario.findUnique({
+      where: { id: funcionarioId },
+      select: { ubsId: true },
+    });
 
-  const novoHistorico = await prisma.historicoMedico.create({
-    data: {
-      pacienteId,
-      funcionarioId,
-      consultaId,
-      laudo,
-      doenca,
-      diagnostico,
-      medicacao,
-      observacoes,
-      dataConsulta: new Date(dataConsulta),
-    },
+    if (!funcionario) {
+      throw { status: 404, data: { message: "Funcionário não encontrado." } };
+    }
+
+    // Registrar Receita se fornecida
+    if (receita && consultaId) {
+      const { descricao, cid, medicamentos = [], observacoes: obsReceita, dataEmissao } = receita;
+      if (descricao && cid && medicamentos.length > 0) {
+        const novaReceita = await tx.receitaMedica.create({
+          data: {
+            pacienteId,
+            funcionarioId,
+            ubsId: funcionario.ubsId,
+            consultaId,
+            descricao,
+            cid,
+            medicamento: medicamentos[0].medicamento || "MULTIPLOS",
+            dosagem: medicamentos[0].dosagem || "",
+            quantidade: medicamentos[0].quantidade?.toString() || "1",
+            status: "ativo",
+            observacoes: obsReceita,
+            dataEmissao: dataEmissao ? new Date(dataEmissao) : new Date(),
+          },
+        });
+
+        await tx.receitaMedicamento.createMany({
+          data: medicamentos.map((item) => ({
+            receitaId: novaReceita.id,
+            medicamento: item.medicamento,
+            dosagem: item.dosagem,
+            quantidade: Number(item.quantidade || 1),
+            posologia: item.posologia || null,
+            observacoes: item.observacoes || null,
+            status: "pendente",
+          })),
+        });
+      }
+    }
+
+    // Registrar Atestado se fornecido
+    if (atestado && consultaId) {
+      const { descricao, cid, diasRepouso, observacoes: obsAtestado, dataEmissao } = atestado;
+      if (descricao && cid && diasRepouso) {
+        await tx.atestadoMedico.create({
+          data: {
+            pacienteId,
+            funcionarioId,
+            ubsId: funcionario.ubsId,
+            consultaId,
+            descricao,
+            cid,
+            diasRepouso: Number(diasRepouso),
+            observacoes: obsAtestado,
+            dataEmissao: dataEmissao ? new Date(dataEmissao) : new Date(),
+          },
+        });
+      }
+    }
+
+    if (consultaId) {
+      try {
+        await tx.consulta.update({
+          where: { id: consultaId },
+          data: { status: "realizado" },
+        });
+      } catch (err) {
+        console.error("Erro ao atualizar status da consulta:", err);
+      }
+    }
+
+    return novoHistorico;
   });
 
+  await notificarHistoricoRegistrado(result);
+
   if (consultaId) {
-    try {
-      await prisma.consulta.update({
-        where: { id: consultaId },
-        data: { status: "realizado" },
-      });
-    } catch (err) {
-      console.error("Erro ao atualizar status da consulta:", err);
+    const consulta = await prisma.consulta.findUnique({
+      where: { id: consultaId },
+      select: { id: true, pacienteId: true, especialidade: true },
+    });
+    if (consulta) {
+      await notificarConsultaRealizada(consulta);
     }
   }
 
-  return novoHistorico;
+  if (receita && consultaId) {
+    const receitaCriada = await prisma.receitaMedica.findFirst({
+      where: { consultaId, pacienteId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (receitaCriada) {
+      await notificarReceitaEmitida(receitaCriada);
+    }
+  }
+
+  if (atestado && consultaId) {
+    const atestadoCriado = await prisma.atestadoMedico.findFirst({
+      where: { consultaId, pacienteId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (atestadoCriado) {
+      await notificarAtestadoEmitido(atestadoCriado);
+    }
+  }
+
+  return result;
 };
 
 export const registrarVacina = async (funcionarioId, data) => {
   const { pacienteId, nome, lote, dataApl, proximaDose } = data;
 
-  return await prisma.vacina.create({
+  const vacina = await prisma.vacina.create({
     data: {
       pacienteId,
       funcionarioId,
@@ -58,6 +179,9 @@ export const registrarVacina = async (funcionarioId, data) => {
       proximaDose: proximaDose ? new Date(proximaDose) : null,
     },
   });
+
+  await notificarVacinaRegistrada(vacina);
+  return vacina;
 };
 
 export const registrarReceita = async (funcionarioId, data) => {
@@ -125,7 +249,7 @@ export const registrarReceita = async (funcionarioId, data) => {
     });
   }
 
-  return await prisma.receitaMedica.findUnique({
+  const receitaCompleta = await prisma.receitaMedica.findUnique({
     where: { id: receita.id },
     include: {
       paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
@@ -134,6 +258,9 @@ export const registrarReceita = async (funcionarioId, data) => {
       itens: { orderBy: { createdAt: "asc" } },
     },
   });
+
+  await notificarReceitaEmitida(receitaCompleta);
+  return receitaCompleta;
 };
 
 export const registrarAtestado = async (funcionarioId, data) => {
@@ -152,7 +279,7 @@ export const registrarAtestado = async (funcionarioId, data) => {
     throw { status: 404, data: { message: "Funcionário não encontrado." } };
   }
 
-  return await prisma.atestadoMedico.create({
+  const atestado = await prisma.atestadoMedico.create({
     data: {
       pacienteId,
       funcionarioId,
@@ -169,6 +296,9 @@ export const registrarAtestado = async (funcionarioId, data) => {
       ubs: { select: { id: true, nome: true, endereco: true } },
     },
   });
+
+  await notificarAtestadoEmitido(atestado);
+  return atestado;
 };
 
 export const assinarReceita = async (id, data) => {
@@ -295,7 +425,7 @@ export const listarMeusAtestados = async (funcionarioId) => {
 export const solicitarExame = async (funcionarioId, data) => {
   const { pacienteId, laboratorioId, tipoExame, observacoes } = data;
 
-  return await prisma.solicitacaoExame.create({
+  const solicitacao = await prisma.solicitacaoExame.create({
     data: {
       pacienteId,
       funcionarioId,
@@ -304,6 +434,9 @@ export const solicitarExame = async (funcionarioId, data) => {
       observacoes,
     },
   });
+
+  await notificarExameSolicitado(solicitacao);
+  return solicitacao;
 };
 
 export const solicitarInternacao = async (funcionarioId, data) => {
@@ -452,56 +585,49 @@ export const buscarPacientes = async (busca) => {
   });
 };
 
-export const obterHistoricoMedicoPaciente = async (pacienteId) => {
-  return await prisma.historicoMedico.findMany({
-    where: { pacienteId },
-    include: {
-      funcionario: { select: { nome: true, funcao: true, crm: true } },
-    },
-    orderBy: { dataConsulta: "desc" },
-  });
-};
-
-export const buscarHistoricoCompletoCpf = async (cpf, userFuncao) => {
-  const funcaoNormalizada = String(userFuncao || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-
-  if (!["medico", "medico clinico geral", "medico geral"].includes(funcaoNormalizada)) {
-    throw { status: 403, data: { message: "Acesso restrito apenas para médicos." } };
-  }
-
-  const paciente = await prisma.paciente.findFirst({
-    where: { cpf: { equals: cpf, mode: "insensitive" } },
-    select: { id: true, nome: true, cpf: true, cns: true, telefone: true, email: true, nascimento: true },
-  });
-
-  if (!paciente) {
-    throw { status: 404, data: { message: "Paciente não encontrado para o CPF informado." } };
-  }
-
-  const [historico, consultas, exames, solicitacoesExame, solicitacoesInternacao, vacinas, medicacoes] = await Promise.all([
+export const getPacienteTimeline = async (pacienteId) => {
+  const [historico, consultas, retornos, exames, solicitacoesExame, solicitacoesInternacao, vacinas, medicacoes] = await Promise.all([
     prisma.historicoMedico.findMany({
-      where: { pacienteId: paciente.id },
-      include: { funcionario: { select: { nome: true, funcao: true, crm: true } } },
+      where: { pacienteId },
+      include: { funcionario: { select: { id: true, nome: true, funcao: true, crm: true } } },
       orderBy: { dataConsulta: "desc" },
     }),
     prisma.consulta.findMany({
-      where: { pacienteId: paciente.id },
+      where: { pacienteId },
       include: {
-        funcionario: { select: { nome: true, funcao: true, crm: true } },
-        ubs: { select: { nome: true } },
+        funcionario: { select: { id: true, nome: true, funcao: true, crm: true } },
+        ubs: { select: { id: true, nome: true } },
+        historicoMedico: true,
+        receita: { include: { itens: true } },
+        atestado: true,
+        retornos: {
+          include: {
+            receita: { include: { itens: true } },
+            atestado: true,
+            funcionario: { select: { nome: true, crm: true } }
+          }
+        }
       },
       orderBy: { dataAgendada: "desc" },
     }),
+    prisma.retornoConsulta.findMany({
+      where: { pacienteId },
+      include: {
+        funcionario: { select: { id: true, nome: true, funcao: true, crm: true } },
+        ubs: { select: { id: true, nome: true } },
+        receita: { include: { itens: true } },
+        atestado: true,
+        consultaOriginal: { select: { especialidade: true } }
+      },
+      orderBy: { dataRetorno: "desc" },
+    }),
     prisma.exame.findMany({
-      where: { pacienteId: paciente.id },
+      where: { pacienteId },
       include: { laboratorio: { select: { nome: true, telefone: true } } },
       orderBy: { dataRealizado: "desc" },
     }),
     prisma.solicitacaoExame.findMany({
-      where: { pacienteId: paciente.id },
+      where: { pacienteId },
       include: {
         funcionario: { select: { nome: true, funcao: true } },
         laboratorio: { select: { nome: true, telefone: true } },
@@ -509,7 +635,7 @@ export const buscarHistoricoCompletoCpf = async (cpf, userFuncao) => {
       orderBy: { createdAt: "desc" },
     }),
     prisma.solicitacaoInternacao.findMany({
-      where: { pacienteId: paciente.id },
+      where: { pacienteId },
       include: {
         funcionario: { select: { nome: true, funcao: true } },
         hospital: { select: { nome: true, telefone: true, endereco: true } },
@@ -518,12 +644,12 @@ export const buscarHistoricoCompletoCpf = async (cpf, userFuncao) => {
       orderBy: { createdAt: "desc" },
     }),
     prisma.vacina.findMany({
-      where: { pacienteId: paciente.id },
+      where: { pacienteId },
       include: { funcionario: { select: { nome: true, funcao: true, crm: true } } },
       orderBy: { dataApl: "desc" },
     }),
     prisma.medicacaoPaciente.findMany({
-      where: { pacienteId: paciente.id },
+      where: { pacienteId },
       include: {
         medicamento: { select: { nome: true, lote: true, descricao: true } },
         funcionario: { select: { nome: true, funcao: true } },
@@ -533,17 +659,23 @@ export const buscarHistoricoCompletoCpf = async (cpf, userFuncao) => {
   ]);
 
   const registros = [
-    ...historico.map((item) => ({
-      id: item.id, tipo: "historico", categoria: "Registro médico",
-      dataRegistro: item.dataConsulta || item.createdAt,
-      titulo: item.diagnostico || "Registro médico",
-      resumo: item.laudo || item.observacoes || "Registro do atendimento médico.", detalhes: item,
-    })),
     ...consultas.map((item) => ({
-      id: item.id, tipo: "consulta", categoria: "Consulta",
+      id: item.id, 
+      tipo: "consulta", 
+      categoria: "Consulta Médica",
       dataRegistro: item.dataAgendada || item.createdAt,
-      titulo: item.motivo || "Consulta",
-      resumo: `${item.especialidade || "Consulta"} • ${item.status || "status não informado"}`, detalhes: item,
+      titulo: `${item.especialidade || "Consulta"} - ${item.status}`,
+      resumo: item.historicoMedico?.laudo || item.motivo || "Consulta agendada no sistema.",
+      detalhes: { ...item, isConsultaPrincipal: true },
+    })),
+    ...retornos.map((item) => ({
+      id: item.id, 
+      tipo: "retorno", 
+      categoria: "Retorno / Acompanhamento",
+      dataRegistro: item.dataRetorno || item.createdAt,
+      titulo: `Retorno de ${item.consultaOriginal?.especialidade || "Clínica"} - ${item.status}`,
+      resumo: item.laudo || item.motivo || "Retorno agendado no sistema.",
+      detalhes: { ...item, isRetornoIndependente: true },
     })),
     ...exames.map((item) => ({
       id: item.id, tipo: "exame", categoria: "Exame",
@@ -575,6 +707,43 @@ export const buscarHistoricoCompletoCpf = async (cpf, userFuncao) => {
     })),
   ].sort((a, b) => new Date(b.dataRegistro).getTime() - new Date(a.dataRegistro).getTime());
 
+  return registros;
+};
+
+export const obterHistoricoMedicoPaciente = async (pacienteId) => {
+  return await getPacienteTimeline(pacienteId);
+};
+
+export const buscarHistoricoCompleteByPacienteId = async (pacienteId) => {
+  const paciente = await prisma.paciente.findUnique({
+    where: { id: pacienteId },
+    select: { id: true, nome: true, cpf: true, cns: true, telefone: true, email: true, nascimento: true },
+  });
+  if (!paciente) throw { status: 404, data: { message: "Paciente não encontrado." } };
+  const registros = await getPacienteTimeline(pacienteId);
+  return { paciente, registros };
+};
+
+export const buscarHistoricoCompletoCpf = async (cpf, userFuncao) => {
+  const funcaoNormalizada = String(userFuncao || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (!["medico", "medico clinico geral", "medico geral"].includes(funcaoNormalizada)) {
+    throw { status: 403, data: { message: "Acesso restrito apenas para médicos." } };
+  }
+
+  const paciente = await prisma.paciente.findFirst({
+    where: { cpf: { equals: cpf, mode: "insensitive" } },
+    select: { id: true, nome: true, cpf: true, cns: true, telefone: true, email: true, nascimento: true },
+  });
+
+  if (!paciente) {
+    throw { status: 404, data: { message: "Paciente não encontrado para o CPF informado." } };
+  }
+
+  const registros = await getPacienteTimeline(paciente.id);
   return { paciente, registros };
 };
 
@@ -591,16 +760,250 @@ export const listarHospitais = async () => {
   });
 };
 
+export const agendarRetorno = async (funcionarioId, data) => {
+  const { consultaId, pacienteId, dataRetorno, motivo, diagnostico, observacao } = data;
+
+  if (!consultaId || !pacienteId || !dataRetorno) {
+    throw { status: 400, data: { message: "Campos obrigatórios: consultaId, pacienteId e dataRetorno." } };
+  }
+
+  const funcionario = await prisma.funcionario.findUnique({
+    where: { id: funcionarioId },
+    select: { ubsId: true },
+  });
+
+  if (!funcionario) {
+    throw { status: 404, data: { message: "Funcionário não encontrado." } };
+  }
+
+  const retorno = await prisma.retornoConsulta.create({
+    data: {
+      consultaId,
+      pacienteId,
+      funcionarioId,
+      ubsId: funcionario.ubsId,
+      dataRetorno: new Date(dataRetorno),
+      motivo,
+      diagnostico,
+      observacao,
+      status: "agendado",
+    },
+    include: {
+      paciente: { select: { nome: true, cpf: true } },
+      consultaOriginal: { select: { especialidade: true } },
+    }
+  });
+
+  await notificarRetornoAgendado(retorno);
+  return retorno;
+};
+
+export const registrarEvolucaoRetorno = async (funcionarioId, data) => {
+  const {
+    retornoId,
+    laudo,
+    doenca,
+    diagnostico,
+    medicacao,
+    observacao,
+    receita,
+    atestado
+  } = data;
+
+  if (!retornoId || !laudo || !diagnostico) {
+    throw { status: 400, data: { message: "Campos obrigatórios: retornoId, laudo e diagnostico." } };
+  }
+
+  // Limpeza robusta do ID
+  const cleanedRetornoId = String(retornoId).replace("ret-", "");
+
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Validar existência e estado do retorno
+    const retornoOriginal = await tx.retornoConsulta.findUnique({
+      where: { id: cleanedRetornoId },
+      include: { receita: true, atestado: true }
+    });
+
+    if (!retornoOriginal) {
+      throw { status: 404, data: { message: "Agendamento de retorno não encontrado." } };
+    }
+
+    if (retornoOriginal.status === "realizado") {
+      throw { status: 409, data: { message: "Este atendimento já foi finalizado." } };
+    }
+
+    // 2. Persistir evolução clínica no retorno
+    const retornoFinalizado = await tx.retornoConsulta.update({
+      where: { id: cleanedRetornoId },
+      data: {
+        laudo,
+        doenca,
+        diagnostico,
+        medicacao,
+        observacao,
+        status: "realizado",
+      },
+    });
+
+    // 3. Criar Receita se solicitado e não existente
+    if (receita && !retornoOriginal.receita) {
+      const { descricao, cid, medicamentos = [], observacoes: obsReceita, dataEmissao } = receita;
+      const medicamentosValidos = medicamentos.filter(m => m.medicamento && m.medicamento.trim() !== "");
+
+      if (descricao && cid && medicamentosValidos.length > 0) {
+        // Data de emissão segura
+        let emissao = new Date();
+        if (dataEmissao) {
+          const parsed = new Date(dataEmissao);
+          if (!isNaN(parsed.getTime())) emissao = parsed;
+        }
+
+        const novaReceita = await tx.receitaMedica.create({
+          data: {
+            pacienteId: retornoOriginal.pacienteId,
+            funcionarioId,
+            ubsId: retornoOriginal.ubsId,
+            retornoId: cleanedRetornoId,
+            descricao,
+            cid,
+            medicamento: medicamentosValidos[0].medicamento,
+            dosagem: medicamentosValidos[0].dosagem || "Conforme prescrição",
+            quantidade: String(medicamentosValidos[0].quantidade || "1"),
+            status: "ativo",
+            observacoes: obsReceita,
+            dataEmissao: emissao,
+          },
+        });
+
+        await tx.receitaMedicamento.createMany({
+          data: medicamentosValidos.map((m) => {
+            const qty = parseInt(m.quantidade);
+            return {
+              receitaId: novaReceita.id,
+              medicamento: m.medicamento,
+              dosagem: m.dosagem || "N/A",
+              quantidade: isNaN(qty) ? 1 : qty,
+              posologia: m.posologia || null,
+              observacoes: m.observacoes || null,
+              status: "pendente",
+            };
+          }),
+        });
+      }
+    }
+
+    // 4. Criar Atestado se solicitado e não existente
+    if (atestado && !retornoOriginal.atestado) {
+      const { descricao, cid, diasRepouso, observacoes: obsAtestado, dataEmissao } = atestado;
+      if (descricao && cid && diasRepouso) {
+        let emissao = new Date();
+        if (dataEmissao) {
+          const parsed = new Date(dataEmissao);
+          if (!isNaN(parsed.getTime())) emissao = parsed;
+        }
+
+        const dias = parseInt(diasRepouso);
+
+        await tx.atestadoMedico.create({
+          data: {
+            pacienteId: retornoOriginal.pacienteId,
+            funcionarioId,
+            ubsId: retornoOriginal.ubsId,
+            retornoId: cleanedRetornoId,
+            descricao,
+            cid,
+            diasRepouso: isNaN(dias) ? 1 : dias,
+            observacoes: obsAtestado,
+            dataEmissao: emissao,
+          },
+        });
+      }
+    }
+
+    return retornoFinalizado;
+  });
+
+  return result;
+};
+
+export const atualizarRetorno = async (funcionarioId, retornoId, data) => {
+  const { dataRetorno, motivo, diagnostico, observacao, status, laudo, doenca, medicacao } = data;
+
+  const retorno = await prisma.retornoConsulta.findUnique({
+    where: { id: retornoId }
+  });
+
+  if (!retorno) {
+    throw { status: 404, data: { message: "Retorno não encontrado." } };
+  }
+
+  if (retorno.funcionarioId !== funcionarioId) {
+    throw { status: 403, data: { message: "Você não tem permissão para alterar este retorno." } };
+  }
+
+  return await prisma.retornoConsulta.update({
+    where: { id: retornoId },
+    data: {
+      dataRetorno: dataRetorno ? new Date(dataRetorno) : undefined,
+      motivo,
+      diagnostico,
+      observacao,
+      status,
+      laudo,
+      doenca,
+      medicacao
+    }
+  });
+};
+
 export const listarMinhasConsultas = async (funcionarioId) => {
-  return await prisma.consulta.findMany({
+  const consultas = await prisma.consulta.findMany({
     where: { funcionarioId },
     include: {
       paciente: { select: { id: true, nome: true, cpf: true, cns: true, telefone: true, email: true } },
       ubs: { select: { id: true, nome: true, endereco: true } },
       historicoMedico: { select: { id: true, diagnostico: true, doenca: true, laudo: true, medicacao: true, observacoes: true, dataConsulta: true } },
+      receita: {
+        include: {
+          itens: { orderBy: { createdAt: "asc" } }
+        }
+      },
+      atestado: true,
+      retornos: true,
     },
     orderBy: { createdAt: "desc" },
   });
+
+  const retornos = await prisma.retornoConsulta.findMany({
+    where: { funcionarioId },
+    include: {
+      paciente: { select: { id: true, nome: true, cpf: true, cns: true, telefone: true, email: true } },
+      ubs: { select: { id: true, nome: true, endereco: true } },
+      consultaOriginal: { select: { especialidade: true, motivo: true } },
+      receita: {
+        include: {
+          itens: { orderBy: { createdAt: "asc" } }
+        }
+      },
+      atestado: true,
+    },
+    orderBy: { dataRetorno: "asc" },
+  });
+
+  // Mapear retornos para o formato de consulta para exibir na agenda
+  const retornosFormatados = retornos.map(r => ({
+    ...r,
+    id: `ret-${r.id}`, // prefixo para diferenciar ids
+    originalRetornoId: r.id,
+    especialidade: r.consultaOriginal?.especialidade || "Retorno",
+    motivo: r.motivo || `Retorno: ${r.consultaOriginal?.motivo}`,
+    dataAgendada: r.dataRetorno,
+    tipo: "retorno" // flag para identificar no frontend
+  }));
+
+  return [...consultas, ...retornosFormatados].sort((a, b) => 
+    new Date(b.dataAgendada || b.createdAt).getTime() - new Date(a.dataAgendada || a.createdAt).getTime()
+  );
 };
 
 export const listarExamesRealizados = async () => {

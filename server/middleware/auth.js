@@ -56,7 +56,7 @@ export const authorizePaciente = (req, res, next) => {
 // Limite muito mais rígido para prevenir ataques de força bruta
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // Máximo 5 tentativas
+  max: 10, // Máximo 5 tentativas
   message: "Muitas tentativas de login. Tente novamente em 15 minutos.",
   standardHeaders: true,
   legacyHeaders: false,

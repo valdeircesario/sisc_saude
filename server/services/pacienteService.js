@@ -1,4 +1,5 @@
 import { prisma } from "../config/database.js";
+import { getPacienteTimeline } from "./funcionarioService.js";
 
 export const obterPerfil = async (pacienteId) => {
   return await prisma.paciente.findUnique({
@@ -38,22 +39,7 @@ export const atualizarPerfil = async (pacienteId, data) => {
 };
 
 export const obterHistoricoMedico = async (pacienteId) => {
-  return await prisma.historicoMedico.findMany({
-    where: { pacienteId },
-    include: {
-      funcionario: {
-        select: {
-          nome: true,
-          funcao: true,
-          crm: true,
-          ubs: {
-            select: { nome: true },
-          },
-        },
-      },
-    },
-    orderBy: { dataConsulta: "desc" },
-  });
+  return await getPacienteTimeline(pacienteId);
 };
 
 export const obterVacinas = async (pacienteId) => {
@@ -107,7 +93,7 @@ export const solicitarConsulta = async (pacienteId, data) => {
 };
 
 export const listarConsultas = async (pacienteId) => {
-  return await prisma.consulta.findMany({
+  const consultas = await prisma.consulta.findMany({
     where: { pacienteId },
     include: {
       ubs: {
@@ -118,6 +104,68 @@ export const listarConsultas = async (pacienteId) => {
       },
     },
     orderBy: { createdAt: "desc" },
+  });
+
+  const retornos = await prisma.retornoConsulta.findMany({
+    where: { pacienteId },
+    include: {
+      ubs: {
+        select: { nome: true, endereco: true, telefone: true },
+      },
+      funcionario: {
+        select: { nome: true, funcao: true },
+      },
+      consultaOriginal: {
+        select: { especialidade: true, motivo: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const retornosFormatados = retornos.map(r => ({
+    ...r,
+    id: `ret-${r.id}`, // prefixo para diferenciar no frontend
+    originalRetornoId: r.id,
+    especialidade: r.consultaOriginal?.especialidade || "Retorno Médico",
+    motivo: r.motivo || `Acompanhamento: ${r.consultaOriginal?.motivo || ""}`,
+    dataAgendada: r.dataRetorno,
+    tipo: "retorno"
+  }));
+
+  return [...consultas, ...retornosFormatados].sort((a, b) => {
+    const dataA = a.dataAgendada ? new Date(a.dataAgendada).getTime() : new Date(a.createdAt).getTime();
+    const dataB = b.dataAgendada ? new Date(b.dataAgendada).getTime() : new Date(b.createdAt).getTime();
+    return dataB - dataA;
+  });
+};
+
+export const atualizarRetornoPaciente = async (pacienteId, retornoId, data) => {
+  const { dataRetorno, observacao, status } = data;
+
+  const retorno = await prisma.retornoConsulta.findUnique({
+    where: { id: retornoId }
+  });
+
+  if (!retorno) {
+    throw { status: 404, data: { message: "Retorno não encontrado." } };
+  }
+
+  if (retorno.pacienteId !== pacienteId) {
+    throw { status: 403, data: { message: "Você não tem permissão para alterar este retorno." } };
+  }
+
+  const updateData = {};
+  if (dataRetorno) updateData.dataRetorno = new Date(dataRetorno);
+  if (status) updateData.status = status;
+  
+  if (observacao !== undefined) {
+    // Sobrescreve diretamente pois o frontend já preenche com a observação existente
+    updateData.observacao = observacao;
+  }
+
+  return await prisma.retornoConsulta.update({
+    where: { id: retornoId },
+    data: updateData
   });
 };
 
@@ -402,5 +450,42 @@ export const obterHistoricoHospitalar = async (pacienteId) => {
       totalMedicacoes: medicacoes.length,
       totalAgendamentos: agendamentos.length,
     },
+  };
+};
+
+export const obterReceitasEAtestados = async (pacienteId) => {
+  const [receitas, atestados] = await Promise.all([
+    prisma.receitaMedica.findMany({
+      where: { pacienteId },
+      include: {
+        funcionario: {
+          select: { id: true, nome: true, crm: true, funcao: true },
+        },
+        ubs: {
+          select: { id: true, nome: true, endereco: true },
+        },
+        itens: {
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: { dataEmissao: "desc" },
+    }),
+    prisma.atestadoMedico.findMany({
+      where: { pacienteId },
+      include: {
+        funcionario: {
+          select: { id: true, nome: true, crm: true, funcao: true },
+        },
+        ubs: {
+          select: { id: true, nome: true, endereco: true },
+        },
+      },
+      orderBy: { dataEmissao: "desc" },
+    }),
+  ]);
+
+  return {
+    receitas: receitas.map(r => ({ ...r, tipoDocumento: "receita" })),
+    atestados: atestados.map(a => ({ ...a, tipoDocumento: "atestado" }))
   };
 };

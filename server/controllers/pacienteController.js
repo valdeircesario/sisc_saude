@@ -1,4 +1,5 @@
 import * as pacienteService from "../services/pacienteService.js";
+import * as notificacaoService from "../services/notificacaoService.js";
 // server/controllers/pacienteController.js
 
 import { PrismaClient } from "@prisma/client";
@@ -286,6 +287,20 @@ export const cancelarConsulta = async (req, res) => {
   }
 };
 
+export const atualizarRetorno = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const retorno = await pacienteService.atualizarRetornoPaciente(
+      req.user.id,
+      id,
+      req.body
+    );
+    res.json({ message: "Retorno atualizado com sucesso", retorno });
+  } catch (error) {
+    handleError(res, error, "Erro ao atualizar retorno:");
+  }
+};
+
 export const listarUbs = async (req, res) => {
   try {
     const ubsList = await pacienteService.listarUbs();
@@ -423,5 +438,56 @@ export const obterHistoricoHospitalar = async (req, res) => {
     res.json(historico);
   } catch (error) {
     handleError(res, error, "Erro ao obter histórico hospitalar:");
+  }
+};
+
+export const obterReceitasEAtestados = async (req, res) => {
+  try {
+    const documentos = await pacienteService.obterReceitasEAtestados(req.user.id);
+    res.json(documentos);
+  } catch (error) {
+    handleError(res, error, "Erro ao obter receitas e atestados:");
+  }
+};
+
+export const listarNotificacoes = async (req, res) => {
+  try {
+    const { lida, limit, page } = req.query;
+    const resultado = await notificacaoService.listarNotificacoes(req.user.id, {
+      lida,
+      limit,
+      page,
+    });
+    res.json(resultado);
+  } catch (error) {
+    handleError(res, error, "Erro ao listar notificações:");
+  }
+};
+
+export const contarNotificacoesNaoLidas = async (req, res) => {
+  try {
+    const naoLidas = await notificacaoService.contarNaoLidas(req.user.id);
+    res.json({ naoLidas });
+  } catch (error) {
+    handleError(res, error, "Erro ao contar notificações:");
+  }
+};
+
+export const marcarNotificacaoLida = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const notificacao = await notificacaoService.marcarComoLida(id, req.user.id);
+    res.json(notificacao);
+  } catch (error) {
+    handleError(res, error, "Erro ao marcar notificação como lida:");
+  }
+};
+
+export const marcarTodasNotificacoesLidas = async (req, res) => {
+  try {
+    const resultado = await notificacaoService.marcarTodasComoLidas(req.user.id);
+    res.json(resultado);
+  } catch (error) {
+    handleError(res, error, "Erro ao marcar notificações como lidas:");
   }
 };

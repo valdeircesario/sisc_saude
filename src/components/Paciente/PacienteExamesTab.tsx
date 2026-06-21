@@ -2,6 +2,7 @@ import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FileText, Search, MapPin, Download } from "lucide-react";
+import { downloadExamePDF } from "../../utils/downloadFile";
 
 interface PacienteExamesTabProps {
   examesSource: "realizados" | "solicitados";
@@ -146,14 +147,12 @@ export const PacienteExamesTab: React.FC<PacienteExamesTabProps> = ({
                   )}
 
                   {item.arquivoPdf && (
-                    <a
-                      href={`http://localhost:3001/api/exames/download/${item.arquivoPdf}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => downloadExamePDF(item.arquivoPdf)}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-teal-700 transition-colors"
                     >
                       <Download className="h-3.5 w-3.5" /> Baixar Laudo
-                    </a>
+                    </button>
                   )}
                 </div>
               ))}

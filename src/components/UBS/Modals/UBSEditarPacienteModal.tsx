@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal } from "./UBSModalBase";
+import { User, MapPin, Phone, CreditCard, Save } from "lucide-react";
 
 export const UBSEditarPacienteModal: React.FC<{
   isOpen: boolean;
@@ -17,75 +18,89 @@ export const UBSEditarPacienteModal: React.FC<{
   onSubmit,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Editar Paciente">
-      {selectedPaciente && (
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <h4 className="font-medium text-gray-900 mb-2">
-            Dados do Paciente
-          </h4>
-          <div className="space-y-1 text-sm text-gray-600">
-            <p>
-              <span className="font-medium">Nome:</span>{" "}
-              {selectedPaciente.nome}
-            </p>
-            <p>
-              <span className="font-medium">CPF:</span>{" "}
-              {selectedPaciente.cpf}
-            </p>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Atualizar Cadastro"
+      size="md"
+    >
+      <div className="space-y-8">
+        {/* Patient Header Info */}
+        {selectedPaciente && (
+          <div className="flex items-center gap-4 p-5 bg-blue-50/50 border border-blue-100 rounded-[24px]">
+            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-blue-200 shadow-sm flex-shrink-0">
+              <User className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-sm font-black text-slate-900 truncate">
+                {selectedPaciente.nome}
+              </h4>
+              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5 flex items-center gap-1.5">
+                <CreditCard className="h-3 w-3" /> CPF: {selectedPaciente.cpf}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
-      <form onSubmit={onSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Endereço *
-          </label>
-          <input
-            type="text"
-            value={pacienteEditData.endereco}
-            onChange={(e) =>
-              setPacienteEditData({
-                ...pacienteEditData,
-                endereco: e.target.value,
-              })
-            }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Telefone *
-          </label>
-          <input
-            type="text"
-            value={pacienteEditData.telefone}
-            onChange={(e) =>
-              setPacienteEditData({
-                ...pacienteEditData,
-                telefone: e.target.value,
-              })
-            }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
-        </div>
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-          >
-            Atualizar
-          </button>
-        </div>
-      </form>
+        )}
+
+        <form onSubmit={onSubmit} className="space-y-6">
+          {/* Endereço */}
+          <div className="space-y-3">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 text-blue-500" /> Endereço Residencial <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={pacienteEditData.endereco}
+              onChange={(e) =>
+                setPacienteEditData({
+                  ...pacienteEditData,
+                  endereco: e.target.value,
+                })
+              }
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
+              placeholder="Rua, Número, Bairro..."
+              required
+            />
+          </div>
+
+          {/* Telefone */}
+          <div className="space-y-3">
+            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-2">
+              <Phone className="h-3.5 w-3.5 text-blue-500" /> Telefone de Contato <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={pacienteEditData.telefone}
+              onChange={(e) =>
+                setPacienteEditData({
+                  ...pacienteEditData,
+                  telefone: e.target.value,
+                })
+              }
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-[18px] text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-teal-500/10 focus:border-teal-500 transition-all shadow-sm"
+              placeholder="(00) 00000-0000"
+              required
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row justify-end items-center gap-3 pt-6 border-t border-slate-50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full sm:w-auto px-8 py-3.5 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+            >
+              Voltar
+            </button>
+            <button
+              type="submit"
+              className="w-full sm:w-auto px-12 py-4 bg-teal-600 text-white rounded-[18px] text-xs font-black uppercase tracking-widest hover:bg-teal-700 hover:shadow-xl hover:shadow-teal-100 transition-all active:scale-95 shadow-lg shadow-teal-900/10 flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" /> Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
     </Modal>
   );
 };
