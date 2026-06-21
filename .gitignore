@@ -25,3 +25,6 @@ dist-ssr
 *.sw?
 .env
 .history/
+
+# Documentação local (não versionada)
+docs/
