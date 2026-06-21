@@ -1,4 +1,17 @@
 import { prisma } from '../config/database.js';
+import {
+  notificarInternacaoStatus,
+  notificarInternacaoIniciada,
+  notificarAltaHospitalar,
+} from './notificacaoService.js';
+
+const STATUS_INTERNACAO_LABEL = {
+  pendente: 'pendente',
+  avaliando: 'em avaliação',
+  agendado: 'agendado',
+  realizado: 'realizado',
+  cancelado: 'cancelado',
+};
 
 export const listarPacientes = async (busca) => {
   const where = busca ? {
@@ -147,7 +160,7 @@ export const atualizarStatusSolicitacao = async (id, hospitalId, data) => {
   }
 
   try {
-    return await prisma.solicitacaoInternacao.update({
+    const solicitacao = await prisma.solicitacaoInternacao.update({
       where: { id, hospitalId },
       data: { status, observacoes },
       include: {
@@ -156,6 +169,8 @@ export const atualizarStatusSolicitacao = async (id, hospitalId, data) => {
         ubs: { select: { nome: true } }
       }
     });
+    await notificarInternacaoStatus(solicitacao, STATUS_INTERNACAO_LABEL[status] || status);
+    return solicitacao;
   } catch (error) {
     if (error.code === 'P2025') throw { status: 404, data: { message: 'Solicitação não encontrada' } };
     throw error;
@@ -165,7 +180,7 @@ export const atualizarStatusSolicitacao = async (id, hospitalId, data) => {
 export const aceitarSolicitacao = async (id, hospitalId, data) => {
   const { observacoes } = data;
   try {
-    return await prisma.solicitacaoInternacao.update({
+    const solicitacao = await prisma.solicitacaoInternacao.update({
       where: { id, hospitalId, status: 'pendente' },
       data: { status: 'avaliando', observacoes },
       include: {
@@ -174,6 +189,8 @@ export const aceitarSolicitacao = async (id, hospitalId, data) => {
         funcionario: { select: { nome: true } }
       }
     });
+    await notificarInternacaoStatus(solicitacao, STATUS_INTERNACAO_LABEL.avaliando);
+    return solicitacao;
   } catch (error) {
     if (error.code === 'P2025') throw { status: 404, data: { message: 'Solicitação não encontrada ou não está pendente' } };
     throw error;
@@ -188,7 +205,7 @@ export const agendarInternacao = async (id, hospitalId, data) => {
   }
 
   try {
-    return await prisma.solicitacaoInternacao.update({
+    const solicitacao = await prisma.solicitacaoInternacao.update({
       where: { id, hospitalId },
       data: {
         status: 'agendado',
@@ -204,6 +221,8 @@ export const agendarInternacao = async (id, hospitalId, data) => {
         ubs: { select: { nome: true } }
       }
     });
+    await notificarInternacaoStatus(solicitacao, STATUS_INTERNACAO_LABEL.agendado);
+    return solicitacao;
   } catch (error) {
     if (error.code === 'P2025') throw { status: 404, data: { message: 'Solicitação não encontrada' } };
     throw error;
@@ -213,7 +232,7 @@ export const agendarInternacao = async (id, hospitalId, data) => {
 export const rejeitarSolicitacao = async (id, hospitalId, data) => {
   const { observacoes } = data;
   try {
-    return await prisma.solicitacaoInternacao.update({
+    const solicitacao = await prisma.solicitacaoInternacao.update({
       where: { id, hospitalId },
       data: { status: 'cancelado', observacoes },
       include: {
@@ -222,6 +241,8 @@ export const rejeitarSolicitacao = async (id, hospitalId, data) => {
         ubs: { select: { nome: true } }
       }
     });
+    await notificarInternacaoStatus(solicitacao, STATUS_INTERNACAO_LABEL.cancelado);
+    return solicitacao;
   } catch (error) {
     if (error.code === 'P2025') throw { status: 404, data: { message: 'Solicitação não encontrada' } };
     throw error;
@@ -338,6 +359,7 @@ export const criarInternacao = async (hospitalId, data) => {
       data: { status: 'realizado' },
     });
 
+    await notificarInternacaoIniciada(novaInternacao);
     return novaInternacao;
   } catch (error) {
     if (error.code === 'P2002') throw { status: 400, data: { message: 'Já existe uma internação para esta solicitação.' } };
@@ -405,6 +427,7 @@ export const registrarAltaHospitalar = async (internacaoId, hospitalId, data) =>
     },
   });
 
+  await notificarAltaHospitalar(novaAlta);
   return novaAlta;
 };
 

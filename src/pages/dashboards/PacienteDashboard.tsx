@@ -42,6 +42,7 @@ import { EmptyState } from "../../components/UI/EmptyState";
 import { StatusBadge } from "../../components/UI/StatusBadge";
 import { SectionHeader } from "../../components/UI/SectionHeader";
 import MinhasCampanhas from "../../components/Paciente/MinhasCampanhas";
+import { PacienteNotificacoesBell } from "../../components/Paciente/PacienteNotificacoesBell";
 import { usePacienteDashboard } from "../../hooks/usePacienteDashboard";
 
 const PacienteDashboard: React.FC = () => {
@@ -381,6 +382,7 @@ const PacienteDashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PacienteNotificacoesBell setActiveTab={setActiveTab} />
             <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-teal-700 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-100">
               <div className="h-1.5 w-1.5 rounded-full bg-teal-500 animate-pulse" />
               Online

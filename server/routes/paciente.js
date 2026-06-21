@@ -93,4 +93,11 @@ router.get("/historico-hospitalar", pacienteController.obterHistoricoHospitalar)
 // Obter receitas e atestados do paciente
 router.get("/receitas-atestados", pacienteController.obterReceitasEAtestados);
 
+// ==================== NOTIFICAÇÕES ====================
+
+router.get("/notificacoes", pacienteController.listarNotificacoes);
+router.get("/notificacoes/contagem", pacienteController.contarNotificacoesNaoLidas);
+router.put("/notificacoes/marcar-todas-lidas", pacienteController.marcarTodasNotificacoesLidas);
+router.put("/notificacoes/:id/lida", pacienteController.marcarNotificacaoLida);
+
 export default router;

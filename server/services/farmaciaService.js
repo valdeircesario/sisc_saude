@@ -1,5 +1,6 @@
 import { prisma } from "../config/database.js";
 import { podeDispensar } from "../utils/dispensacaoUtils.js";
+import { notificarDispensacao } from "./notificacaoService.js";
 
 export const buscarReceitaPorRegistro = async (registro) => {
   if (!registro) {
@@ -209,6 +210,7 @@ export const registrarDispensacao = async (data, farmaciaId, userNome) => {
     },
   });
 
+  await notificarDispensacao(receita, statusDispensacao || "completa");
   return dispensacao;
 };
 

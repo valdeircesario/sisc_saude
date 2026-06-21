@@ -1,5 +1,12 @@
 import { prisma } from "../config/database.js";
 import bcrypt from "bcryptjs";
+import {
+  notificarConsultaAgendada,
+  notificarConsultaCancelada,
+  notificarCampanhaAgendada,
+  notificarInternacaoStatus,
+  buscarPacienteIdPorCpf,
+} from "./notificacaoService.js";
 
 export const listarHospitais = async () => {
   return await prisma.hospital.findMany({
@@ -180,6 +187,9 @@ export const agendarConsultaPaciente = async (pacienteId, ubsId, data) => {
         select: { nome: true, funcao: true },
       },
     },
+  }).then(async (consulta) => {
+    await notificarConsultaAgendada(consulta);
+    return consulta;
   });
 };
 
@@ -426,6 +436,18 @@ export const agendarInscricaoCampanha = async (campanhaId, inscricaoId, ubsId, d
     },
   });
 
+  const inscricao = await prisma.inscricaoCampanha.findUnique({
+    where: { id: inscricaoId },
+    select: { cpf: true },
+  });
+
+  if (inscricao?.cpf) {
+    const pacienteId = await buscarPacienteIdPorCpf(inscricao.cpf);
+    if (pacienteId) {
+      await notificarCampanhaAgendada(pacienteId, agendamento, campanha.titulo);
+    }
+  }
+
   return agendamento;
 };
 
@@ -504,11 +526,11 @@ export const listarConsultas = async (ubsId) => {
 export const agendarConsulta = async (id, ubsId, data) => {
   const { dataAgendada, funcionarioId, observacoes } = data;
 
-  const consulta = await prisma.consulta.findFirst({
+  const consultaExistente = await prisma.consulta.findFirst({
     where: { id, ubsId },
   });
 
-  if (!consulta) {
+  if (!consultaExistente) {
     throw { status: 404, data: { message: "Consulta não encontrada" } };
   }
 
@@ -520,7 +542,7 @@ export const agendarConsulta = async (id, ubsId, data) => {
     throw { status: 400, data: { message: "Funcionário não encontrado ou não pertence a esta UBS" } };
   }
 
-  return await prisma.consulta.update({
+  const consulta = await prisma.consulta.update({
     where: { id },
     data: {
       dataAgendada: new Date(dataAgendada),
@@ -537,26 +559,29 @@ export const agendarConsulta = async (id, ubsId, data) => {
       },
     },
   });
+
+  await notificarConsultaAgendada(consulta);
+  return consulta;
 };
 
 export const cancelarConsulta = async (id, ubsId, observacoes) => {
-  const consulta = await prisma.consulta.findFirst({
+  const consultaExistente = await prisma.consulta.findFirst({
     where: { id, ubsId },
   });
 
-  if (!consulta) {
+  if (!consultaExistente) {
     throw { status: 404, data: { message: "Consulta não encontrada" } };
   }
 
-  if (consulta.status === "cancelada") {
+  if (consultaExistente.status === "cancelada") {
     throw { status: 400, data: { message: "Consulta já está cancelada" } };
   }
 
-  if (consulta.status === "realizada") {
+  if (consultaExistente.status === "realizada") {
     throw { status: 400, data: { message: "Não é possível cancelar uma consulta já realizada" } };
   }
 
-  return await prisma.consulta.update({
+  const consulta = await prisma.consulta.update({
     where: { id },
     data: {
       status: "cancelada",
@@ -572,6 +597,9 @@ export const cancelarConsulta = async (id, ubsId, observacoes) => {
       },
     },
   });
+
+  await notificarConsultaCancelada(consulta, observacoes);
+  return consulta;
 };
 
 export const solicitarInternacao = async (ubsId, data) => {
@@ -690,6 +718,7 @@ export const solicitarInternacao = async (ubsId, data) => {
     prioridade,
   });
 
+  await notificarInternacaoStatus(solicitacaoInternacao, "pendente");
   return solicitacaoInternacao;
 };
 

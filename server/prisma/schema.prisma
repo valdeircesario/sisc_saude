@@ -318,6 +318,7 @@ model Paciente {
   receitasMedicas          ReceitaMedica[]
   atestadosMedicos         AtestadoMedico[]
   retornos                 RetornoConsulta[]
+  notificacoes             Notificacao[]
 
   @@map("pacientes")
 }
@@ -886,5 +887,22 @@ model AgendamentoCampanha {
   inscricao        InscricaoCampanha @relation(fields: [inscricaoId], references: [id])
 
   @@map("agendamentos_campanhas")
+}
+
+model Notificacao {
+  id           String   @id @default(cuid())
+  pacienteId   String
+  titulo       String
+  mensagem     String
+  tipo         String   // CONSULTA, EXAME, RECEITA, DISPENSACAO, VACINA, INTERNACAO, HISTORICO, CAMPANHA, SISTEMA
+  acao         String?  // AGENDADA, CANCELADA, REALIZADA, RESULTADO_DISPONIVEL, etc.
+  lida         Boolean  @default(false)
+  referenciaId String?  // ID do registro relacionado para navegação/detalhes
+  createdAt    DateTime @default(now())
+
+  paciente     Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+
+  @@index([pacienteId, lida, createdAt(sort: Desc)])
+  @@map("notificacoes")
 }
 

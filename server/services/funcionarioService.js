@@ -1,4 +1,14 @@
 import { prisma } from "../config/database.js";
+import {
+  notificarHistoricoRegistrado,
+  notificarConsultaRealizada,
+  notificarReceitaEmitida,
+  notificarAtestadoEmitido,
+  notificarVacinaRegistrada,
+  notificarExameSolicitado,
+  notificarRetornoAgendado,
+  notificarInternacaoStatus,
+} from "./notificacaoService.js";
 
 export const registrarHistoricoMedico = async (funcionarioId, data) => {
   const { 
@@ -121,13 +131,45 @@ export const registrarHistoricoMedico = async (funcionarioId, data) => {
     return novoHistorico;
   });
 
+  await notificarHistoricoRegistrado(result);
+
+  if (consultaId) {
+    const consulta = await prisma.consulta.findUnique({
+      where: { id: consultaId },
+      select: { id: true, pacienteId: true, especialidade: true },
+    });
+    if (consulta) {
+      await notificarConsultaRealizada(consulta);
+    }
+  }
+
+  if (receita && consultaId) {
+    const receitaCriada = await prisma.receitaMedica.findFirst({
+      where: { consultaId, pacienteId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (receitaCriada) {
+      await notificarReceitaEmitida(receitaCriada);
+    }
+  }
+
+  if (atestado && consultaId) {
+    const atestadoCriado = await prisma.atestadoMedico.findFirst({
+      where: { consultaId, pacienteId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (atestadoCriado) {
+      await notificarAtestadoEmitido(atestadoCriado);
+    }
+  }
+
   return result;
 };
 
 export const registrarVacina = async (funcionarioId, data) => {
   const { pacienteId, nome, lote, dataApl, proximaDose } = data;
 
-  return await prisma.vacina.create({
+  const vacina = await prisma.vacina.create({
     data: {
       pacienteId,
       funcionarioId,
@@ -137,6 +179,9 @@ export const registrarVacina = async (funcionarioId, data) => {
       proximaDose: proximaDose ? new Date(proximaDose) : null,
     },
   });
+
+  await notificarVacinaRegistrada(vacina);
+  return vacina;
 };
 
 export const registrarReceita = async (funcionarioId, data) => {
@@ -204,7 +249,7 @@ export const registrarReceita = async (funcionarioId, data) => {
     });
   }
 
-  return await prisma.receitaMedica.findUnique({
+  const receitaCompleta = await prisma.receitaMedica.findUnique({
     where: { id: receita.id },
     include: {
       paciente: { select: { id: true, nome: true, cpf: true, cns: true } },
@@ -213,6 +258,9 @@ export const registrarReceita = async (funcionarioId, data) => {
       itens: { orderBy: { createdAt: "asc" } },
     },
   });
+
+  await notificarReceitaEmitida(receitaCompleta);
+  return receitaCompleta;
 };
 
 export const registrarAtestado = async (funcionarioId, data) => {
@@ -231,7 +279,7 @@ export const registrarAtestado = async (funcionarioId, data) => {
     throw { status: 404, data: { message: "Funcionário não encontrado." } };
   }
 
-  return await prisma.atestadoMedico.create({
+  const atestado = await prisma.atestadoMedico.create({
     data: {
       pacienteId,
       funcionarioId,
@@ -248,6 +296,9 @@ export const registrarAtestado = async (funcionarioId, data) => {
       ubs: { select: { id: true, nome: true, endereco: true } },
     },
   });
+
+  await notificarAtestadoEmitido(atestado);
+  return atestado;
 };
 
 export const assinarReceita = async (id, data) => {
@@ -374,7 +425,7 @@ export const listarMeusAtestados = async (funcionarioId) => {
 export const solicitarExame = async (funcionarioId, data) => {
   const { pacienteId, laboratorioId, tipoExame, observacoes } = data;
 
-  return await prisma.solicitacaoExame.create({
+  const solicitacao = await prisma.solicitacaoExame.create({
     data: {
       pacienteId,
       funcionarioId,
@@ -383,6 +434,9 @@ export const solicitarExame = async (funcionarioId, data) => {
       observacoes,
     },
   });
+
+  await notificarExameSolicitado(solicitacao);
+  return solicitacao;
 };
 
 export const solicitarInternacao = async (funcionarioId, data) => {
@@ -722,7 +776,7 @@ export const agendarRetorno = async (funcionarioId, data) => {
     throw { status: 404, data: { message: "Funcionário não encontrado." } };
   }
 
-  return await prisma.retornoConsulta.create({
+  const retorno = await prisma.retornoConsulta.create({
     data: {
       consultaId,
       pacienteId,
@@ -739,6 +793,9 @@ export const agendarRetorno = async (funcionarioId, data) => {
       consultaOriginal: { select: { especialidade: true } },
     }
   });
+
+  await notificarRetornoAgendado(retorno);
+  return retorno;
 };
 
 export const registrarEvolucaoRetorno = async (funcionarioId, data) => {
