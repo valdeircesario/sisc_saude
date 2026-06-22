@@ -181,7 +181,15 @@ export const agendarInscricaoCampanha = async (req, res) => {
 
 export const cancelarAgendamentoCampanha = async (req, res) => {
   try {
-    const agendamento = await ubsService.cancelarAgendamentoCampanha(req.params.id, req.user.id, req.body.justificativa);
+    let ubsId = req.user.id;
+    if (req.user.tipo === "funcionario") {
+      const funcionario = await ubsService.getFuncionarioById(req.user.id);
+      if (!funcionario || !funcionario.ubsId) {
+        throw { status: 404, data: { message: "Funcionário ou UBS não encontrado" } };
+      }
+      ubsId = funcionario.ubsId;
+    }
+    const agendamento = await ubsService.cancelarAgendamentoCampanha(req.params.id, ubsId, req.body.justificativa);
     res.json(agendamento);
   } catch (error) {
     handleError(res, error, "Erro ao cancelar agendamento de campanha:");
@@ -190,10 +198,38 @@ export const cancelarAgendamentoCampanha = async (req, res) => {
 
 export const realizarAgendamentoCampanha = async (req, res) => {
   try {
-    const agendamento = await ubsService.realizarAgendamentoCampanha(req.params.id, req.user.id, req.body.observacoes);
+    let ubsId = req.user.id;
+    if (req.user.tipo === "funcionario") {
+      const funcionario = await ubsService.getFuncionarioById(req.user.id);
+      if (!funcionario || !funcionario.ubsId) {
+        throw { status: 404, data: { message: "Funcionário ou UBS não encontrado" } };
+      }
+      ubsId = funcionario.ubsId;
+    }
+    const agendamento = await ubsService.realizarAgendamentoCampanha(req.params.id, ubsId, req.body.observacoes);
     res.json({ message: "Agendamento marcado como realizado com sucesso", agendamento });
   } catch (error) {
     handleError(res, error, "Erro ao realizar agendamento de campanha:");
+  }
+};
+
+export const listarAgendamentosCampanha = async (req, res) => {
+  try {
+    // For employees, we need to find their ubsId first
+    let ubsId = req.user.id;
+    
+    if (req.user.tipo === "funcionario") {
+      const funcionario = await ubsService.getFuncionarioById(req.user.id);
+      if (!funcionario || !funcionario.ubsId) {
+        throw { status: 404, data: { message: "Funcionário ou UBS não encontrado" } };
+      }
+      ubsId = funcionario.ubsId;
+    }
+
+    const agendamentos = await ubsService.listarAgendamentosCampanha(ubsId);
+    res.json(agendamentos);
+  } catch (error) {
+    handleError(res, error, "Erro ao listar agendamentos de campanha:");
   }
 };
 

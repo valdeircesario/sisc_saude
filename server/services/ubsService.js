@@ -8,6 +8,18 @@ import {
   buscarPacienteIdPorCpf,
 } from "./notificacaoService.js";
 
+export const getFuncionarioById = async (id) => {
+  return await prisma.funcionario.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      nome: true,
+      funcao: true,
+      ubsId: true,
+    },
+  });
+};
+
 export const listarHospitais = async () => {
   return await prisma.hospital.findMany({
     select: {
@@ -452,6 +464,10 @@ export const agendarInscricaoCampanha = async (campanhaId, inscricaoId, ubsId, d
 };
 
 export const cancelarAgendamentoCampanha = async (id, ubsId, justificativa) => {
+  if (!justificativa?.trim()) {
+    throw { status: 400, data: { message: "Justificativa é obrigatória para cancelar o agendamento." } };
+  }
+
   const agendamento = await prisma.agendamentoCampanha.findFirst({
     where: { id, ubsId },
   });
@@ -477,6 +493,10 @@ export const cancelarAgendamentoCampanha = async (id, ubsId, justificativa) => {
 };
 
 export const realizarAgendamentoCampanha = async (id, ubsId, observacoes) => {
+  if (!observacoes?.trim()) {
+    throw { status: 400, data: { message: "Observações são obrigatórias para registrar o atendimento." } };
+  }
+
   const agendamento = await prisma.agendamentoCampanha.findFirst({
     where: { id, ubsId },
   });
@@ -499,6 +519,18 @@ export const realizarAgendamentoCampanha = async (id, ubsId, observacoes) => {
   });
 
   return updatedAgendamento;
+};
+
+export const listarAgendamentosCampanha = async (ubsId) => {
+  const agendamentos = await prisma.agendamentoCampanha.findMany({
+    where: { ubsId },
+    include: {
+      campanha: true,
+      inscricao: true,
+    },
+    orderBy: { dataAgendada: "asc" },
+  });
+  return agendamentos;
 };
 
 export const listarConsultas = async (ubsId) => {

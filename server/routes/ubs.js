@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Middleware para UBS
 router.use(authenticateToken);
-router.use(authorizeRole(["ubs"]));
+router.use(authorizeRole(["ubs", "funcionario"]));
 
 // Hospitais
 router.get("/hospitais", ubsController.listarHospitais);
@@ -35,6 +35,7 @@ router.get("/campanhas", ubsController.listarCampanhas);
 router.put("/campanhas/:id", ubsController.editarCampanha);
 router.delete("/campanhas/:id", ubsController.deletarCampanha);
 router.get("/campanhas/:id/inscricoes", ubsController.listarInscricoesCampanha);
+router.get("/agendamentos-campanha", ubsController.listarAgendamentosCampanha);
 router.put("/campanhas/:campanhaId/inscricoes/:inscricaoId/agendar", ubsController.agendarInscricaoCampanha);
 router.put("/agendamentos-campanha/:id/cancelar", ubsController.cancelarAgendamentoCampanha);
 router.put("/agendamentos-campanha/:id/realizar", ubsController.realizarAgendamentoCampanha);

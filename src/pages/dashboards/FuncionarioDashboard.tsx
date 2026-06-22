@@ -10,6 +10,7 @@ import FuncionarioHistoricoTab from "../../components/Funcionario/FuncionarioHis
 import FuncionarioHistoricoModals from "../../components/Funcionario/FuncionarioHistoricoModals";
 import FuncionarioSolicitacoesTab from "../../components/Funcionario/FuncionarioSolicitacoesTab";
 import FuncionarioExamesTab from "../../components/Funcionario/FuncionarioExamesTab";
+import { FuncionarioCampanhasTab } from "../../components/Funcionario/FuncionarioCampanhasTab";
 import FuncionarioPatientActionModals from "../../components/Funcionario/FuncionarioPatientActionModals";
 import FuncionarioDispensacaoModals from "../../components/Funcionario/FuncionarioDispensacaoModals";
 import { FuncionarioHeader } from "../../components/Funcionario/FuncionarioHeader";
@@ -165,6 +166,12 @@ const FuncionarioDashboard: React.FC = () => {
     setFormRetorno,
     handleAgendarRetorno,
     setModalRetorno,
+
+    // Agendamentos de Campanha
+    agendamentosCampanha,
+    loadingAgendamentosCampanha,
+    handleRealizarAgendamentoCampanha,
+    handleCancelarAgendamentoCampanha,
   } = useFuncionarioDashboard();
 
   return (
@@ -284,6 +291,15 @@ const FuncionarioDashboard: React.FC = () => {
                 setExameSearchTerm={setExameSearchTerm}
                 loadingExames={loadingExames}
                 filteredExames={filteredExames}
+              />
+            )}
+
+            {activeTab === "Agenda_Campanha" && (
+              <FuncionarioCampanhasTab
+                agendamentos={agendamentosCampanha}
+                loading={loadingAgendamentosCampanha}
+                onRealizar={handleRealizarAgendamentoCampanha}
+                onCancelar={handleCancelarAgendamentoCampanha}
               />
             )}
 
