@@ -1,5 +1,12 @@
 import React from "react";
-import { LayoutDashboard, Users, Heart, Megaphone, Calendar, Pill } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Heart,
+  Megaphone,
+  Calendar,
+  Pill,
+} from "lucide-react";
 
 interface UBSTabsProps {
   activeTab: string;
@@ -33,16 +40,17 @@ export const UBSTabs: React.FC<UBSTabsProps> = ({ activeTab, onTabChange }) => {
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
-          
+
           return (
             <button
               key={tab.key}
               onClick={() => onTabChange(tab.key)}
               className={`
                 flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap
-                ${active 
-                  ? "bg-teal-600 text-white shadow-md shadow-teal-100" 
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                ${
+                  active
+                    ? "bg-teal-600 text-white shadow-md shadow-teal-100"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                 }
               `}
             >

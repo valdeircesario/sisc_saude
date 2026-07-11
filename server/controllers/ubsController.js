@@ -375,12 +375,10 @@ export const solicitarInternacao = async (req, res) => {
       req.user.id,
       req.body,
     );
-    res
-      .status(201)
-      .json({
-        message: "Solicitação de internação enviada com sucesso",
-        solicitacao,
-      });
+    res.status(201).json({
+      message: "Solicitação de internação enviada com sucesso",
+      solicitacao,
+    });
   } catch (error) {
     handleError(res, error, "Erro ao solicitar internação:");
   }

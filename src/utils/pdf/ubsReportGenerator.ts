@@ -36,7 +36,13 @@ const drawTableHeader = (
   pdf.setFillColor(...LIGHT_GRAY);
   pdf.setDrawColor(...LINE_GRAY);
   pdf.setLineWidth(0.3);
-  pdf.rect(ML, y, widths.reduce((sum, w) => sum + w, 0), 10, "F");
+  pdf.rect(
+    ML,
+    y,
+    widths.reduce((sum, w) => sum + w, 0),
+    10,
+    "F",
+  );
 
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(8);
@@ -81,9 +87,10 @@ export const generateUBSReportPDF = (
   let y = addHeader(pdf, `Relatório UBS - ${title}`);
   y += 6;
 
-  const rangeLabel = periodo.dataInicio || periodo.dataFim
-    ? `Período: ${periodo.dataInicio || "-"} até ${periodo.dataFim || "-"}`
-    : "Período: Todos os registros";
+  const rangeLabel =
+    periodo.dataInicio || periodo.dataFim
+      ? `Período: ${periodo.dataInicio || "-"} até ${periodo.dataFim || "-"}`
+      : "Período: Todos os registros";
 
   const summaryText = `Tipo: ${title}`;
   const countText = `Registros: ${relatorio?.resultado?.length ?? 0}`;
@@ -116,11 +123,23 @@ export const generateUBSReportPDF = (
       widths = [70, 30, 25, 30, 30];
       break;
     case "dispensacoes":
-      headers = ["Medicamento", "Paciente", "Quantidade", "Data", "Profissional"];
+      headers = [
+        "Medicamento",
+        "Paciente",
+        "Quantidade",
+        "Data",
+        "Profissional",
+      ];
       widths = [50, 40, 25, 35, 40];
       break;
     case "consultas":
-      headers = ["Paciente", "Especialidade", "Data Agendada", "Status", "Criado em"];
+      headers = [
+        "Paciente",
+        "Especialidade",
+        "Data Agendada",
+        "Status",
+        "Criado em",
+      ];
       widths = [55, 40, 35, 30, 30];
       break;
     case "vacinas":
@@ -191,7 +210,13 @@ export const generateUBSReportPDF = (
           x += widths[2];
           renderCell(pdf, item.lote || "-", x, y + 6, widths[3]);
           x += widths[3];
-          renderCell(pdf, item.proximaDose ? formatDate(item.proximaDose) : "-", x, y + 6, widths[4]);
+          renderCell(
+            pdf,
+            item.proximaDose ? formatDate(item.proximaDose) : "-",
+            x,
+            y + 6,
+            widths[4],
+          );
           break;
         default:
           renderCell(pdf, JSON.stringify(item), x, y + 6, widths[0]);
@@ -209,10 +234,21 @@ export const generateUBSReportPDF = (
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
   pdf.setTextColor(MID_GRAY[0], MID_GRAY[1], MID_GRAY[2]);
-  safeText(pdf, `Emitido em ${new Date().toLocaleString("pt-BR")}`, ML, footerY + 8);
-  safeText(pdf, `SISC - Sistema Individual de Saúde do Cidadão`, pageWidth(pdf) - MR, footerY + 8, {
-    align: "right",
-  });
+  safeText(
+    pdf,
+    `Emitido em ${new Date().toLocaleString("pt-BR")}`,
+    ML,
+    footerY + 8,
+  );
+  safeText(
+    pdf,
+    `SISC - Sistema Individual de Saúde do Cidadão`,
+    pageWidth(pdf) - MR,
+    footerY + 8,
+    {
+      align: "right",
+    },
+  );
 
   pdf.save(`relatorio-ubs-${tipo}-${slug(rangeLabel)}.pdf`);
 };

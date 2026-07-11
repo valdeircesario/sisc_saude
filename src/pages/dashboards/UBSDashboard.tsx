@@ -616,7 +616,9 @@ const UBSDashboard: React.FC = () => {
                     </div>
 
                     <div className="rounded-3xl bg-white p-4 border border-slate-200">
-                      <p className="text-sm text-slate-500">Status do relatório</p>
+                      <p className="text-sm text-slate-500">
+                        Status do relatório
+                      </p>
                       <p className="mt-2 text-lg font-semibold text-slate-900">
                         {relatorio?.resultado?.length ?? 0} registro(s)
                       </p>
@@ -634,10 +636,10 @@ const UBSDashboard: React.FC = () => {
                         {reportType === "estoque"
                           ? "Estoque de Medicamentos"
                           : reportType === "dispensacoes"
-                          ? "Medicamentos Dispensados"
-                          : reportType === "consultas"
-                          ? "Consultas"
-                          : "Vacinações"}
+                            ? "Medicamentos Dispensados"
+                            : reportType === "consultas"
+                              ? "Consultas"
+                              : "Vacinações"}
                       </h3>
                     </div>
                     <span className="text-sm text-slate-500">
@@ -653,7 +655,8 @@ const UBSDashboard: React.FC = () => {
                     </div>
                   ) : !relatorio ? (
                     <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">
-                      Use os filtros ao lado e clique em Buscar para carregar os dados.
+                      Use os filtros ao lado e clique em Buscar para carregar os
+                      dados.
                     </div>
                   ) : !relatorio.resultado?.length ? (
                     <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">
@@ -703,46 +706,102 @@ const UBSDashboard: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
-                          {relatorio.resultado.map((item: any, index: number) => (
-                            <tr key={index}>
-                              {reportType === "estoque" && (
-                                <>
-                                  <td className="px-4 py-4 text-slate-900">{item.nome}</td>
-                                  <td className="px-4 py-4 text-slate-600">{item.lote}</td>
-                                  <td className="px-4 py-4 text-slate-900">{item.quantidade}</td>
-                                  <td className="px-4 py-4 text-slate-600">{new Date(item.dataValidade).toLocaleDateString("pt-BR")}</td>
-                                  <td className="px-4 py-4 text-slate-900">{item.vencido ? "Sim" : "Não"}</td>
-                                </>
-                              )}
-                              {reportType === "dispensacoes" && (
-                                <>
-                                  <td className="px-4 py-4 text-slate-900">{item.medicamento}</td>
-                                  <td className="px-4 py-4 text-slate-600">{item.pacienteNome}</td>
-                                  <td className="px-4 py-4 text-slate-900">{item.quantidade}</td>
-                                  <td className="px-4 py-4 text-slate-600">{new Date(item.dataRetirada).toLocaleDateString("pt-BR")}</td>
-                                  <td className="px-4 py-4 text-slate-900">{item.funcionarioNome}</td>
-                                </>
-                              )}
-                              {reportType === "consultas" && (
-                                <>
-                                  <td className="px-4 py-4 text-slate-900">{item.pacienteNome}</td>
-                                  <td className="px-4 py-4 text-slate-600">{item.especialidade}</td>
-                                  <td className="px-4 py-4 text-slate-900">{new Date(item.dataAgendada).toLocaleDateString("pt-BR")}</td>
-                                  <td className="px-4 py-4 text-slate-600">{item.status}</td>
-                                  <td className="px-4 py-4 text-slate-900">{new Date(item.createdAt).toLocaleDateString("pt-BR")}</td>
-                                </>
-                              )}
-                              {reportType === "vacinas" && (
-                                <>
-                                  <td className="px-4 py-4 text-slate-900">{item.pacienteNome}</td>
-                                  <td className="px-4 py-4 text-slate-600">{item.vacinaNome}</td>
-                                  <td className="px-4 py-4 text-slate-900">{new Date(item.dataApl).toLocaleDateString("pt-BR")}</td>
-                                  <td className="px-4 py-4 text-slate-600">{item.lote}</td>
-                                  <td className="px-4 py-4 text-slate-900">{item.proximaDose ? new Date(item.proximaDose).toLocaleDateString("pt-BR") : "-"}</td>
-                                </>
-                              )}
-                            </tr>
-                          ))}
+                          {relatorio.resultado.map(
+                            (item: any, index: number) => (
+                              <tr key={index}>
+                                {reportType === "estoque" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.nome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.lote}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.quantidade}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {new Date(
+                                        item.dataValidade,
+                                      ).toLocaleDateString("pt-BR")}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.vencido ? "Sim" : "Não"}
+                                    </td>
+                                  </>
+                                )}
+                                {reportType === "dispensacoes" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.medicamento}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.pacienteNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.quantidade}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {new Date(
+                                        item.dataRetirada,
+                                      ).toLocaleDateString("pt-BR")}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.funcionarioNome}
+                                    </td>
+                                  </>
+                                )}
+                                {reportType === "consultas" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.pacienteNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.especialidade}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {new Date(
+                                        item.dataAgendada,
+                                      ).toLocaleDateString("pt-BR")}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.status}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {new Date(
+                                        item.createdAt,
+                                      ).toLocaleDateString("pt-BR")}
+                                    </td>
+                                  </>
+                                )}
+                                {reportType === "vacinas" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.pacienteNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.vacinaNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {new Date(
+                                        item.dataApl,
+                                      ).toLocaleDateString("pt-BR")}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.lote}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.proximaDose
+                                        ? new Date(
+                                            item.proximaDose,
+                                          ).toLocaleDateString("pt-BR")
+                                        : "-"}
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            ),
+                          )}
                         </tbody>
                       </table>
                     </div>

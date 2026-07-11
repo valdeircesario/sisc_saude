@@ -258,7 +258,9 @@ export const useUBSDashboard = () => {
       retry: false,
       onError: (error: any) => {
         console.error("Erro ao carregar relatório UBS:", error);
-        toast.error(error.response?.data?.message || "Erro ao carregar relatório");
+        toast.error(
+          error.response?.data?.message || "Erro ao carregar relatório",
+        );
       },
     },
   );
