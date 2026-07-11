@@ -1,11 +1,17 @@
 import * as ubsService from "../services/ubsService.js";
 
-const handleError = (res, error, customMessage = "Erro interno do servidor") => {
+const handleError = (
+  res,
+  error,
+  customMessage = "Erro interno do servidor",
+) => {
   if (error.status && error.data) {
     return res.status(error.status).json(error.data);
   }
   console.error(customMessage, error);
-  return res.status(500).json({ message: customMessage, details: error.message });
+  return res
+    .status(500)
+    .json({ message: customMessage, details: error.message });
 };
 
 export const listarHospitais = async (req, res) => {
@@ -28,7 +34,10 @@ export const obterHospital = async (req, res) => {
 
 export const listarMedicamentos = async (req, res) => {
   try {
-    const medicamentos = await ubsService.listarMedicamentos(req.user.id, req.query.busca);
+    const medicamentos = await ubsService.listarMedicamentos(
+      req.user.id,
+      req.query.busca,
+    );
     res.json(medicamentos);
   } catch (error) {
     handleError(res, error, "Erro ao listar medicamentos da UBS:");
@@ -73,7 +82,11 @@ export const obterConsultasPaciente = async (req, res) => {
 
 export const agendarConsultaPaciente = async (req, res) => {
   try {
-    const consulta = await ubsService.agendarConsultaPaciente(req.params.id, req.user.id, req.body);
+    const consulta = await ubsService.agendarConsultaPaciente(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
     res.status(201).json(consulta);
   } catch (error) {
     handleError(res, error, "Erro ao agendar consulta:");
@@ -100,7 +113,10 @@ export const listarFuncionarios = async (req, res) => {
 
 export const cadastrarFuncionario = async (req, res) => {
   try {
-    const funcionario = await ubsService.cadastrarFuncionario(req.user.id, req.body);
+    const funcionario = await ubsService.cadastrarFuncionario(
+      req.user.id,
+      req.body,
+    );
     res.status(201).json(funcionario);
   } catch (error) {
     handleError(res, error, "Erro ao cadastrar funcionário:");
@@ -109,7 +125,11 @@ export const cadastrarFuncionario = async (req, res) => {
 
 export const editarFuncionario = async (req, res) => {
   try {
-    const funcionario = await ubsService.editarFuncionario(req.params.id, req.user.id, req.body);
+    const funcionario = await ubsService.editarFuncionario(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
     res.json(funcionario);
   } catch (error) {
     handleError(res, error, "Erro ao editar funcionário:");
@@ -145,7 +165,11 @@ export const listarCampanhas = async (req, res) => {
 
 export const editarCampanha = async (req, res) => {
   try {
-    const campanha = await ubsService.editarCampanha(req.params.id, req.user.id, req.body);
+    const campanha = await ubsService.editarCampanha(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
     res.json(campanha);
   } catch (error) {
     handleError(res, error, "Erro ao editar campanha:");
@@ -163,7 +187,10 @@ export const deletarCampanha = async (req, res) => {
 
 export const listarInscricoesCampanha = async (req, res) => {
   try {
-    const inscricoes = await ubsService.listarInscricoesCampanha(req.params.id, req.user.id);
+    const inscricoes = await ubsService.listarInscricoesCampanha(
+      req.params.id,
+      req.user.id,
+    );
     res.json(inscricoes);
   } catch (error) {
     handleError(res, error, "Erro ao listar inscrições:");
@@ -172,7 +199,12 @@ export const listarInscricoesCampanha = async (req, res) => {
 
 export const agendarInscricaoCampanha = async (req, res) => {
   try {
-    const inscricao = await ubsService.agendarInscricaoCampanha(req.params.campanhaId, req.params.inscricaoId, req.user.id, req.body);
+    const inscricao = await ubsService.agendarInscricaoCampanha(
+      req.params.campanhaId,
+      req.params.inscricaoId,
+      req.user.id,
+      req.body,
+    );
     res.json(inscricao);
   } catch (error) {
     handleError(res, error, "Erro ao agendar atendimento:");
@@ -185,11 +217,18 @@ export const cancelarAgendamentoCampanha = async (req, res) => {
     if (req.user.tipo === "funcionario") {
       const funcionario = await ubsService.getFuncionarioById(req.user.id);
       if (!funcionario || !funcionario.ubsId) {
-        throw { status: 404, data: { message: "Funcionário ou UBS não encontrado" } };
+        throw {
+          status: 404,
+          data: { message: "Funcionário ou UBS não encontrado" },
+        };
       }
       ubsId = funcionario.ubsId;
     }
-    const agendamento = await ubsService.cancelarAgendamentoCampanha(req.params.id, ubsId, req.body.justificativa);
+    const agendamento = await ubsService.cancelarAgendamentoCampanha(
+      req.params.id,
+      ubsId,
+      req.body.justificativa,
+    );
     res.json(agendamento);
   } catch (error) {
     handleError(res, error, "Erro ao cancelar agendamento de campanha:");
@@ -202,12 +241,22 @@ export const realizarAgendamentoCampanha = async (req, res) => {
     if (req.user.tipo === "funcionario") {
       const funcionario = await ubsService.getFuncionarioById(req.user.id);
       if (!funcionario || !funcionario.ubsId) {
-        throw { status: 404, data: { message: "Funcionário ou UBS não encontrado" } };
+        throw {
+          status: 404,
+          data: { message: "Funcionário ou UBS não encontrado" },
+        };
       }
       ubsId = funcionario.ubsId;
     }
-    const agendamento = await ubsService.realizarAgendamentoCampanha(req.params.id, ubsId, req.body.observacoes);
-    res.json({ message: "Agendamento marcado como realizado com sucesso", agendamento });
+    const agendamento = await ubsService.realizarAgendamentoCampanha(
+      req.params.id,
+      ubsId,
+      req.body.observacoes,
+    );
+    res.json({
+      message: "Agendamento marcado como realizado com sucesso",
+      agendamento,
+    });
   } catch (error) {
     handleError(res, error, "Erro ao realizar agendamento de campanha:");
   }
@@ -217,11 +266,14 @@ export const listarAgendamentosCampanha = async (req, res) => {
   try {
     // For employees, we need to find their ubsId first
     let ubsId = req.user.id;
-    
+
     if (req.user.tipo === "funcionario") {
       const funcionario = await ubsService.getFuncionarioById(req.user.id);
       if (!funcionario || !funcionario.ubsId) {
-        throw { status: 404, data: { message: "Funcionário ou UBS não encontrado" } };
+        throw {
+          status: 404,
+          data: { message: "Funcionário ou UBS não encontrado" },
+        };
       }
       ubsId = funcionario.ubsId;
     }
@@ -242,9 +294,62 @@ export const listarConsultas = async (req, res) => {
   }
 };
 
+export const obterEstatisticas = async (req, res) => {
+  try {
+    let ubsId = req.user.id;
+    if (req.user.tipo === "funcionario") {
+      const funcionario = await ubsService.getFuncionarioById(req.user.id);
+      if (!funcionario || !funcionario.ubsId) {
+        throw {
+          status: 404,
+          data: { message: "Funcionário ou UBS não encontrado" },
+        };
+      }
+      ubsId = funcionario.ubsId;
+    }
+
+    const estatisticas = await ubsService.obterEstatisticas(ubsId);
+    res.json(estatisticas);
+  } catch (error) {
+    handleError(res, error, "Erro ao obter estatísticas da UBS:");
+  }
+};
+
+export const obterRelatorio = async (req, res) => {
+  try {
+    let ubsId = req.user.id;
+    if (req.user.tipo === "funcionario") {
+      const funcionario = await ubsService.getFuncionarioById(req.user.id);
+      if (!funcionario || !funcionario.ubsId) {
+        throw {
+          status: 404,
+          data: { message: "Funcionário ou UBS não encontrado" },
+        };
+      }
+      ubsId = funcionario.ubsId;
+    }
+
+    const { tipo, dataInicio, dataFim } = req.query;
+    const relatorio = await ubsService.obterRelatorio(
+      ubsId,
+      String(tipo || ""),
+      String(dataInicio || ""),
+      String(dataFim || ""),
+    );
+
+    res.json(relatorio);
+  } catch (error) {
+    handleError(res, error, "Erro ao obter relatório da UBS:");
+  }
+};
+
 export const agendarConsulta = async (req, res) => {
   try {
-    const consulta = await ubsService.agendarConsulta(req.params.id, req.user.id, req.body);
+    const consulta = await ubsService.agendarConsulta(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
     res.json(consulta);
   } catch (error) {
     handleError(res, error, "Erro ao agendar consulta:");
@@ -253,7 +358,11 @@ export const agendarConsulta = async (req, res) => {
 
 export const cancelarConsulta = async (req, res) => {
   try {
-    const consulta = await ubsService.cancelarConsulta(req.params.id, req.user.id, req.body.observacoes);
+    const consulta = await ubsService.cancelarConsulta(
+      req.params.id,
+      req.user.id,
+      req.body.observacoes,
+    );
     res.json({ message: "Consulta cancelada com sucesso", consulta });
   } catch (error) {
     handleError(res, error, "Erro ao cancelar consulta:");
@@ -262,8 +371,16 @@ export const cancelarConsulta = async (req, res) => {
 
 export const solicitarInternacao = async (req, res) => {
   try {
-    const solicitacao = await ubsService.solicitarInternacao(req.user.id, req.body);
-    res.status(201).json({ message: "Solicitação de internação enviada com sucesso", solicitacao });
+    const solicitacao = await ubsService.solicitarInternacao(
+      req.user.id,
+      req.body,
+    );
+    res
+      .status(201)
+      .json({
+        message: "Solicitação de internação enviada com sucesso",
+        solicitacao,
+      });
   } catch (error) {
     handleError(res, error, "Erro ao solicitar internação:");
   }
@@ -271,7 +388,10 @@ export const solicitarInternacao = async (req, res) => {
 
 export const listarSolicitacoesInternacao = async (req, res) => {
   try {
-    const solicitacoes = await ubsService.listarSolicitacoesInternacao(req.user.id, req.query.status);
+    const solicitacoes = await ubsService.listarSolicitacoesInternacao(
+      req.user.id,
+      req.query.status,
+    );
     res.json(solicitacoes);
   } catch (error) {
     handleError(res, error, "Erro ao listar solicitações de internação:");
@@ -280,7 +400,10 @@ export const listarSolicitacoesInternacao = async (req, res) => {
 
 export const obterSolicitacaoInternacao = async (req, res) => {
   try {
-    const solicitacao = await ubsService.obterSolicitacaoInternacao(req.params.id, req.user.id);
+    const solicitacao = await ubsService.obterSolicitacaoInternacao(
+      req.params.id,
+      req.user.id,
+    );
     res.json(solicitacao);
   } catch (error) {
     handleError(res, error, "Erro ao obter solicitação de internação:");
@@ -289,8 +412,15 @@ export const obterSolicitacaoInternacao = async (req, res) => {
 
 export const cancelarSolicitacaoInternacao = async (req, res) => {
   try {
-    const solicitacao = await ubsService.cancelarSolicitacaoInternacao(req.params.id, req.user.id, req.body.motivoCancelamento);
-    res.json({ message: "Solicitação de internação cancelada com sucesso", solicitacao });
+    const solicitacao = await ubsService.cancelarSolicitacaoInternacao(
+      req.params.id,
+      req.user.id,
+      req.body.motivoCancelamento,
+    );
+    res.json({
+      message: "Solicitação de internação cancelada com sucesso",
+      solicitacao,
+    });
   } catch (error) {
     handleError(res, error, "Erro ao cancelar solicitação de internação:");
   }

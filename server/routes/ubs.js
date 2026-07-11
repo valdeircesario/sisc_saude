@@ -21,7 +21,10 @@ router.get("/pacientes/:id", ubsController.obterPaciente);
 router.put("/pacientes/:id", ubsController.editarPaciente);
 router.get("/pacientes/:id/historico", ubsController.obterHistoricoMedico);
 router.get("/pacientes/:id/consultas", ubsController.obterConsultasPaciente);
-router.post("/pacientes/:id/agendar-consulta", ubsController.agendarConsultaPaciente);
+router.post(
+  "/pacientes/:id/agendar-consulta",
+  ubsController.agendarConsultaPaciente,
+);
 
 // Funcionários
 router.get("/funcionarios", ubsController.listarFuncionarios);
@@ -36,9 +39,24 @@ router.put("/campanhas/:id", ubsController.editarCampanha);
 router.delete("/campanhas/:id", ubsController.deletarCampanha);
 router.get("/campanhas/:id/inscricoes", ubsController.listarInscricoesCampanha);
 router.get("/agendamentos-campanha", ubsController.listarAgendamentosCampanha);
-router.put("/campanhas/:campanhaId/inscricoes/:inscricaoId/agendar", ubsController.agendarInscricaoCampanha);
-router.put("/agendamentos-campanha/:id/cancelar", ubsController.cancelarAgendamentoCampanha);
-router.put("/agendamentos-campanha/:id/realizar", ubsController.realizarAgendamentoCampanha);
+router.put(
+  "/campanhas/:campanhaId/inscricoes/:inscricaoId/agendar",
+  ubsController.agendarInscricaoCampanha,
+);
+router.put(
+  "/agendamentos-campanha/:id/cancelar",
+  ubsController.cancelarAgendamentoCampanha,
+);
+router.put(
+  "/agendamentos-campanha/:id/realizar",
+  ubsController.realizarAgendamentoCampanha,
+);
+
+// Estatísticas do dashboard
+router.get("/dashboard/estatisticas", ubsController.obterEstatisticas);
+
+// coletar informações e dados
+router.get("/Relatorio", ubsController.obterRelatorio);
 
 // Consultas da UBS
 router.get("/consultas", ubsController.listarConsultas);
@@ -47,8 +65,17 @@ router.put("/consultas/:id/cancelamento", ubsController.cancelarConsulta);
 
 // Internação
 router.post("/solicitar-internacao", ubsController.solicitarInternacao);
-router.get("/solicitacoes-internacao", ubsController.listarSolicitacoesInternacao);
-router.get("/solicitacoes-internacao/:id", ubsController.obterSolicitacaoInternacao);
-router.put("/solicitacoes-internacao/:id/cancelar", ubsController.cancelarSolicitacaoInternacao);
+router.get(
+  "/solicitacoes-internacao",
+  ubsController.listarSolicitacoesInternacao,
+);
+router.get(
+  "/solicitacoes-internacao/:id",
+  ubsController.obterSolicitacaoInternacao,
+);
+router.put(
+  "/solicitacoes-internacao/:id/cancelar",
+  ubsController.cancelarSolicitacaoInternacao,
+);
 
 export default router;

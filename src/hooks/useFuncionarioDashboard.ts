@@ -1190,7 +1190,8 @@ export const useFuncionarioDashboard = () => {
     { name: "Histórico Médico", key: "historico", icon: Shield },
     { name: "Receita/Atestado", key: "receitas", icon: FileText },
     { name: "Consultar Receita", key: "consultar_receita", icon: FileText },
-    { name: "Campanhas fazer", key: "Agenda_Campanha", icon: Heart },//iMPLEMENTAR ESSA FUNÇÃO
+    { name: "Campanhas", key: "Agenda_Campanha", icon: Heart },
+    
   ];
 
   const navigation = allNavigation.filter((item) => {
