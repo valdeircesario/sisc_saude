@@ -23,6 +23,7 @@ const reportTitles: Record<string, string> = {
   dispensacoes: "Medicamentos Dispensados",
   consultas: "Consultas Realizadas",
   vacinas: "Vacinações Registradas",
+  campanhas: "Relatório de Campanhas",
 };
 
 const getReportTitle = (tipo: string) => reportTitles[tipo] || "Relatório UBS";
@@ -138,13 +139,19 @@ export const generateUBSReportPDF = (
         "Especialidade",
         "Data Agendada",
         "Status",
-        "Criado em",
+        "Data Consulta",
+        "Diagnóstico",
+        "Laudo",
       ];
-      widths = [55, 40, 35, 30, 30];
+      widths = [40, 30, 25, 20, 25, 30, 30];
       break;
     case "vacinas":
       headers = ["Paciente", "Vacina", "Data", "Lote", "Próxima Dose"];
       widths = [50, 45, 30, 30, 30];
+      break;
+    case "campanhas":
+      headers = ["Nome", "CPF", "Status", "Agendamento", "Observações"];
+      widths = [50, 35, 30, 40, 35];
       break;
     default:
       headers = ["Registro"];
@@ -199,7 +206,17 @@ export const generateUBSReportPDF = (
           x += widths[2];
           renderCell(pdf, item.status || "-", x, y + 6, widths[3]);
           x += widths[3];
-          renderCell(pdf, formatDate(item.createdAt), x, y + 6, widths[4]);
+          renderCell(
+            pdf,
+            item.historico?.dataConsulta ? formatDate(item.historico.dataConsulta) : "-",
+            x,
+            y + 6,
+            widths[4],
+          );
+          x += widths[4];
+          renderCell(pdf, item.historico?.diagnostico || "-", x, y + 6, widths[5]);
+          x += widths[5];
+          renderCell(pdf, item.historico?.laudo || "-", x, y + 6, widths[6]);
           break;
         case "vacinas":
           renderCell(pdf, item.pacienteNome || "-", x, y + 6, widths[0]);
@@ -213,6 +230,31 @@ export const generateUBSReportPDF = (
           renderCell(
             pdf,
             item.proximaDose ? formatDate(item.proximaDose) : "-",
+            x,
+            y + 6,
+            widths[4],
+          );
+          break;
+        case "campanhas":
+          renderCell(pdf, item.nome || "-", x, y + 6, widths[0]);
+          x += widths[0];
+          renderCell(pdf, item.cpf || "-", x, y + 6, widths[1]);
+          x += widths[1];
+          renderCell(pdf, item.status || "-", x, y + 6, widths[2]);
+          x += widths[2];
+          renderCell(
+            pdf,
+            item.agendamento
+              ? `${formatDate(item.agendamento.dataAgendada)} ${item.agendamento.horaAgendada || ""}`
+              : "Sem agendamento",
+            x,
+            y + 6,
+            widths[3],
+          );
+          x += widths[3];
+          renderCell(
+            pdf,
+            item.observacoes || item.agendamento?.observacoes || "-",
             x,
             y + 6,
             widths[4],

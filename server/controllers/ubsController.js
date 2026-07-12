@@ -329,10 +329,11 @@ export const obterRelatorio = async (req, res) => {
       ubsId = funcionario.ubsId;
     }
 
-    const { tipo, dataInicio, dataFim } = req.query;
+    const { tipo, campanhaId, dataInicio, dataFim } = req.query;
     const relatorio = await ubsService.obterRelatorio(
       ubsId,
       String(tipo || ""),
+      String(campanhaId || ""),
       String(dataInicio || ""),
       String(dataFim || ""),
     );

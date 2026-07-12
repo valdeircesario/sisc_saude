@@ -21,6 +21,22 @@ import { UBSSolicitarInternacaoModal } from "../../components/UBS/Modals/UBSSoli
 import { useUBSDashboard } from "../../hooks/useUBSDashboard";
 import { generateUBSReportPDF } from "../../utils/pdfGenerator";
 
+const formatDateBR = (dateString: string) => {
+  if (!dateString) return "";
+
+  const isoDateMatch = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/.exec(dateString);
+  const date = isoDateMatch
+    ? new Date(
+        Number(isoDateMatch[1]),
+        Number(isoDateMatch[2]) - 1,
+        Number(isoDateMatch[3]),
+      )
+    : new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) return dateString;
+  return date.toLocaleDateString("pt-BR");
+};
+
 const UBSDashboard: React.FC = () => {
   const {
     user,
@@ -135,6 +151,10 @@ const UBSDashboard: React.FC = () => {
     resetMedForm,
     reportType,
     setReportType,
+    reportCampaignId,
+    setReportCampaignId,
+    reportCampanhas,
+    loadingReportCampanhas,
     reportStartDate,
     setReportStartDate,
     reportEndDate,
@@ -551,7 +571,10 @@ const UBSDashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => fetchRelatorio()}
-                    disabled={loadingRelatorio}
+                    disabled={
+                      loadingRelatorio ||
+                      (reportType === "campanhas" && !reportCampaignId)
+                    }
                     className="inline-flex items-center justify-center rounded-2xl bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     {loadingRelatorio ? "Carregando..." : "Buscar relatório"}
@@ -581,15 +604,44 @@ const UBSDashboard: React.FC = () => {
                       </label>
                       <select
                         value={reportType}
-                        onChange={(e) => setReportType(e.target.value)}
+                        onChange={(e) => {
+                          setReportType(e.target.value);
+                          setReportCampaignId("");
+                        }}
                         className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-1 ring-transparent transition focus:ring-teal-500"
                       >
                         <option value="estoque">Estoque</option>
                         <option value="dispensacoes">Dispensações</option>
                         <option value="consultas">Consultas</option>
                         <option value="vacinas">Vacinas</option>
+                        <option value="campanhas">Campanhas</option>
                       </select>
                     </div>
+
+                    {reportType === "campanhas" && (
+                      <div>
+                        <label className="block text-sm font-semibold text-slate-700">
+                          Campanha
+                        </label>
+                        <select
+                          value={reportCampaignId}
+                          onChange={(e) => setReportCampaignId(e.target.value)}
+                          className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-1 ring-transparent transition focus:ring-teal-500"
+                        >
+                          <option value="">Selecione uma campanha</option>
+                          {reportCampanhas?.map((campanha: any) => (
+                            <option key={campanha.id} value={campanha.id}>
+                              {campanha.titulo}
+                            </option>
+                          ))}
+                        </select>
+                        {loadingReportCampanhas && (
+                          <p className="mt-2 text-xs text-slate-500">
+                            Carregando campanhas...
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-700">
@@ -639,12 +691,14 @@ const UBSDashboard: React.FC = () => {
                             ? "Medicamentos Dispensados"
                             : reportType === "consultas"
                               ? "Consultas"
-                              : "Vacinações"}
+                              : reportType === "vacinas"
+                                ? "Vacinações"
+                                : "Campanhas"}
                       </h3>
                     </div>
                     <span className="text-sm text-slate-500">
                       {reportStartDate || reportEndDate
-                        ? `${reportStartDate || "--"} até ${reportEndDate || "--"}`
+                        ? `${formatDateBR(reportStartDate) || "--"} até ${formatDateBR(reportEndDate) || "--"}`
                         : "Período completo"}
                     </span>
                   </div>
@@ -691,7 +745,9 @@ const UBSDashboard: React.FC = () => {
                                 <th className="px-4 py-3">Especialidade</th>
                                 <th className="px-4 py-3">Data Agendada</th>
                                 <th className="px-4 py-3">Status</th>
-                                <th className="px-4 py-3">Criado em</th>
+                                <th className="px-4 py-3">Data Consulta</th>
+                                <th className="px-4 py-3">Diagnóstico</th>
+                                <th className="px-4 py-3">Laudo</th>
                               </>
                             )}
                             {reportType === "vacinas" && (
@@ -701,6 +757,15 @@ const UBSDashboard: React.FC = () => {
                                 <th className="px-4 py-3">Data</th>
                                 <th className="px-4 py-3">Lote</th>
                                 <th className="px-4 py-3">Próxima Dose</th>
+                              </>
+                            )}
+                            {reportType === "campanhas" && (
+                              <>
+                                <th className="px-4 py-3">Nome</th>
+                                <th className="px-4 py-3">CPF</th>
+                                <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3">Agendamento</th>
+                                <th className="px-4 py-3">Observações</th>
                               </>
                             )}
                           </tr>
@@ -760,17 +825,21 @@ const UBSDashboard: React.FC = () => {
                                       {item.especialidade}
                                     </td>
                                     <td className="px-4 py-4 text-slate-900">
-                                      {new Date(
-                                        item.dataAgendada,
-                                      ).toLocaleDateString("pt-BR")}
+                                      {formatDateBR(item.dataAgendada)}
                                     </td>
                                     <td className="px-4 py-4 text-slate-600">
                                       {item.status}
                                     </td>
                                     <td className="px-4 py-4 text-slate-900">
-                                      {new Date(
-                                        item.createdAt,
-                                      ).toLocaleDateString("pt-BR")}
+                                      {item.historico?.dataConsulta
+                                        ? formatDateBR(item.historico.dataConsulta)
+                                        : "-"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.historico?.diagnostico || "-"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.historico?.laudo || "-"}
                                     </td>
                                   </>
                                 )}
@@ -783,19 +852,38 @@ const UBSDashboard: React.FC = () => {
                                       {item.vacinaNome}
                                     </td>
                                     <td className="px-4 py-4 text-slate-900">
-                                      {new Date(
-                                        item.dataApl,
-                                      ).toLocaleDateString("pt-BR")}
+                                      {formatDateBR(item.dataApl)}
                                     </td>
                                     <td className="px-4 py-4 text-slate-600">
                                       {item.lote}
                                     </td>
                                     <td className="px-4 py-4 text-slate-900">
                                       {item.proximaDose
-                                        ? new Date(
-                                            item.proximaDose,
-                                          ).toLocaleDateString("pt-BR")
+                                        ? formatDateBR(item.proximaDose)
                                         : "-"}
+                                    </td>
+                                  </>
+                                )}
+                                {reportType === "campanhas" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.nome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.cpf}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.status}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.agendamento
+                                        ? `${formatDateBR(item.agendamento.dataAgendada)} ${item.agendamento.horaAgendada || ""}`
+                                        : "Sem agendamento"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.observacoes ||
+                                        item.agendamento?.observacoes ||
+                                        "-"}
                                     </td>
                                   </>
                                 )}

@@ -234,20 +234,28 @@ export const useUBSDashboard = () => {
   );
 
   const [reportType, setReportType] = useState("estoque");
+  const [reportCampaignId, setReportCampaignId] = useState("");
   const [reportStartDate, setReportStartDate] = useState("");
   const [reportEndDate, setReportEndDate] = useState("");
+
+  const { data: reportCampanhas, isLoading: loadingReportCampanhas } = useQuery(
+    "ubs-campanhas-report",
+    () => api.get("/ubs/campanhas").then((res) => res.data),
+    { enabled: activeTab === "relatorios" },
+  );
 
   const {
     data: relatorio,
     isLoading: loadingRelatorio,
     refetch: fetchRelatorio,
   } = useQuery(
-    ["ubs-relatorio", reportType, reportStartDate, reportEndDate],
+    ["ubs-relatorio", reportType, reportCampaignId, reportStartDate, reportEndDate],
     () =>
       api
         .get("/ubs/Relatorio", {
           params: {
             tipo: reportType,
+            campanhaId: reportType === "campanhas" ? reportCampaignId : undefined,
             dataInicio: reportStartDate,
             dataFim: reportEndDate,
           },
@@ -907,6 +915,8 @@ export const useUBSDashboard = () => {
     loadingDashboardStats,
     reportType,
     setReportType,
+    reportCampaignId,
+    setReportCampaignId,
     reportStartDate,
     setReportStartDate,
     reportEndDate,
@@ -914,6 +924,8 @@ export const useUBSDashboard = () => {
     relatorio,
     loadingRelatorio,
     fetchRelatorio,
+    reportCampanhas,
+    loadingReportCampanhas,
 
     // Mutations
     solicitarInternacaoMutation,
