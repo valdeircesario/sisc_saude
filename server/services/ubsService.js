@@ -597,10 +597,7 @@ export const obterEstatisticas = async (ubsId) => {
   const consultasRealizadas = await prisma.consulta.count({
     where: {
       ubsId,
-      OR: [
-        { status: "realizada" },
-        { historicoMedico: { isNot: null } },
-      ],
+      OR: [{ status: "realizada" }, { historicoMedico: { isNot: null } }],
     },
   });
 

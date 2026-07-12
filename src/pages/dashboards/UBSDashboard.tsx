@@ -832,7 +832,9 @@ const UBSDashboard: React.FC = () => {
                                     </td>
                                     <td className="px-4 py-4 text-slate-900">
                                       {item.historico?.dataConsulta
-                                        ? formatDateBR(item.historico.dataConsulta)
+                                        ? formatDateBR(
+                                            item.historico.dataConsulta,
+                                          )
                                         : "-"}
                                     </td>
                                     <td className="px-4 py-4 text-slate-600">

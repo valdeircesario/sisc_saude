@@ -208,13 +208,21 @@ export const generateUBSReportPDF = (
           x += widths[3];
           renderCell(
             pdf,
-            item.historico?.dataConsulta ? formatDate(item.historico.dataConsulta) : "-",
+            item.historico?.dataConsulta
+              ? formatDate(item.historico.dataConsulta)
+              : "-",
             x,
             y + 6,
             widths[4],
           );
           x += widths[4];
-          renderCell(pdf, item.historico?.diagnostico || "-", x, y + 6, widths[5]);
+          renderCell(
+            pdf,
+            item.historico?.diagnostico || "-",
+            x,
+            y + 6,
+            widths[5],
+          );
           x += widths[5];
           renderCell(pdf, item.historico?.laudo || "-", x, y + 6, widths[6]);
           break;
