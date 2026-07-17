@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClientProvider } from 'react-query';
+import { queryClient } from './lib/queryClient';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import CampanhaInscricaoPage from './pages/CampanhaInscricaoPage';
@@ -27,15 +28,6 @@ import PacienteDashboard from './pages/dashboards/PacienteDashboard';
 import HOSPDashboard from './pages/dashboards/HOSPDashoard';
 import UpaDashboard from './pages/dashboards/UpaDashboard';
 import FarmaciaDashboard from './pages/dashboards/FarmaciaDashboards';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 function App() {
   return (

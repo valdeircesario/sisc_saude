@@ -52,16 +52,12 @@ export const authorizePaciente = (req, res, next) => {
   }
 };
 
-// ✅ SEGURANÇA: Rate limiter específico para rotas de autenticação
-// Limite muito mais rígido para prevenir ataques de força bruta
+// Rate limiter específico para rotas de autenticação (tentativas de login falhas)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // Máximo 5 tentativas
+  max: 30,
   message: "Muitas tentativas de login. Tente novamente em 15 minutos.",
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req, res) => {
-    // Não aplicar rate limit se a requisição foi bem-sucedida (status 200)
-    return false;
-  },
+  skipSuccessfulRequests: true,
 });

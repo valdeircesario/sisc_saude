@@ -46,11 +46,14 @@ const PORT = process.env.PORT || 3001;
 // Testar conexão com o banco
 testConnection();
 
-// Rate limiting
+// Rate limiting global — limite generoso para uso normal do sistema (dashboards, CRUD, polling)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // limit each IP to 20 requests per windowMs
-  message: "Muitas tentativas, tente novamente em 15 minutos",
+  max: 1000,
+  message: "Muitas requisições. Aguarde alguns instantes e tente novamente.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.path === "/health",
 });
 
 // Middleware

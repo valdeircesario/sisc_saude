@@ -166,10 +166,10 @@ const UpaDashboard: React.FC = () => {
 
   /* queries */
   const { data: triagens = [], isLoading: loadingTriagens } = useQuery(
-    ['upa-triagens'], () => api.get('/upa/triagens').then(r => r.data), { refetchInterval: 15000 }
+    ['upa-triagens'], () => api.get('/upa/triagens').then(r => r.data), { refetchInterval: 60000 }
   );
   const { data: atendimentos = [], isLoading: loadingAtend } = useQuery(
-    ['upa-atendimentos'], () => api.get('/upa/atendimentos').then(r => r.data), { refetchInterval: 15000 }
+    ['upa-atendimentos'], () => api.get('/upa/atendimentos').then(r => r.data), { refetchInterval: 60000 }
   );
   const { data: meds = [] } = useQuery(
     ['upa-medicacoes'], () => api.get('/upa/medicacoes').then(r => r.data),

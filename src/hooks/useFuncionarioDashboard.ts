@@ -1121,6 +1121,45 @@ export const useFuncionarioDashboard = () => {
   const funcao = user?.funcao?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() || "";
   const isMedico = ["medico", "médico"].includes(funcao);
   const isEnfermagemOuFarmacia = ["enfermeiro", "farmaceutico", "farmacêutico"].includes(funcao);
+  const isEnfermeiro = ["enfermeiro"].includes(funcao);
+
+  const { data: agendamentosCampanha, isLoading: loadingAgendamentosCampanha, refetch: refetchAgendamentosCampanha } = useQuery(
+    "funcionario-agendamentos-campanha",
+    async () => {
+      const res = await api.get("/ubs/agendamentos-campanha");
+      const data = res.data;
+      return Array.isArray(data) ? data : [];
+    },
+    { enabled: isEnfermeiro && activeTab === "Agenda_Campanha" },
+  );
+
+  const handleRealizarAgendamentoCampanha = async (id: string, observacoes: string) => {
+    if (!observacoes.trim()) {
+      toast.error("Informe as observações do atendimento.");
+      return;
+    }
+    try {
+      await api.put(`/ubs/agendamentos-campanha/${id}/realizar`, { observacoes: observacoes.trim() });
+      toast.success("Atendimento registrado com sucesso!");
+      refetchAgendamentosCampanha();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao registrar atendimento");
+    }
+  };
+
+  const handleCancelarAgendamentoCampanha = async (id: string, justificativa: string) => {
+    if (!justificativa.trim()) {
+      toast.error("Informe a justificativa do cancelamento.");
+      return;
+    }
+    try {
+      await api.put(`/ubs/agendamentos-campanha/${id}/cancelar`, { justificativa: justificativa.trim() });
+      toast.success("Agendamento cancelado com sucesso!");
+      refetchAgendamentosCampanha();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Erro ao cancelar agendamento");
+    }
+  };
 
   const { data: examesRealizados, isLoading: loadingExames } = useQuery(
     "funcionario-exames",
@@ -1151,6 +1190,8 @@ export const useFuncionarioDashboard = () => {
     { name: "Histórico Médico", key: "historico", icon: Shield },
     { name: "Receita/Atestado", key: "receitas", icon: FileText },
     { name: "Consultar Receita", key: "consultar_receita", icon: FileText },
+    { name: "Campanhas", key: "Agenda_Campanha", icon: Heart },
+    
   ];
 
   const navigation = allNavigation.filter((item) => {
@@ -1160,6 +1201,9 @@ export const useFuncionarioDashboard = () => {
     }
     if (["medicamentos", "consultar_receita"].includes(item.key)) {
       return ["enfermeiro", "farmaceutico", "farmacêutico"].includes(f);
+    }
+    if (item.key === "Agenda_Campanha") {
+      return ["enfermeiro"].includes(f);
     }
     return true;
   });
@@ -1329,6 +1373,12 @@ export const useFuncionarioDashboard = () => {
     openVacinaModal,
     openExameModal,
     openInternacaoModal,
-    openAdministrarMedicamentoModal
+    openAdministrarMedicamentoModal,
+
+    // Agendamentos de Campanha
+    agendamentosCampanha,
+    loadingAgendamentosCampanha,
+    handleRealizarAgendamentoCampanha,
+    handleCancelarAgendamentoCampanha,
   };
 };

@@ -8,7 +8,7 @@ export const useUBSDashboard = () => {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState("funcionarios");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [showFuncModal, setShowFuncModal] = useState(false);
   const [showCampanhaModal, setShowCampanhaModal] = useState(false);
   const [showAgendamentoModal, setShowAgendamentoModal] = useState(false);
@@ -191,7 +191,8 @@ export const useUBSDashboard = () => {
 
   const filteredConsultas = (consultas || []).filter((consulta: any) => {
     const matchesStatus =
-      consultaStatusFilter === "todas" || consulta.status === consultaStatusFilter;
+      consultaStatusFilter === "todas" ||
+      consulta.status === consultaStatusFilter;
 
     const pacienteNome = consulta?.paciente?.nome?.toLowerCase() || "";
     const matchesSearch = pacienteNome.includes(
@@ -224,6 +225,52 @@ export const useUBSDashboard = () => {
         .get("/ubs/medicamentos", { params: { busca: searchTerm } })
         .then((res) => res.data),
     { enabled: activeTab === "medicamentos" },
+  );
+
+  const { data: dashboardStats, isLoading: loadingDashboardStats } = useQuery(
+    "ubs-dashboard-estatisticas",
+    () => api.get("/ubs/dashboard/estatisticas").then((res) => res.data),
+    { enabled: activeTab === "dashboard" },
+  );
+
+  const [reportType, setReportType] = useState("estoque");
+  const [reportCampaignId, setReportCampaignId] = useState("");
+  const [reportStartDate, setReportStartDate] = useState("");
+  const [reportEndDate, setReportEndDate] = useState("");
+
+  const { data: reportCampanhas, isLoading: loadingReportCampanhas } = useQuery(
+    "ubs-campanhas-report",
+    () => api.get("/ubs/campanhas").then((res) => res.data),
+    { enabled: activeTab === "relatorios" },
+  );
+
+  const {
+    data: relatorio,
+    isLoading: loadingRelatorio,
+    refetch: fetchRelatorio,
+  } = useQuery(
+    ["ubs-relatorio", reportType, reportCampaignId, reportStartDate, reportEndDate],
+    () =>
+      api
+        .get("/ubs/Relatorio", {
+          params: {
+            tipo: reportType,
+            campanhaId: reportType === "campanhas" ? reportCampaignId : undefined,
+            dataInicio: reportStartDate,
+            dataFim: reportEndDate,
+          },
+        })
+        .then((res) => res.data),
+    {
+      enabled: false,
+      retry: false,
+      onError: (error: any) => {
+        console.error("Erro ao carregar relatório UBS:", error);
+        toast.error(
+          error.response?.data?.message || "Erro ao carregar relatório",
+        );
+      },
+    },
   );
 
   // Mutations
@@ -356,7 +403,9 @@ export const useUBSDashboard = () => {
         resetCancelamentoForm();
       },
       onError: (error: any) => {
-        toast.error(error.response?.data?.message || "Erro ao cancelar consulta");
+        toast.error(
+          error.response?.data?.message || "Erro ao cancelar consulta",
+        );
       },
     },
   );
@@ -843,7 +892,7 @@ export const useUBSDashboard = () => {
     setEditCampanhaData,
     internacaoData,
     setInternacaoData,
-    
+
     // Data
     funcionarios,
     loadingFuncionarios,
@@ -862,10 +911,25 @@ export const useUBSDashboard = () => {
     hospitaisError,
     medicamentos,
     loadingMedicamentos,
-    
+    dashboardStats,
+    loadingDashboardStats,
+    reportType,
+    setReportType,
+    reportCampaignId,
+    setReportCampaignId,
+    reportStartDate,
+    setReportStartDate,
+    reportEndDate,
+    setReportEndDate,
+    relatorio,
+    loadingRelatorio,
+    fetchRelatorio,
+    reportCampanhas,
+    loadingReportCampanhas,
+
     // Mutations
     solicitarInternacaoMutation,
-    
+
     // Handlers
     handleFuncSubmit,
     handleCampanhaSubmit,

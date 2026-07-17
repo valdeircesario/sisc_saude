@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
+import { queryClient } from '../lib/queryClient';
 
 interface User {
   id: string;
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (newToken: string, newUser: User) => {
+    queryClient.clear();
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
@@ -64,6 +66,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    queryClient.cancelQueries();
+    queryClient.clear();
     setToken(null);
     setUser(null);
     localStorage.removeItem('token');

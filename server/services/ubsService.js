@@ -8,6 +8,18 @@ import {
   buscarPacienteIdPorCpf,
 } from "./notificacaoService.js";
 
+export const getFuncionarioById = async (id) => {
+  return await prisma.funcionario.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      nome: true,
+      funcao: true,
+      ubsId: true,
+    },
+  });
+};
+
 export const listarHospitais = async () => {
   return await prisma.hospital.findMany({
     select: {
@@ -166,31 +178,34 @@ export const obterConsultasPaciente = async (pacienteId) => {
 };
 
 export const agendarConsultaPaciente = async (pacienteId, ubsId, data) => {
-  const { especialidade, motivo, dataAgendada, funcionarioId, observacoes } = data;
+  const { especialidade, motivo, dataAgendada, funcionarioId, observacoes } =
+    data;
 
-  return await prisma.consulta.create({
-    data: {
-      pacienteId,
-      ubsId,
-      especialidade,
-      motivo,
-      dataAgendada: new Date(dataAgendada),
-      funcionarioId,
-      observacoes,
-      status: "agendada",
-    },
-    include: {
-      paciente: {
-        select: { nome: true, email: true },
+  return await prisma.consulta
+    .create({
+      data: {
+        pacienteId,
+        ubsId,
+        especialidade,
+        motivo,
+        dataAgendada: new Date(dataAgendada),
+        funcionarioId,
+        observacoes,
+        status: "agendada",
       },
-      funcionario: {
-        select: { nome: true, funcao: true },
+      include: {
+        paciente: {
+          select: { nome: true, email: true },
+        },
+        funcionario: {
+          select: { nome: true, funcao: true },
+        },
       },
-    },
-  }).then(async (consulta) => {
-    await notificarConsultaAgendada(consulta);
-    return consulta;
-  });
+    })
+    .then(async (consulta) => {
+      await notificarConsultaAgendada(consulta);
+      return consulta;
+    });
 };
 
 export const editarPaciente = async (pacienteId, data) => {
@@ -239,7 +254,10 @@ export const cadastrarFuncionario = async (ubsId, data) => {
   });
 
   if (funcExistente) {
-    throw { status: 400, data: { message: "Funcionário já cadastrado com estes dados" } };
+    throw {
+      status: 400,
+      data: { message: "Funcionário já cadastrado com estes dados" },
+    };
   }
 
   const senhaHash = await bcrypt.hash(senha, 12);
@@ -365,7 +383,10 @@ export const deletarCampanha = async (id, ubsId) => {
   });
 
   if (inscricoes > 0) {
-    throw { status: 400, data: { message: "Não é possível excluir campanha com inscrições" } };
+    throw {
+      status: 400,
+      data: { message: "Não é possível excluir campanha com inscrições" },
+    };
   }
 
   await prisma.campanha.delete({
@@ -392,7 +413,12 @@ export const listarInscricoesCampanha = async (campanhaId, ubsId) => {
   });
 };
 
-export const agendarInscricaoCampanha = async (campanhaId, inscricaoId, ubsId, data) => {
+export const agendarInscricaoCampanha = async (
+  campanhaId,
+  inscricaoId,
+  ubsId,
+  data,
+) => {
   const { dataAgendada, horaAgendada, localAtendimento, observacoes } = data;
 
   const campanha = await prisma.campanha.findFirst({
@@ -421,7 +447,7 @@ export const agendarInscricaoCampanha = async (campanhaId, inscricaoId, ubsId, d
       localAtendimento,
       observacoes,
       status: "agendado",
-    }
+    },
   });
 
   await prisma.inscricaoCampanha.update({
@@ -452,6 +478,15 @@ export const agendarInscricaoCampanha = async (campanhaId, inscricaoId, ubsId, d
 };
 
 export const cancelarAgendamentoCampanha = async (id, ubsId, justificativa) => {
+  if (!justificativa?.trim()) {
+    throw {
+      status: 400,
+      data: {
+        message: "Justificativa é obrigatória para cancelar o agendamento.",
+      },
+    };
+  }
+
   const agendamento = await prisma.agendamentoCampanha.findFirst({
     where: { id, ubsId },
   });
@@ -477,6 +512,15 @@ export const cancelarAgendamentoCampanha = async (id, ubsId, justificativa) => {
 };
 
 export const realizarAgendamentoCampanha = async (id, ubsId, observacoes) => {
+  if (!observacoes?.trim()) {
+    throw {
+      status: 400,
+      data: {
+        message: "Observações são obrigatórias para registrar o atendimento.",
+      },
+    };
+  }
+
   const agendamento = await prisma.agendamentoCampanha.findFirst({
     where: { id, ubsId },
   });
@@ -489,16 +533,35 @@ export const realizarAgendamentoCampanha = async (id, ubsId, observacoes) => {
     where: { id },
     data: {
       status: "realizada",
-      observacoes: observacoes ? `${agendamento.observacoes ? agendamento.observacoes + '\n' : ''}Realizado: ${observacoes}` : agendamento.observacoes,
+      observacoes: observacoes
+        ? `${agendamento.observacoes ? agendamento.observacoes + "\n" : ""}Realizado: ${observacoes}`
+        : agendamento.observacoes,
     },
   });
 
   await prisma.inscricaoCampanha.update({
     where: { id: agendamento.inscricaoId },
-    data: { status: "realizada", observacoes: observacoes ? `${agendamento.observacoes ? agendamento.observacoes + '\n' : ''}Realizado: ${observacoes}` : agendamento.observacoes },
+    data: {
+      status: "realizada",
+      observacoes: observacoes
+        ? `${agendamento.observacoes ? agendamento.observacoes + "\n" : ""}Realizado: ${observacoes}`
+        : agendamento.observacoes,
+    },
   });
 
   return updatedAgendamento;
+};
+
+export const listarAgendamentosCampanha = async (ubsId) => {
+  const agendamentos = await prisma.agendamentoCampanha.findMany({
+    where: { ubsId },
+    include: {
+      campanha: true,
+      inscricao: true,
+    },
+    orderBy: { dataAgendada: "asc" },
+  });
+  return agendamentos;
 };
 
 export const listarConsultas = async (ubsId) => {
@@ -523,6 +586,396 @@ export const listarConsultas = async (ubsId) => {
   });
 };
 
+export const obterEstatisticas = async (ubsId) => {
+  const consultasSolicitadas = await prisma.consulta.count({
+    where: {
+      ubsId,
+      status: "solicitada",
+    },
+  });
+
+  const consultasRealizadas = await prisma.consulta.count({
+    where: {
+      ubsId,
+      OR: [{ status: "realizada" }, { historicoMedico: { isNot: null } }],
+    },
+  });
+
+  const consultasCanceladas = await prisma.consulta.count({
+    where: {
+      ubsId,
+      status: "cancelada",
+    },
+  });
+
+  const medicamentosDispensados = await prisma.medicacaoPaciente.count({
+    where: { ubsId },
+  });
+
+  const vacinasRegistradas = await prisma.vacina.count({
+    where: {
+      funcionario: {
+        ubsId,
+      },
+    },
+  });
+
+  const campanhasAtivas = await prisma.campanha.count({
+    where: { ubsId, ativa: true },
+  });
+
+  const campanhasRealizadas = await prisma.campanha.count({
+    where: {
+      ubsId,
+      agendamentos: {
+        some: { status: "realizada" },
+      },
+    },
+  });
+
+  const totalFuncionarios = await prisma.funcionario.count({
+    where: { ubsId },
+  });
+
+  const pacientesAtendidosRaw = await prisma.consulta.findMany({
+    where: { ubsId },
+    select: { pacienteId: true },
+  });
+  const pacientesAtendidos = new Set(
+    pacientesAtendidosRaw.map((consulta) => consulta.pacienteId),
+  ).size;
+
+  const campanhas = await prisma.campanha.findMany({
+    where: { ubsId },
+    select: {
+      id: true,
+      titulo: true,
+      tipo: true,
+      dataIni: true,
+      dataFim: true,
+      _count: {
+        select: {
+          inscricoes: true,
+        },
+      },
+    },
+    orderBy: { dataIni: "desc" },
+  });
+
+  return {
+    consultasSolicitadas,
+    consultasRealizadas,
+    consultasCanceladas,
+    medicamentosDispensados,
+    vacinasRegistradas,
+    campanhasAtivas,
+    campanhasRealizadas,
+    totalFuncionarios,
+    pacientesAtendidos,
+    campanhas,
+  };
+};
+
+export const obterRelatorio = async (
+  ubsId,
+  tipo,
+  campanhaId,
+  dataInicio,
+  dataFim,
+) => {
+  const buildDateRange = (start, end) => {
+    const range = {};
+
+    if (start) {
+      const startDate = new Date(`${start}T00:00:00.000`);
+      if (!Number.isNaN(startDate.getTime())) {
+        range.gte = startDate;
+      }
+    }
+
+    if (end) {
+      const endDate = new Date(`${end}T23:59:59.999`);
+      if (!Number.isNaN(endDate.getTime())) {
+        range.lte = endDate;
+      }
+    }
+
+    return range;
+  };
+
+  const dateRange = buildDateRange(dataInicio, dataFim);
+  const hasDateRange = Object.keys(dateRange).length > 0;
+
+  switch (tipo) {
+    case "estoque": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.createdAt = dateRange;
+      }
+      const estoque = await prisma.medicamento.findMany({
+        where,
+        select: {
+          id: true,
+          nome: true,
+          descricao: true,
+          lote: true,
+          quantidade: true,
+          dataValidade: true,
+          vencido: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { nome: "asc" },
+      });
+
+      return {
+        tipo,
+        resultado: estoque,
+      };
+    }
+    case "dispensacoes": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.dataRetirada = dateRange;
+      }
+
+      const dispensacoes = await prisma.medicacaoPaciente.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+          medicamento: {
+            select: { nome: true },
+          },
+          funcionario: {
+            select: { nome: true },
+          },
+        },
+        orderBy: { dataRetirada: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: dispensacoes.map((item) => ({
+          id: item.id,
+          medicamento: item.medicamento?.nome,
+          pacienteNome: item.paciente?.nome,
+          quantidade: item.quantidade,
+          dataRetirada: item.dataRetirada,
+          funcionarioNome: item.funcionario?.nome,
+          observacoes: item.observacoes,
+        })),
+      };
+    }
+    case "consultas": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.dataAgendada = dateRange;
+      }
+
+      const consultas = await prisma.consulta.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+          historicoMedico: {
+            select: {
+              laudo: true,
+              diagnostico: true,
+              medicacao: true,
+              observacoes: true,
+              dataConsulta: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: consultas.map((item) => ({
+          id: item.id,
+          pacienteNome: item.paciente?.nome,
+          especialidade: item.especialidade,
+          dataAgendada: item.dataAgendada,
+          status: item.status,
+          createdAt: item.createdAt,
+          historico: item.historicoMedico
+            ? {
+                laudo: item.historicoMedico.laudo,
+                diagnostico: item.historicoMedico.diagnostico,
+                medicacao: item.historicoMedico.medicacao,
+                observacoes: item.historicoMedico.observacoes,
+                dataConsulta: item.historicoMedico.dataConsulta,
+              }
+            : null,
+        })),
+      };
+    }
+    case "receitas": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.dataEmissao = dateRange;
+      }
+
+      const receitas = await prisma.receitaMedica.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+          funcionario: {
+            select: { nome: true },
+          },
+          itens: {
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: { dataEmissao: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: receitas.map((item) => ({
+          id: item.id,
+          pacienteNome: item.paciente?.nome,
+          funcionarioNome: item.funcionario?.nome,
+          dataEmissao: item.dataEmissao,
+          cid: item.cid,
+          descricao: item.descricao,
+          assinaturaTexto: item.assinaturaTexto,
+          registroAssinatura: item.registroAssinatura,
+          assinaturaConcluida: item.assinaturaConcluida,
+          itens: item.itens.map((med) => ({
+            medicamento: med.medicamento,
+            dosagem: med.dosagem,
+            quantidade: med.quantidade,
+            posologia: med.posologia,
+            observacoes: med.observacoes,
+          })),
+        })),
+      };
+    }
+    case "atestados": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.dataEmissao = dateRange;
+      }
+
+      const atestados = await prisma.atestadoMedico.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+          funcionario: {
+            select: { nome: true },
+          },
+        },
+        orderBy: { dataEmissao: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: atestados.map((item) => ({
+          id: item.id,
+          pacienteNome: item.paciente?.nome,
+          funcionarioNome: item.funcionario?.nome,
+          dataEmissao: item.dataEmissao,
+          cid: item.cid,
+          descricao: item.descricao,
+          diasRepouso: item.diasRepouso,
+          observacoes: item.observacoes,
+          assinaturaConcluida: item.assinaturaConcluida,
+        })),
+      };
+    }
+    case "vacinas": {
+      const where = {
+        funcionario: {
+          ubsId,
+        },
+      };
+      if (hasDateRange) {
+        where.dataApl = dateRange;
+      }
+
+      const vacinas = await prisma.vacina.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+        },
+        orderBy: { dataApl: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: vacinas.map((item) => ({
+          id: item.id,
+          pacienteNome: item.paciente?.nome,
+          vacinaNome: item.nome,
+          lote: item.lote,
+          dataApl: item.dataApl,
+          proximaDose: item.proximaDose,
+        })),
+      };
+    }
+    case "campanhas": {
+      if (!campanhaId) {
+        throw {
+          status: 400,
+          data: { message: "Campanha é obrigatória para este relatório" },
+        };
+      }
+
+      const where = { campanhaId };
+      if (hasDateRange) {
+        where.createdAt = dateRange;
+      }
+
+      const inscricoes = await prisma.inscricaoCampanha.findMany({
+        where,
+        include: {
+          agendamento: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return {
+        tipo,
+        campanhaId,
+        resultado: inscricoes.map((item) => ({
+          id: item.id,
+          nome: item.nome,
+          cpf: item.cpf,
+          telefone: item.telefone,
+          status: item.status,
+          dataInscricao: item.createdAt,
+          agendamento: item.agendamento
+            ? {
+                dataAgendada: item.agendamento.dataAgendada,
+                horaAgendada: item.agendamento.horaAgendada,
+                localAtendimento: item.agendamento.localAtendimento,
+                status: item.agendamento.status,
+                observacoes: item.agendamento.observacoes,
+              }
+            : null,
+          observacoes: item.observacoes,
+        })),
+      };
+    }
+    default:
+      throw {
+        status: 400,
+        data: { message: "Tipo de relatório inválido" },
+      };
+  }
+};
+
 export const agendarConsulta = async (id, ubsId, data) => {
   const { dataAgendada, funcionarioId, observacoes } = data;
 
@@ -539,7 +992,12 @@ export const agendarConsulta = async (id, ubsId, data) => {
   });
 
   if (!funcionario) {
-    throw { status: 400, data: { message: "Funcionário não encontrado ou não pertence a esta UBS" } };
+    throw {
+      status: 400,
+      data: {
+        message: "Funcionário não encontrado ou não pertence a esta UBS",
+      },
+    };
   }
 
   const consulta = await prisma.consulta.update({
@@ -578,7 +1036,10 @@ export const cancelarConsulta = async (id, ubsId, observacoes) => {
   }
 
   if (consultaExistente.status === "realizada") {
-    throw { status: 400, data: { message: "Não é possível cancelar uma consulta já realizada" } };
+    throw {
+      status: 400,
+      data: { message: "Não é possível cancelar uma consulta já realizada" },
+    };
   }
 
   const consulta = await prisma.consulta.update({
@@ -623,7 +1084,10 @@ export const solicitarInternacao = async (ubsId, data) => {
     !detalhes ||
     !laudoMedico
   ) {
-    throw { status: 400, data: { message: "Todos os campos obrigatórios devem ser preenchidos" } };
+    throw {
+      status: 400,
+      data: { message: "Todos os campos obrigatórios devem ser preenchidos" },
+    };
   }
 
   const paciente = await prisma.paciente.findUnique({
@@ -654,7 +1118,12 @@ export const solicitarInternacao = async (ubsId, data) => {
   });
 
   if (!funcionario) {
-    throw { status: 400, data: { message: "Funcionário não encontrado ou não pertence a esta UBS" } };
+    throw {
+      status: 400,
+      data: {
+        message: "Funcionário não encontrado ou não pertence a esta UBS",
+      },
+    };
   }
 
   const ubs = await prisma.uBS.findUnique({
@@ -799,12 +1268,19 @@ export const obterSolicitacaoInternacao = async (id, ubsId) => {
   });
 
   if (!solicitacao) {
-    throw { status: 404, data: { message: "Solicitação de internação não encontrada" } };
+    throw {
+      status: 404,
+      data: { message: "Solicitação de internação não encontrada" },
+    };
   }
   return solicitacao;
 };
 
-export const cancelarSolicitacaoInternacao = async (id, ubsId, motivoCancelamento) => {
+export const cancelarSolicitacaoInternacao = async (
+  id,
+  ubsId,
+  motivoCancelamento,
+) => {
   const solicitacao = await prisma.solicitacaoInternacao.findFirst({
     where: {
       id,
@@ -814,7 +1290,10 @@ export const cancelarSolicitacaoInternacao = async (id, ubsId, motivoCancelament
   });
 
   if (!solicitacao) {
-    throw { status: 404, data: { message: "Solicitação não encontrada ou não pode ser cancelada" } };
+    throw {
+      status: 404,
+      data: { message: "Solicitação não encontrada ou não pode ser cancelada" },
+    };
   }
 
   return await prisma.solicitacaoInternacao.update({
