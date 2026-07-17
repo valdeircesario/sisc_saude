@@ -13,7 +13,16 @@ dist-ssr
 *.local
 .history/src/
 
+
+# Uploads gerados pela aplicação
+server/uploads/**
+
+# Mantém a estrutura de diretórios
+!server/uploads/
+!server/uploads/.gitkeep
+
 # Editor directories and files
+
 .vscode/*
 !.vscode/extensions.json
 .idea
