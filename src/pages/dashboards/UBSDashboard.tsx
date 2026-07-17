@@ -615,6 +615,8 @@ const UBSDashboard: React.FC = () => {
                         <option value="consultas">Consultas</option>
                         <option value="vacinas">Vacinas</option>
                         <option value="campanhas">Campanhas</option>
+                        <option value="receitas">Receitas Médicas</option>
+                        <option value="atestados">Atestados Médicos</option>
                       </select>
                     </div>
 
@@ -693,7 +695,11 @@ const UBSDashboard: React.FC = () => {
                               ? "Consultas"
                               : reportType === "vacinas"
                                 ? "Vacinações"
-                                : "Campanhas"}
+                                : reportType === "campanhas"
+                                  ? "Campanhas"
+                                  : reportType === "receitas"
+                                    ? "Receitas Médicas"
+                                    : "Atestados Médicos"}
                       </h3>
                     </div>
                     <span className="text-sm text-slate-500">
@@ -765,6 +771,26 @@ const UBSDashboard: React.FC = () => {
                                 <th className="px-4 py-3">CPF</th>
                                 <th className="px-4 py-3">Status</th>
                                 <th className="px-4 py-3">Agendamento</th>
+                                <th className="px-4 py-3">Observações</th>
+                              </>
+                            )}
+                            {reportType === "receitas" && (
+                              <>
+                                <th className="px-4 py-3">Paciente</th>
+                                <th className="px-4 py-3">Funcionário</th>
+                                <th className="px-4 py-3">Data Emissão</th>
+                                <th className="px-4 py-3">CID</th>
+                                <th className="px-4 py-3">Medicamentos</th>
+                                <th className="px-4 py-3">Assinatura</th>
+                              </>
+                            )}
+                            {reportType === "atestados" && (
+                              <>
+                                <th className="px-4 py-3">Paciente</th>
+                                <th className="px-4 py-3">Funcionário</th>
+                                <th className="px-4 py-3">Data Emissão</th>
+                                <th className="px-4 py-3">CID</th>
+                                <th className="px-4 py-3">Dias Repouso</th>
                                 <th className="px-4 py-3">Observações</th>
                               </>
                             )}
@@ -863,6 +889,59 @@ const UBSDashboard: React.FC = () => {
                                       {item.proximaDose
                                         ? formatDateBR(item.proximaDose)
                                         : "-"}
+                                    </td>
+                                  </>
+                                )}
+                                {reportType === "receitas" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.pacienteNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.funcionarioNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {formatDateBR(item.dataEmissao)}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.cid || "-"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.itens && item.itens.length > 0
+                                        ? item.itens
+                                            .map(
+                                              (med: any) =>
+                                                `${med.medicamento}${med.dosagem ? ` ${med.dosagem}` : ""} x${med.quantidade}`,
+                                            )
+                                            .join("; ")
+                                        : item.descricao || "-"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.registroAssinatura || "-"}
+                                    </td>
+                                  </>
+                                )}
+                                {reportType === "atestados" && (
+                                  <>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.pacienteNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.funcionarioNome}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {formatDateBR(item.dataEmissao)}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.cid || "-"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-900">
+                                      {item.diasRepouso ?? "-"}
+                                    </td>
+                                    <td className="px-4 py-4 text-slate-600">
+                                      {item.observacoes ||
+                                        item.descricao ||
+                                        "-"}
                                     </td>
                                   </>
                                 )}

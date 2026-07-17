@@ -814,6 +814,84 @@ export const obterRelatorio = async (
         })),
       };
     }
+    case "receitas": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.dataEmissao = dateRange;
+      }
+
+      const receitas = await prisma.receitaMedica.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+          funcionario: {
+            select: { nome: true },
+          },
+          itens: {
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: { dataEmissao: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: receitas.map((item) => ({
+          id: item.id,
+          pacienteNome: item.paciente?.nome,
+          funcionarioNome: item.funcionario?.nome,
+          dataEmissao: item.dataEmissao,
+          cid: item.cid,
+          descricao: item.descricao,
+          assinaturaTexto: item.assinaturaTexto,
+          registroAssinatura: item.registroAssinatura,
+          assinaturaConcluida: item.assinaturaConcluida,
+          itens: item.itens.map((med) => ({
+            medicamento: med.medicamento,
+            dosagem: med.dosagem,
+            quantidade: med.quantidade,
+            posologia: med.posologia,
+            observacoes: med.observacoes,
+          })),
+        })),
+      };
+    }
+    case "atestados": {
+      const where = { ubsId };
+      if (hasDateRange) {
+        where.dataEmissao = dateRange;
+      }
+
+      const atestados = await prisma.atestadoMedico.findMany({
+        where,
+        include: {
+          paciente: {
+            select: { nome: true },
+          },
+          funcionario: {
+            select: { nome: true },
+          },
+        },
+        orderBy: { dataEmissao: "desc" },
+      });
+
+      return {
+        tipo,
+        resultado: atestados.map((item) => ({
+          id: item.id,
+          pacienteNome: item.paciente?.nome,
+          funcionarioNome: item.funcionario?.nome,
+          dataEmissao: item.dataEmissao,
+          cid: item.cid,
+          descricao: item.descricao,
+          diasRepouso: item.diasRepouso,
+          observacoes: item.observacoes,
+          assinaturaConcluida: item.assinaturaConcluida,
+        })),
+      };
+    }
     case "vacinas": {
       const where = {
         funcionario: {

@@ -24,6 +24,8 @@ const reportTitles: Record<string, string> = {
   consultas: "Consultas Realizadas",
   vacinas: "Vacinações Registradas",
   campanhas: "Relatório de Campanhas",
+  receitas: "Receitas Médicas",
+  atestados: "Atestados Médicos",
 };
 
 const getReportTitle = (tipo: string) => reportTitles[tipo] || "Relatório UBS";
@@ -137,13 +139,13 @@ export const generateUBSReportPDF = (
       headers = [
         "Paciente",
         "Especialidade",
-        "Data Agendada",
+        "Dt Agendada",
         "Status",
-        "Data Consulta",
+        "Dt Consulta",
         "Diagnóstico",
         "Laudo",
       ];
-      widths = [40, 30, 25, 20, 25, 30, 30];
+      widths = [34, 21, 21, 16, 23, 27, 45];
       break;
     case "vacinas":
       headers = ["Paciente", "Vacina", "Data", "Lote", "Próxima Dose"];
@@ -151,7 +153,16 @@ export const generateUBSReportPDF = (
       break;
     case "campanhas":
       headers = ["Nome", "CPF", "Status", "Agendamento", "Observações"];
-      widths = [50, 35, 30, 40, 35];
+      widths = [35, 23, 16, 30, 70];
+      break;
+      //configurar espaço do pdf dos dados
+    case "receitas":
+      headers = ["Paciente", "Funcionário", "Data Emissão", "CID", "Medicamentos", "Assinatura"];
+      widths = [35, 32, 22, 14, 38, 25];
+      break;
+    case "atestados":
+      headers = ["Paciente", "Funcionário", "Data Emissão", "CID", "Dias Repouso", "Observações"];
+      widths = [40, 35, 30, 25, 25, 35];
       break;
     default:
       headers = ["Registro"];
@@ -198,13 +209,13 @@ export const generateUBSReportPDF = (
           renderCell(pdf, item.funcionarioNome || "-", x, y + 6, widths[4]);
           break;
         case "consultas":
-          renderCell(pdf, item.pacienteNome || "-", x, y + 6, widths[0]);
+          renderCell(pdf, item.pacienteNome || "-", x, y + 8, widths[0]);
           x += widths[0];
-          renderCell(pdf, item.especialidade || "-", x, y + 6, widths[1]);
+          renderCell(pdf, item.especialidade || "-", x, y + 8, widths[1]);
           x += widths[1];
-          renderCell(pdf, formatDate(item.dataAgendada), x, y + 6, widths[2]);
+          renderCell(pdf, formatDate(item.dataAgendada), x, y + 8, widths[2]);
           x += widths[2];
-          renderCell(pdf, item.status || "-", x, y + 6, widths[3]);
+          renderCell(pdf, item.status || "-", x, y + 8, widths[3]);
           x += widths[3];
           renderCell(
             pdf,
@@ -212,7 +223,7 @@ export const generateUBSReportPDF = (
               ? formatDate(item.historico.dataConsulta)
               : "-",
             x,
-            y + 6,
+            y + 8,
             widths[4],
           );
           x += widths[4];
@@ -220,11 +231,11 @@ export const generateUBSReportPDF = (
             pdf,
             item.historico?.diagnostico || "-",
             x,
-            y + 6,
+            y + 8,
             widths[5],
           );
           x += widths[5];
-          renderCell(pdf, item.historico?.laudo || "-", x, y + 6, widths[6]);
+          renderCell(pdf, item.historico?.laudo || "-", x, y + 3, widths[6]);
           break;
         case "vacinas":
           renderCell(pdf, item.pacienteNome || "-", x, y + 6, widths[0]);
@@ -264,12 +275,51 @@ export const generateUBSReportPDF = (
             pdf,
             item.observacoes || item.agendamento?.observacoes || "-",
             x,
-            y + 6,
+            y + 3,
             widths[4],
           );
           break;
+        case "receitas":
+          renderCell(pdf, item.pacienteNome || "-", x, y + 5, widths[0]);
+          x += widths[0];
+          renderCell(pdf, item.funcionarioNome || "-", x, y + 5, widths[1]);
+          x += widths[1];
+          renderCell(pdf, formatDate(item.dataEmissao), x, y + 5, widths[2]);
+          x += widths[2];
+          renderCell(pdf, item.cid || "-", x, y + 5, widths[3]);
+          x += widths[3];
+          renderCell(
+            pdf,
+            item.itens && item.itens.length > 0
+              ? item.itens
+                  .map(
+                    (med: any) =>
+                      `${med.medicamento}${med.dosagem ? ` ${med.dosagem}` : ""} x${med.quantidade}`,
+                  )
+                  .join("; ")
+              : item.descricao || "-",
+            x,
+            y + 5,
+            widths[4],
+          );
+          x += widths[4];
+          renderCell(pdf, item.registroAssinatura || "-", x, y + 5, widths[5]);
+          break;
+        case "atestados":
+          renderCell(pdf, item.pacienteNome || "-", x, y + 5, widths[0]);
+          x += widths[0];
+          renderCell(pdf, item.funcionarioNome || "-", x, y + 5, widths[1]);
+          x += widths[1];
+          renderCell(pdf, formatDate(item.dataEmissao), x, y + 5, widths[2]);
+          x += widths[2];
+          renderCell(pdf, item.cid || "-", x, y + 5, widths[3]);
+          x += widths[3];
+          renderCell(pdf, String(item.diasRepouso ?? "-"), x, y + 5, widths[4]);
+          x += widths[4];
+          renderCell(pdf, item.observacoes || item.descricao || "-", x, y + 5, widths[5]);
+          break;
         default:
-          renderCell(pdf, JSON.stringify(item), x, y + 6, widths[0]);
+          renderCell(pdf, JSON.stringify(item), x, y + 5, widths[0]);
           break;
       }
       y += rowHeight;
