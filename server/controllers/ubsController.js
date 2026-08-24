@@ -344,6 +344,19 @@ export const obterRelatorio = async (req, res) => {
   }
 };
 
+export const editarConsulta = async (req, res) => {
+  try {
+    const consulta = await ubsService.editarConsulta(
+      req.params.id,
+      req.user.id,
+      req.body,
+    );
+    res.json({ message: "Consulta atualizada com sucesso", consulta });
+  } catch (error) {
+    handleError(res, error, "Erro ao editar consulta:");
+  }
+};
+
 export const agendarConsulta = async (req, res) => {
   try {
     const consulta = await ubsService.agendarConsulta(

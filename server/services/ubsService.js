@@ -2,6 +2,7 @@ import { prisma } from "../config/database.js";
 import bcrypt from "bcryptjs";
 import {
   notificarConsultaAgendada,
+  notificarConsultaAlterada,
   notificarConsultaCancelada,
   notificarCampanhaAgendada,
   notificarInternacaoStatus,
@@ -974,6 +975,64 @@ export const obterRelatorio = async (
         data: { message: "Tipo de relatório inválido" },
       };
   }
+};
+
+export const editarConsulta = async (id, ubsId, data) => {
+  const { dataAgendada, funcionarioId, motivo, especialidade, observacoes } =
+    data;
+
+  const consultaExistente = await prisma.consulta.findFirst({
+    where: { id, ubsId },
+  });
+
+  if (!consultaExistente) {
+    throw { status: 404, data: { message: "Consulta não encontrada" } };
+  }
+
+  // Verifica se o funcionário pertence à mesma UBS, se estiver sendo alterado
+  if (funcionarioId && funcionarioId !== consultaExistente.funcionarioId) {
+    const funcionario = await prisma.funcionario.findFirst({
+      where: { id: funcionarioId, ubsId },
+    });
+
+    if (!funcionario) {
+      throw {
+        status: 400,
+        data: {
+          message: "Funcionário não encontrado ou não pertence a esta UBS",
+        },
+      };
+    }
+  }
+
+  const consultaAtualizada = await prisma.consulta.update({
+    where: { id },
+    data: {
+      dataAgendada: dataAgendada
+        ? new Date(dataAgendada)
+        : consultaExistente.dataAgendada,
+      funcionarioId: funcionarioId || consultaExistente.funcionarioId,
+      motivo: motivo || consultaExistente.motivo,
+      especialidade: especialidade || consultaExistente.especialidade,
+      observacoes:
+        observacoes !== undefined ? observacoes : consultaExistente.observacoes,
+    },
+    include: {
+      paciente: {
+        select: { nome: true, email: true },
+      },
+      funcionario: {
+        select: { nome: true, funcao: true },
+      },
+    },
+  });
+
+  await notificarConsultaAlterada(
+    consultaAtualizada,
+    "A UBS realizou uma atualização na sua consulta.",
+  );
+
+  return consultaAtualizada;
 };
 
 export const agendarConsulta = async (id, ubsId, data) => {

@@ -1,27 +1,27 @@
 import React from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { 
-  Edit, 
-  Trash2, 
-  Heart, 
-  Calendar, 
-  Building2, 
-  Users, 
-  X, 
-  Mail, 
-  Phone, 
-  CreditCard, 
-  User, 
-  MapPin, 
-  Shield, 
-  Clock, 
+import {
+  Edit,
+  Trash2,
+  Heart,
+  Calendar,
+  Building2,
+  Users,
+  X,
+  Mail,
+  Phone,
+  CreditCard,
+  User,
+  MapPin,
+  Shield,
+  Clock,
   Stethoscope,
   Info,
   CheckCircle,
   AlertCircle,
   Megaphone,
-  Pill
+  Pill,
 } from "lucide-react";
 
 // Helper for status colors
@@ -31,7 +31,11 @@ const getStatusStyles = (status: string) => {
     case "solicitada":
       return "bg-amber-50 text-amber-700 border-amber-100";
     case "agendada":
+    case "agendado":
       return "bg-blue-50 text-blue-700 border-blue-100";
+    case "confirmada":
+    case "confirmado":
+      return "bg-emerald-50 text-emerald-700 border-emerald-100";
     case "realizada":
       return "bg-emerald-50 text-emerald-700 border-emerald-100";
     case "cancelada":
@@ -71,7 +75,8 @@ export const FuncionarioCard: React.FC<{
               </h3>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500 font-medium">
                 <span className="flex items-center gap-1">
-                  <CreditCard className="h-3.5 w-3.5" /> {funcionario.cpf || "—"}
+                  <CreditCard className="h-3.5 w-3.5" />{" "}
+                  {funcionario.cpf || "—"}
                 </span>
                 {funcionario.crm && (
                   <span className="flex items-center gap-1 text-teal-600">
@@ -80,7 +85,7 @@ export const FuncionarioCard: React.FC<{
                 )}
               </div>
             </div>
-            
+
             <div className="flex gap-2">
               <button
                 onClick={() => onEdit(funcionario)}
@@ -110,7 +115,9 @@ export const FuncionarioCard: React.FC<{
               <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center border border-gray-100">
                 <Mail className="h-3.5 w-3.5 text-gray-400" />
               </div>
-              <span className="truncate">{funcionario.email || "Não informado"}</span>
+              <span className="truncate">
+                {funcionario.email || "Não informado"}
+              </span>
             </div>
           </div>
         </div>
@@ -152,21 +159,31 @@ export const PacienteCard: React.FC<{
         {/* Middle: Details */}
         <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-6 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-6">
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Documentos</p>
-            <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
-              <CreditCard className="h-3.5 w-3.5 text-gray-300" /> CPF: {paciente.cpf || "—"}
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Documentos
             </p>
             <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-gray-300" /> {paciente.nascimento ? format(new Date(paciente.nascimento), "dd/MM/yyyy") : "N/A"}
+              <CreditCard className="h-3.5 w-3.5 text-gray-300" /> CPF:{" "}
+              {paciente.cpf || "—"}
+            </p>
+            <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-gray-300" />{" "}
+              {paciente.nascimento
+                ? format(new Date(paciente.nascimento), "dd/MM/yyyy")
+                : "N/A"}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Contato e Local</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Contato e Local
+            </p>
             <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5">
-              <Phone className="h-3.5 w-3.5 text-gray-300" /> {paciente.telefone || "—"}
+              <Phone className="h-3.5 w-3.5 text-gray-300" />{" "}
+              {paciente.telefone || "—"}
             </p>
             <p className="text-xs font-medium text-gray-700 flex items-center gap-1.5 truncate">
-              <MapPin className="h-3.5 w-3.5 text-gray-300" /> {paciente.endereco || "Não informado"}
+              <MapPin className="h-3.5 w-3.5 text-gray-300" />{" "}
+              {paciente.endereco || "Não informado"}
             </p>
           </div>
         </div>
@@ -226,7 +243,9 @@ export const MedicamentoCard: React.FC<{
             <Pill className="h-6 w-6 text-violet-600" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-gray-900">{medicamento.nome || "Sem nome"}</h3>
+            <h3 className="text-base font-bold text-gray-900">
+              {medicamento.nome || "Sem nome"}
+            </h3>
             <p className="text-xs text-gray-500 font-medium truncate max-w-[200px]">
               {medicamento.descricao || "Sem descrição"}
             </p>
@@ -242,29 +261,41 @@ export const MedicamentoCard: React.FC<{
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Estoque Atual</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            Estoque Atual
+          </p>
           <div className="flex items-center gap-2">
-            <span className={`text-xl font-black ${isOutOfStock ? "text-rose-600" : isLowStock ? "text-amber-600" : "text-gray-900"}`}>
+            <span
+              className={`text-xl font-black ${isOutOfStock ? "text-rose-600" : isLowStock ? "text-amber-600" : "text-gray-900"}`}
+            >
               {quantidade}
             </span>
             {isOutOfStock ? (
               <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600 px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100">
                 <AlertCircle className="h-3 w-3" /> ESGOTADO
               </span>
-            ) : isLowStock && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
-                <Info className="h-3 w-3" /> BAIXO
-              </span>
+            ) : (
+              isLowStock && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 px-2 py-0.5 rounded-full bg-amber-50 border border-amber-100">
+                  <Info className="h-3 w-3" /> BAIXO
+                </span>
+              )
             )}
           </div>
         </div>
-        
+
         <div className="space-y-1 text-right">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Informações</p>
-          <p className="text-xs font-bold text-gray-700">LOTE: {medicamento.lote || "—"}</p>
-          <p className={`text-[11px] font-bold ${medicamento.vencido ? "text-rose-600" : "text-emerald-600"}`}>
-            {medicamento.dataValidade 
-              ? `VAL: ${format(new Date(medicamento.dataValidade), "dd/MM/yyyy")}` 
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            Informações
+          </p>
+          <p className="text-xs font-bold text-gray-700">
+            LOTE: {medicamento.lote || "—"}
+          </p>
+          <p
+            className={`text-[11px] font-bold ${medicamento.vencido ? "text-rose-600" : "text-emerald-600"}`}
+          >
+            {medicamento.dataValidade
+              ? `VAL: ${format(new Date(medicamento.dataValidade), "dd/MM/yyyy")}`
               : "VAL: N/A"}
           </p>
         </div>
@@ -283,12 +314,15 @@ export const CampanhaCard: React.FC<{
 }> = ({ campanha, inscricoes, onEdit, onDelete, onInscricoes }) => {
   if (!campanha) return null;
 
-  const agendados = Array.isArray(inscricoes) ? inscricoes.filter((i: any) => i?.status === "agendado").length : 0;
-  const pendentes = Array.isArray(inscricoes) ? inscricoes.filter((i: any) => i?.status === "inscrito").length : 0;
-  const totalInscritos = campanha?._count?.inscricoes || 0;
-  const percentual = totalInscritos > 0 
-    ? Math.round((agendados / totalInscritos) * 100) 
+  const agendados = Array.isArray(inscricoes)
+    ? inscricoes.filter((i: any) => i?.status === "agendado").length
     : 0;
+  const pendentes = Array.isArray(inscricoes)
+    ? inscricoes.filter((i: any) => i?.status === "inscrito").length
+    : 0;
+  const totalInscritos = campanha?._count?.inscricoes || 0;
+  const percentual =
+    totalInscritos > 0 ? Math.round((agendados / totalInscritos) * 100) : 0;
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
@@ -297,17 +331,27 @@ export const CampanhaCard: React.FC<{
           <Megaphone className="h-6 w-6 text-amber-600" />
         </div>
         <div className="flex gap-1.5">
-          <button onClick={() => onEdit(campanha)} className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+          <button
+            onClick={() => onEdit(campanha)}
+            className="p-2 bg-gray-50 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+          >
             <Edit className="h-4 w-4" />
           </button>
-          <button onClick={() => onDelete(campanha?.id)} className="p-2 bg-gray-50 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
+          <button
+            onClick={() => onDelete(campanha?.id)}
+            className="p-2 bg-gray-50 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+          >
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2">{campanha?.titulo || "Sem título"}</h3>
-      <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4">{campanha?.descricao || "Sem descrição"}</p>
+      <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2">
+        {campanha?.titulo || "Sem título"}
+      </h3>
+      <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4">
+        {campanha?.descricao || "Sem descrição"}
+      </p>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-widest">
@@ -315,23 +359,29 @@ export const CampanhaCard: React.FC<{
           <span className="text-teal-600">{percentual}%</span>
         </div>
         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-teal-500 rounded-full transition-all duration-1000" 
+          <div
+            className="h-full bg-teal-500 rounded-full transition-all duration-1000"
             style={{ width: `${percentual}%` }}
           />
         </div>
 
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-gray-50 rounded-xl p-2.5 text-center border border-gray-100">
-            <p className="text-[10px] font-bold text-gray-400 uppercase">Inscritos</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase">
+              Inscritos
+            </p>
             <p className="text-sm font-black text-gray-900">{totalInscritos}</p>
-            </div>
+          </div>
           <div className="bg-teal-50 rounded-xl p-2.5 text-center border border-teal-100">
-            <p className="text-[10px] font-bold text-teal-400 uppercase">Agendados</p>
+            <p className="text-[10px] font-bold text-teal-400 uppercase">
+              Agendados
+            </p>
             <p className="text-sm font-black text-teal-700">{agendados}</p>
           </div>
           <div className="bg-amber-50 rounded-xl p-2.5 text-center border border-amber-100">
-            <p className="text-[10px] font-bold text-amber-400 uppercase">Pendentes</p>
+            <p className="text-[10px] font-bold text-amber-400 uppercase">
+              Pendentes
+            </p>
             <p className="text-sm font-black text-teal-700">{pendentes}</p>
           </div>
         </div>
@@ -351,10 +401,17 @@ export const CampanhaCard: React.FC<{
 export const ConsultaCard: React.FC<{
   consulta: any;
   onAgendar: (consulta: any) => void;
+  onEdit: (consulta: any) => void;
   onCancelamento: (consulta: any) => void;
-}> = ({ consulta, onAgendar, onCancelamento }) => {
+}> = ({ consulta, onAgendar, onEdit, onCancelamento }) => {
   if (!consulta) return null;
   const statusStyles = getStatusStyles(consulta.status);
+  const canEditConsulta = [
+    "agendada",
+    "agendado",
+    "confirmada",
+    "confirmado",
+  ].includes(String(consulta?.status || "").toLowerCase());
 
   return (
     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
@@ -364,39 +421,69 @@ export const ConsultaCard: React.FC<{
             <Calendar className="h-6 w-6 text-sky-600" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-gray-900 leading-none">{consulta?.paciente?.nome || "Paciente desconhecido"}</h3>
-            <span className={`inline-block mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${statusStyles}`}>
+            <h3 className="text-base font-bold text-gray-900 leading-none">
+              {consulta?.paciente?.nome || "Paciente desconhecido"}
+            </h3>
+            <span
+              className={`inline-block mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${statusStyles}`}
+            >
               {consulta?.status || "—"}
             </span>
           </div>
         </div>
+        {canEditConsulta && (
+          <button
+            onClick={() => onEdit(consulta)}
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-100 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-amber-600 hover:text-white transition-all shadow-sm"
+            title="Editar consulta"
+            type="button"
+          >
+            <Edit className="h-3.5 w-3.5" />
+            Editar
+          </button>
+        )}
       </div>
 
       <div className="space-y-4 mb-6">
+        {/* ... (restante do componente) ... */}
+
         <div className="flex gap-4">
           <div className="flex-1 space-y-1">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Especialidade</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Especialidade
+            </p>
             <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Stethoscope className="h-4 w-4 text-sky-500" /> {consulta?.especialidade || "—"}
+              <Stethoscope className="h-4 w-4 text-sky-500" />{" "}
+              {consulta?.especialidade || "—"}
             </p>
           </div>
           <div className="flex-1 space-y-1">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Solicitação</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+              Solicitação
+            </p>
             <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-              <Clock className="h-4 w-4 text-gray-300" /> {consulta?.createdAt ? format(new Date(consulta.createdAt), "dd/MM/yy") : "—"}
+              <Clock className="h-4 w-4 text-gray-300" />{" "}
+              {consulta?.createdAt
+                ? format(new Date(consulta.createdAt), "dd/MM/yy")
+                : "—"}
             </p>
           </div>
         </div>
 
         <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Motivo / Queixa</p>
-          <p className="text-xs text-gray-600 font-medium leading-relaxed italic">"{consulta?.motivo || "Não informado"}"</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+            Motivo / Queixa
+          </p>
+          <p className="text-xs text-gray-600 font-medium leading-relaxed italic">
+            "{consulta?.motivo || "Não informado"}"
+          </p>
         </div>
 
         {consulta?.dataAgendada && (
           <div className="flex items-center gap-2 text-sm font-black text-sky-700 bg-sky-50 p-3 rounded-xl border border-sky-100">
             <CheckCircle className="h-5 w-5" />
-            AGENDADO: {format(new Date(consulta.dataAgendada), "dd/MM/yyyy HH:mm")}
+            AGENDADO:{" "}
+            {format(new Date(consulta.dataAgendada), "dd/MM/yyyy HH:mm")}
           </div>
         )}
       </div>

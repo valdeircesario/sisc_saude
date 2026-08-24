@@ -10,6 +10,7 @@ interface UBSConsultasTabProps {
   consultaStatusFilter: string;
   setConsultaStatusFilter: (filter: string) => void;
   openAgendamentoModal: (consulta: any) => void;
+  openEdicaoConsultaModal: (consulta: any) => void;
   openCancelamentoModal: (consulta: any) => void;
 }
 
@@ -21,6 +22,7 @@ export const UBSConsultasTab: React.FC<UBSConsultasTabProps> = ({
   consultaStatusFilter,
   setConsultaStatusFilter,
   openAgendamentoModal,
+  openEdicaoConsultaModal,
   openCancelamentoModal,
 }) => {
   return (
@@ -53,7 +55,7 @@ export const UBSConsultasTab: React.FC<UBSConsultasTabProps> = ({
           </div>
 
           <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-gray-100 shadow-sm shadow-gray-100/50 w-full sm:w-auto overflow-x-auto no-scrollbar">
-             {["todas", "solicitada", "agendada", "cancelada"].map((status) => (
+             {["todas", "solicitada", "agendada", "confirmada", "cancelada"].map((status) => (
                <button
                  key={status}
                  onClick={() => setConsultaStatusFilter(status)}
@@ -85,6 +87,7 @@ export const UBSConsultasTab: React.FC<UBSConsultasTabProps> = ({
                 key={consulta.id}
                 consulta={consulta}
                 onAgendar={openAgendamentoModal}
+                onEdit={openEdicaoConsultaModal}
                 onCancelamento={openCancelamentoModal}
               />
             ))

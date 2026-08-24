@@ -20,6 +20,7 @@ import { UBSAgendamentoCampanhaModal } from "../../components/UBS/Modals/UBSAgen
 import { UBSSolicitarInternacaoModal } from "../../components/UBS/Modals/UBSSolicitarInternacaoModal";
 import { useUBSDashboard } from "../../hooks/useUBSDashboard";
 import { generateUBSReportPDF } from "../../utils/pdfGenerator";
+import { UBSEditarConsultaModal } from "../../components/UBS/Modals/UBSEditarConsultaModal";
 
 const formatDateBR = (dateString: string) => {
   if (!dateString) return "";
@@ -49,6 +50,8 @@ const UBSDashboard: React.FC = () => {
     setShowCampanhaModal,
     showAgendamentoModal,
     setShowAgendamentoModal,
+    showEdicaoConsultaModal,
+    setShowEdicaoConsultaModal,
     showCancelamentoModal,
     setShowCancelamentoModal,
     showPacienteModal,
@@ -88,6 +91,8 @@ const UBSDashboard: React.FC = () => {
     setCampanhaData,
     agendamentoData,
     setAgendamentoData,
+    editConsultaData,
+    setEditConsultaData,
     cancelamentoData,
     setCancelamentoData,
     pacienteEditData,
@@ -129,6 +134,7 @@ const UBSDashboard: React.FC = () => {
     handleCampanhaSubmit,
     handleEditCampanhaSubmit,
     handleAgendamentoSubmit,
+    handleEditConsultaSubmit,
     handleCancelamentoSubmit,
     handlePacienteEditSubmit,
     handleConsultaPacienteSubmit,
@@ -141,6 +147,7 @@ const UBSDashboard: React.FC = () => {
     handleDeleteFunc,
     handleDeleteCampanha,
     openAgendamentoModal,
+    openEdicaoConsultaModal,
     openCancelamentoModal,
     openPacienteModal,
     openHistoricoModal,
@@ -540,6 +547,7 @@ const UBSDashboard: React.FC = () => {
               consultaStatusFilter={consultaStatusFilter}
               setConsultaStatusFilter={setConsultaStatusFilter}
               openAgendamentoModal={openAgendamentoModal}
+              openEdicaoConsultaModal={openEdicaoConsultaModal}
               openCancelamentoModal={openCancelamentoModal}
             />
           )}
@@ -1028,6 +1036,17 @@ const UBSDashboard: React.FC = () => {
           setAgendamentoData={setAgendamentoData}
           funcionarios={funcionarios || []}
           onSubmit={handleAgendamentoSubmit}
+        />
+
+        {/* Modal de Edição de Consulta */}
+        <UBSEditarConsultaModal
+          isOpen={showEdicaoConsultaModal}
+          onClose={() => setShowEdicaoConsultaModal(false)}
+          selectedConsulta={selectedConsulta}
+          editData={editConsultaData}
+          setEditData={setEditConsultaData}
+          funcionarios={funcionarios || []}
+          onSubmit={handleEditConsultaSubmit}
         />
 
         {/* Modal de Editar Paciente */}
