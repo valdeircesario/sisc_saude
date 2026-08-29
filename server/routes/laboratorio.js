@@ -1,15 +1,19 @@
 import express from 'express';
 import multer from 'multer';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { authenticateToken, authorizeRole } from '../middleware/auth.js';
 import * as laboratorioController from '../controllers/laboratorioController.js';
 
 const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const examesUploadDir = path.join(__dirname, '..', 'uploads', 'exames');
 
 // Configuração do multer para upload de arquivos
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/exames/');
+    cb(null, examesUploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

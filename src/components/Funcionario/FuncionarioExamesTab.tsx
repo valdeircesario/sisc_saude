@@ -54,7 +54,7 @@ const FuncionarioExamesTab: React.FC<ExamesTabProps> = ({
           </div>
           <div className="relative md:w-80">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-[#8FA8C4]" />
+              <Search className="h-4 w-4 text-[#4e5256]" />
             </div>
             <input
               type="text"

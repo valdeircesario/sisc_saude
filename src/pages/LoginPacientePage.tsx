@@ -111,7 +111,7 @@ const LoginPacientePage: React.FC = () => {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-600">
+              <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-gray-600">
                 Email
               </label>
               <div className="relative">
@@ -119,6 +119,7 @@ const LoginPacientePage: React.FC = () => {
                   <Mail className="h-4 w-4 text-teal-500" />
                 </div>
                 <input
+                  id="email"
                   {...register("email", {
                     required: "Email é obrigatório",
                     pattern: {
@@ -140,7 +141,7 @@ const LoginPacientePage: React.FC = () => {
 
             {/* Senha */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold uppercase tracking-widest text-gray-600">
+              <label htmlFor="senha" className="text-xs font-bold uppercase tracking-widest text-gray-600">
                 Senha
               </label>
               <div className="relative">
@@ -148,6 +149,7 @@ const LoginPacientePage: React.FC = () => {
                   <Lock className="h-4 w-4 text-teal-500" />
                 </div>
                 <input
+                  id="senha"
                   {...register("senha", { required: "Senha é obrigatória" })}
                   type={showPassword ? "text" : "password"}
                   className="block w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-11 pr-11 text-sm font-medium text-gray-800 placeholder-gray-400 transition-all duration-200 focus:border-teal-400 focus:bg-white focus:ring-2 focus:ring-teal-100 focus:outline-none"
@@ -170,6 +172,12 @@ const LoginPacientePage: React.FC = () => {
                   <span>⚠</span> {errors.senha.message}
                 </p>
               )}
+            </div>
+
+            <div className="text-right">
+              <Link to="/recuperar-senha" className="text-xs font-bold text-teal-600 hover:text-teal-700">
+                Esqueci minha senha
+              </Link>
             </div>
 
             {/* Botão submit */}

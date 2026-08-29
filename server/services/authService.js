@@ -1,6 +1,143 @@
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
 import { prisma } from "../config/database.js";
+import { enviarEmailResetSenha } from "./emailService.js";
+
+const USUARIOS_SENHA = {
+  paciente: { model: "paciente", emailObrigatorio: true },
+  funcionario: { model: "funcionario", emailObrigatorio: true },
+  admin: { model: "admin", emailObrigatorio: true },
+  ubs: { model: "uBS", emailObrigatorio: true },
+  hospital: { model: "hospital", emailObrigatorio: true },
+  upa: { model: "upa", emailObrigatorio: false },
+  farmacia: { model: "farmacia", emailObrigatorio: true },
+  laboratorio: { model: "laboratorio", emailObrigatorio: true },
+};
+
+const hashResetToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+
+const validarNovaSenha = (senha) => {
+  if (typeof senha !== "string" || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(senha)) {
+    throw {
+      status: 400,
+      data: {
+        message: "Senha deve ter: mínimo 8 caracteres, uma letra maiúscula, uma letra minúscula e um número",
+      },
+    };
+  }
+};
+
+const obterConfiguracaoUsuario = (tipoUsuario) => {
+  const config = USUARIOS_SENHA[tipoUsuario];
+  if (!config) {
+    throw { status: 400, data: { message: "Tipo de usuário inválido" } };
+  }
+  return config;
+};
+
+const obterUsuarioPorId = async (client, tipoUsuario, usuarioId) => {
+  const { model } = obterConfiguracaoUsuario(tipoUsuario);
+  return client[model].findUnique({ where: { id: usuarioId } });
+};
+
+export const solicitarResetSenha = async ({ email, tipoUsuario, ipSolicitante }) => {
+  const config = obterConfiguracaoUsuario(tipoUsuario);
+  const emailNormalizado = typeof email === "string" ? email.trim().toLowerCase() : "";
+
+  if (!emailNormalizado) {
+    throw { status: 400, data: { message: "Email e tipo de usuário são obrigatórios" } };
+  }
+
+  const usuario = await prisma[config.model].findUnique({
+    where: { email: emailNormalizado },
+    select: { id: true, email: true },
+  });
+
+  // A mesma resposta evita revelar se um email está cadastrado.
+  const resposta = {
+    message: "Se os dados forem válidos, um link de redefinição será enviado.",
+  };
+  if (!usuario) return resposta;
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+  await prisma.passwordResetToken.create({
+    data: {
+      tipoUsuario,
+      usuarioId: usuario.id,
+      tokenHash: hashResetToken(token),
+      expiresAt,
+      ipSolicitante: ipSolicitante || null,
+    },
+  });
+
+  const resetUrl = `${process.env.PASSWORD_RESET_URL || "http://localhost:5173/recuperar-senha"}?token=${token}`;
+  await enviarEmailResetSenha({ destinatario: usuario.email, resetUrl });
+  return resposta;
+};
+
+export const redefinirSenha = async ({ token, novaSenha }) => {
+  if (typeof token !== "string" || !token) {
+    throw { status: 400, data: { message: "Token de redefinição é obrigatório" } };
+  }
+  validarNovaSenha(novaSenha);
+
+  const tokenRegistro = await prisma.passwordResetToken.findFirst({
+    where: {
+      tokenHash: hashResetToken(token),
+      usado: false,
+      expiresAt: { gt: new Date() },
+    },
+  });
+  if (!tokenRegistro) {
+    throw { status: 400, data: { message: "Token inválido, expirado ou já utilizado" } };
+  }
+
+  const senha = await bcrypt.hash(novaSenha, 12);
+  await prisma.$transaction(async (transaction) => {
+    const consumo = await transaction.passwordResetToken.updateMany({
+      where: {
+        id: tokenRegistro.id,
+        usado: false,
+        expiresAt: { gt: new Date() },
+      },
+      data: { usado: true, usadoEm: new Date() },
+    });
+    if (consumo.count !== 1) {
+      throw { status: 400, data: { message: "Token inválido, expirado ou já utilizado" } };
+    }
+
+    const usuario = await obterUsuarioPorId(transaction, tokenRegistro.tipoUsuario, tokenRegistro.usuarioId);
+    if (!usuario) {
+      throw { status: 400, data: { message: "Usuário não encontrado" } };
+    }
+    const { model } = obterConfiguracaoUsuario(tokenRegistro.tipoUsuario);
+    await transaction[model].update({ where: { id: usuario.id }, data: { senha } });
+  });
+
+  return { message: "Senha redefinida com sucesso" };
+};
+
+export const alterarSenha = async ({ tipoUsuario, usuarioId, senhaAtual, novaSenha }) => {
+  const { model } = obterConfiguracaoUsuario(tipoUsuario);
+  if (!senhaAtual) {
+    throw { status: 400, data: { message: "Senha atual é obrigatória" } };
+  }
+  validarNovaSenha(novaSenha);
+
+  const usuario = await prisma[model].findUnique({ where: { id: usuarioId } });
+  if (!usuario || !(await bcrypt.compare(senhaAtual, usuario.senha))) {
+    throw { status: 401, data: { message: "Senha atual inválida" } };
+  }
+
+  await prisma[model].update({
+    where: { id: usuarioId },
+    data: { senha: await bcrypt.hash(novaSenha, 12) },
+  });
+  return { message: "Senha alterada com sucesso" };
+};
 
 // Função para validar CPF
 const validarCPF = (cpf) => {
