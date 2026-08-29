@@ -7,10 +7,10 @@ const router = express.Router();
 // ✅ SEGURANÇA: Download de arquivo de exame com autenticação e sanitização
 // Requer token JWT válido e sanitiza o filename para prevenir path traversal
 router.get(
-	"/download/:filename",
-	authenticateToken,
-	authorizeRole(["laboratorio", "funcionario", "paciente"]),
-	exameController.downloadExame,
+  "/download/:filename",
+  authenticateToken,
+  authorizeRole(["laboratorio", "funcionario", "paciente"]),
+  exameController.downloadExame,
 );
 
 export default router;
