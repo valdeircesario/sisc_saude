@@ -60,6 +60,7 @@ router.get("/Relatorio", ubsController.obterRelatorio);
 
 // Consultas da UBS
 router.get("/consultas", ubsController.listarConsultas);
+router.put("/consultas/:id/editar", ubsController.editarConsulta);
 router.put("/consultas/:id/agendar", ubsController.agendarConsulta);
 router.put("/consultas/:id/cancelamento", ubsController.cancelarConsulta);
 

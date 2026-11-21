@@ -217,6 +217,12 @@ const LoginSistemaPage: React.FC = () => {
               )}
             </div>
 
+            <div className="text-right">
+              <Link to="/recuperar-senha" className="text-xs font-semibold text-[#0F6E56] hover:text-[#085041]">
+                Esqueci minha senha
+              </Link>
+            </div>
+
             {/* Botão */}
             <button
               type="submit"

@@ -15,6 +15,7 @@ import HomePage from './pages/HomePage';
 import LoginPacientePage from './pages/LoginPacientePage';
 import LoginSistemaPage from './pages/LoginSistemaPage';
 import RegisterPacientePage from './pages/RegisterPacientePage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Protected Routes
 import ProtectedRoute from './components/ProtectedRoute';
@@ -41,6 +42,7 @@ function App() {
               <Route path="/login-paciente" element={<LoginPacientePage />} />
               <Route path="/login-sistema" element={<LoginSistemaPage />} />
               <Route path="/cadastro-paciente" element={<RegisterPacientePage />} />
+              <Route path="/recuperar-senha" element={<ResetPasswordPage />} />
               <Route path="/campanha/:id" element={<CampanhaInscricaoPage />} />
 
               {/* Rotas protegidas */}

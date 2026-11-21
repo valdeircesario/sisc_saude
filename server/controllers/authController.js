@@ -39,3 +39,37 @@ export const registerPaciente = async (req, res) => {
     handleError(res, error, "Erro no registro do paciente:");
   }
 };
+
+export const solicitarResetSenha = async (req, res) => {
+  try {
+    const result = await authService.solicitarResetSenha({
+      ...req.body,
+      ipSolicitante: req.ip,
+    });
+    res.json(result);
+  } catch (error) {
+    handleError(res, error, "Erro ao solicitar redefinição de senha:");
+  }
+};
+
+export const redefinirSenha = async (req, res) => {
+  try {
+    const result = await authService.redefinirSenha(req.body);
+    res.json(result);
+  } catch (error) {
+    handleError(res, error, "Erro ao redefinir senha:");
+  }
+};
+
+export const alterarSenha = async (req, res) => {
+  try {
+    const result = await authService.alterarSenha({
+      ...req.body,
+      tipoUsuario: req.user.tipo,
+      usuarioId: req.user.id,
+    });
+    res.json(result);
+  } catch (error) {
+    handleError(res, error, "Erro ao alterar senha:");
+  }
+};

@@ -12,7 +12,68 @@ export const useUBSDashboard = () => {
   const [showFuncModal, setShowFuncModal] = useState(false);
   const [showCampanhaModal, setShowCampanhaModal] = useState(false);
   const [showAgendamentoModal, setShowAgendamentoModal] = useState(false);
+  const [showEdicaoConsultaModal, setShowEdicaoConsultaModal] = useState(false);
   const [showCancelamentoModal, setShowCancelamentoModal] = useState(false);
+  // ... (outros estados)
+  const [editConsultaData, setEditConsultaData] = useState({
+    dataAgendada: "",
+    funcionarioId: "",
+    motivo: "",
+    especialidade: "",
+    observacoes: "",
+  });
+
+  // ... (dentro de useUBSDashboard)
+
+  const editConsultaMutation = useMutation(
+    ({ id, data }: { id: string; data: any }) =>
+      api.put(`/ubs/consultas/${id}/editar`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries("ubs-consultas");
+        toast.success("Consulta atualizada com sucesso!");
+        setShowEdicaoConsultaModal(false);
+        setSelectedConsulta(null);
+        setEditConsultaData({
+          dataAgendada: "",
+          funcionarioId: "",
+          motivo: "",
+          especialidade: "",
+          observacoes: "",
+        });
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || "Erro ao editar consulta");
+      },
+    },
+  );
+
+  // ... (dentro de useUBSDashboard)
+
+  const handleEditConsultaSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedConsulta) {
+      editConsultaMutation.mutate({
+        id: selectedConsulta.id,
+        data: editConsultaData,
+      });
+    }
+  };
+
+  const openEdicaoConsultaModal = (consulta: any) => {
+    setSelectedConsulta(consulta);
+    setEditConsultaData({
+      dataAgendada: consulta.dataAgendada
+        ? consulta.dataAgendada.split(".")[0]
+        : "",
+      funcionarioId: consulta.funcionarioId || "",
+      motivo: consulta.motivo || "",
+      especialidade: consulta.especialidade || "",
+      observacoes: consulta.observacoes || "",
+    });
+    setShowEdicaoConsultaModal(true);
+  };
+
   const [showPacienteModal, setShowPacienteModal] = useState(false);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
   const [showInscricoesModal, setShowInscricoesModal] = useState(false);
@@ -118,7 +179,9 @@ export const useUBSDashboard = () => {
     {
       enabled:
         activeTab === "funcionarios" ||
+          activeTab === "consultas" ||
         showAgendamentoModal ||
+        showEdicaoConsultaModal ||
         showCancelamentoModal ||
         showConsultaPacienteModal ||
         showInternacaoModal,
@@ -249,13 +312,20 @@ export const useUBSDashboard = () => {
     isLoading: loadingRelatorio,
     refetch: fetchRelatorio,
   } = useQuery(
-    ["ubs-relatorio", reportType, reportCampaignId, reportStartDate, reportEndDate],
+    [
+      "ubs-relatorio",
+      reportType,
+      reportCampaignId,
+      reportStartDate,
+      reportEndDate,
+    ],
     () =>
       api
         .get("/ubs/Relatorio", {
           params: {
             tipo: reportType,
-            campanhaId: reportType === "campanhas" ? reportCampaignId : undefined,
+            campanhaId:
+              reportType === "campanhas" ? reportCampaignId : undefined,
             dataInicio: reportStartDate,
             dataFim: reportEndDate,
           },
@@ -840,6 +910,8 @@ export const useUBSDashboard = () => {
     setShowCampanhaModal,
     showAgendamentoModal,
     setShowAgendamentoModal,
+    showEdicaoConsultaModal,
+    setShowEdicaoConsultaModal,
     showCancelamentoModal,
     setShowCancelamentoModal,
     showPacienteModal,
@@ -880,6 +952,8 @@ export const useUBSDashboard = () => {
     setCampanhaData,
     agendamentoData,
     setAgendamentoData,
+    editConsultaData,
+    setEditConsultaData,
     cancelamentoData,
     setCancelamentoData,
     pacienteEditData,
@@ -935,6 +1009,7 @@ export const useUBSDashboard = () => {
     handleCampanhaSubmit,
     handleEditCampanhaSubmit,
     handleAgendamentoSubmit,
+    handleEditConsultaSubmit,
     handleCancelamentoSubmit,
     handlePacienteEditSubmit,
     handleConsultaPacienteSubmit,
@@ -947,6 +1022,7 @@ export const useUBSDashboard = () => {
     handleDeleteFunc,
     handleDeleteCampanha,
     openAgendamentoModal,
+    openEdicaoConsultaModal,
     openCancelamentoModal,
     openPacienteModal,
     openHistoricoModal,

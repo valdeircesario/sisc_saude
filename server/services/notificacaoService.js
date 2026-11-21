@@ -45,7 +45,10 @@ export const criarNotificacaoSegura = async (data) => {
   }
 };
 
-export const listarNotificacoes = async (pacienteId, { lida, limit = 20, page = 1 } = {}) => {
+export const listarNotificacoes = async (
+  pacienteId,
+  { lida, limit = 20, page = 1 } = {},
+) => {
   const where = { pacienteId };
   if (lida !== undefined && lida !== null && lida !== "") {
     where.lida = lida === "true" || lida === true;
@@ -105,6 +108,26 @@ export const notificarConsultaAgendada = async (consulta) => {
     mensagem: `Sua consulta de ${consulta.especialidade} foi agendada para ${formatarDataPt(consulta.dataAgendada)}.`,
     tipo: "CONSULTA",
     acao: "AGENDADA",
+    referenciaId: consulta.id,
+  });
+};
+
+export const notificarConsultaAlterada = async (consulta, detalhes = "") => {
+  const mensagemBase = `Sua consulta de ${consulta.especialidade || "saúde"} foi alterada.`;
+  const novaData = consulta.dataAgendada
+    ? ` Nova data: ${formatarDataPt(consulta.dataAgendada)}.`
+    : "";
+  const novoResponsavel = consulta.funcionario?.nome
+    ? ` Novo responsável: ${consulta.funcionario.nome}.`
+    : "";
+  const mensagem = `${mensagemBase}${detalhes ? ` ${detalhes}` : ""}${novaData}${novoResponsavel}`;
+
+  await criarNotificacaoSegura({
+    pacienteId: consulta.pacienteId,
+    titulo: "Consulta alterada",
+    mensagem,
+    tipo: "CONSULTA",
+    acao: "ALTERADA",
     referenciaId: consulta.id,
   });
 };
@@ -219,7 +242,11 @@ export const notificarExameResultado = async (exame) => {
   });
 };
 
-export const notificarCampanhaAgendada = async (pacienteId, agendamento, campanhaTitulo) => {
+export const notificarCampanhaAgendada = async (
+  pacienteId,
+  agendamento,
+  campanhaTitulo,
+) => {
   await criarNotificacaoSegura({
     pacienteId,
     titulo: "Campanha agendada",
