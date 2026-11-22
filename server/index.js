@@ -61,7 +61,7 @@ app.use(helmet());
 app.use(limiter);
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin: ["https://sisc-saude.vercel.app", "http://localhost:5173"],
     credentials: true,
   }),
 );
